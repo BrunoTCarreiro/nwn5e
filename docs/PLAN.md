@@ -138,6 +138,60 @@ monster AC by CR.
     classes from the class list. A dedicated subclass screen would need the
     client's level-up UI code reworked — not planned.
 
+## Phase 1b proposal — advantage/disadvantage (2026-10-18, awaiting owner)
+
+**How.** NWN adds situational bonuses as flat 3e numbers inside
+GetAttackModifierVersus (all of them decoded, RE-NOTES "situational terms").
+ResolveAttackRoll rolls its d20 (call at 0x744401, `RollDice(1, 20)`
+0x47E120) *before* it asks for the attack modifier, so:
+1. ResolveAttackRoll hook (already hooked for the trace), at entry: work out
+   which situational terms apply to this attacker and target (the engine's
+   own checks), keep their 3e total (`rules::NwnSituationalTotal`) and the
+   roll mode (`rules::SituationalRollMode`) for this attack.
+2. The d20 call at 0x744401 goes to a function that rolls two dice and keeps
+   the higher or lower (`rules::RollD20`, the engine's own RollDice for each
+   die). The kept die is the natural roll for natural 1 / 20.
+3. The GetAttackModifierVersus hook takes the 3e total back out for that
+   attack.
+The parry roll (0x74465E) and the threat roll (0x744707) are untouched. The
+rules part is built and tested; the hook waits for the decisions below.
+
+**B1. Mapping** (proposed; built that way in `src/rules/nwn_situational.cpp`):
+
+| NWN term (3e) | 2024 |
+|---|---|
+| Target blind (+2), attacker invisible to the target (+2) | Advantage |
+| Target stunned (+2) | Advantage |
+| Target prone: melee +4 / ranged −4 | Advantage in melee, Disadvantage at range |
+| Can't see the target (−4) | Disadvantage |
+| Ranged attack within the target's melee reach (−4) | Disadvantage |
+| Moving target (−2, ranged) | nothing (no 2024 rule) |
+| Target flanked (+2) | see B2 |
+
+**B2. Flanking.** Core 2024 has no flanking; the DMG has an optional rule
+(Advantage). Proposed: off — with a henchman almost every melee attack would
+flank, making Advantage the norm.
+
+**B3. Point Blank Shot.** The NWN feat removes the −4 for shooting in melee
+and adds +1 within 5 m; 2024 has no such feat. Proposed until feats are
+reworked (Phase 3): it removes the close-combat Disadvantage (as 2024
+Crossbow Expert does for crossbows) and keeps its +1.
+
+**B4. Who it applies to.** Proposed: every attacker — party and creatures —
+as in 2024.
+
+**B5. "In close combat".** NWN checks only the target's reach; 2024 checks
+any enemy within 5 ft that can see you. Proposed: NWN's check first (no new
+engine reads), widened later if it feels wrong.
+
+**B6. Combat log.** It shows one d20 ("17 + 2 = 19"). Proposed: it shows the
+kept die; nwn5e.log records both dice and the mode. An "Advantage" label in
+the log text is Phase 7 (interface).
+
+Later sources, as each NWN effect is converted: conditions (Restrained,
+Paralyzed, Poisoned, Frightened…), hidden attackers, Reckless Attack, Help,
+spells (Faerie Fire, Bless's d4 is not adv/disadv).
+
 ## Decided (owner, 2026-10-17)
 
 8. Expanded critical range (Champion's Improved Critical, 19–20): the expanded
