@@ -14,6 +14,7 @@ struct Config {
   // [debug] — test switches, not rules.
   bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored
   int debug_attacks_per_round = 0;     // >0: player characters make this many main-hand attacks
+  bool debug_attack_trace = false;     // log round setup and every PC attack roll
 };
 
 extern Config g_config;

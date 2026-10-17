@@ -25,6 +25,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.log_attacks = ReadBool(ini, L"log_attacks", g_config.log_attacks);
   g_config.debug_every_hit_crits = ReadBool(ini, L"every_hit_crits", g_config.debug_every_hit_crits, L"debug");
   g_config.debug_attacks_per_round = GetPrivateProfileIntW(L"debug", L"attacks_per_round", 0, ini);
+  g_config.debug_attack_trace = ReadBool(ini, L"attack_trace", g_config.debug_attack_trace, L"debug");
+  if (g_config.debug_attack_trace) Log("config: [debug] attack_trace=1 — logging round setup and PC attack rolls");
   Log("config: crit_nat20_only=%d crit_no_confirmation=%d crit_double_damage=%d attack_proficiency=%d "
       "creature_ac_by_cr=%d extra_attack=%d log_attacks=%d",
       g_config.crit_nat20_only, g_config.crit_no_confirmation, g_config.crit_double_damage,

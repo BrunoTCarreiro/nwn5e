@@ -79,6 +79,25 @@ constexpr uint8_t kIterativePenaltyMonkBytes[] = {0x2b, 0xd9};
 constexpr uintptr_t kIterativePenalty = 0x00695A05;
 constexpr uint8_t kIterativePenaltyBytes[] = {0x2b, 0xda};
 
+// Diagnostics ([debug] attack_trace).
+// void CNWSCombatRound::InitializeNumberOfAttacks(), no stack args (the
+// community plugin hooks it as (CNWSCombatRound*, void*) on 1.69).
+constexpr uintptr_t kInitializeNumberOfAttacks = 0x0073C5A0;
+constexpr uint8_t kInitializeNumberOfAttacksPrologue[] = {0x53, 0x56, 0x8b, 0xf1, 0x8b, 0x86, 0x5c, 0x21};
+// void CNWSCreature::ResolveAttackRoll(CNWSObject* target), one stack arg.
+constexpr uintptr_t kResolveAttackRoll = 0x00744390;
+constexpr uint8_t kResolveAttackRollPrologue[] = {0x6a, 0xff, 0x68, 0xbb, 0xec, 0x89, 0x00, 0x64};
+
+// CNWSCombatRound fields (InitializeNumberOfAttacks, ResolveMeleeAttack,
+// GetAttackModifierVersus).
+constexpr uintptr_t kRoundCurrentAttack = 0x2114;    // uint8, index of the attack being resolved
+constexpr uintptr_t kRoundMainHandAttacks = 0x2138;  // int32, set from GetAttacksPerRound
+constexpr uintptr_t kRoundOffHandAttacks = 0x213C;   // int32 (set by 0x73BF80 — unverified)
+constexpr uintptr_t kRoundExtraAttacks = 0x2148;     // int32, Flurry/Rapid Shot/Haste
+constexpr uintptr_t kRoundOwner = 0x215C;            // CNWSCreature*
+// CNWSCreature -> its combat round (ResolveAttackRoll reads +0xAC8, then +0x2114).
+constexpr uintptr_t kCreatureCombatRound = 0xAC8;
+
 // CNWSCreatureStats class slots: count at +0xA1; slot i at i * 0x118 holds the
 // class id (classes.2da row) at +0x1B2 and its levels at +0x1B3
 // (GetBaseAttackBonus, GetLevel).

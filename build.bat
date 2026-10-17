@@ -13,7 +13,7 @@ set CFLAGS=/nologo /O2 /MT /W3 /EHsc /std:c++17 /DWIN32_LEAN_AND_MEAN /DNOMINMAX
 cl %CFLAGS% /LD /Ithird_party\minhook\include /Isrc ^
   src\core\dllmain.cpp src\core\log.cpp src\core\config.cpp src\core\hooks.cpp ^
   src\core\rules_crit.cpp src\core\rules_crit_confirm.cpp src\core\rules_attack.cpp ^
-  src\core\rules_extra_attack.cpp ^
+  src\core\rules_extra_attack.cpp src\core\rules_attack_trace.cpp ^
   src\rules\core.cpp src\rules\combat.cpp src\rules\monster.cpp src\rules\nwn_conversion.cpp ^
   third_party\minhook\src\buffer.c third_party\minhook\src\hook.c ^
   third_party\minhook\src\trampoline.c third_party\minhook\src\hde\hde32.c ^
@@ -27,7 +27,8 @@ cl %CFLAGS% src\loader\main.cpp /Fe:build\nwn5e.exe ^
 
 cl %CFLAGS% tests\inject_test.cpp /Fe:build\inject_test.exe /link /SUBSYSTEM:CONSOLE || exit /b 1
 
-copy /y nwn5e.ini build\nwn5e.ini >nul
+rem build\nwn5e.ini holds the player's settings: only create it, never overwrite it.
+if not exist build\nwn5e.ini copy nwn5e.ini build\nwn5e.ini >nul
 echo built build\nwn5e.exe build\nwn5e.dll
 exit /b 0
 
