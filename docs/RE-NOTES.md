@@ -211,8 +211,28 @@ CR 0.17 10 → 13, CR 2 14 → 13. Threat 21 / multiplier x0 came only in pairs
 at the same instant, outside attacks — the empty off-hand during the combat
 information update; 0.2.1 leaves them unchanged.
 
+## In-game observations (2026-10-17, Extra Attack, 0.3.1 attack_trace)
+
+`[debug] attacks_per_round=3`, `attack_trace=1`, plus the game's own chat
+log (`ClientEntireChatWindowLogging=1` in **nwnplayer.ini** `[Game Options]`
+— not nwn.ini — writes `logs\nwclientLog1.txt` with `[CHAT WINDOW TEXT]
+[timestamp]` lines).
+
+- Every round is set up with main 3 (`GetAttacksPerRound` hook reaches
+  combat round +0x2138).
+- Against a target that survives (21:20 session) three attack rolls ran in one
+  round, indices 0, 1, 2.
+- Against Weak Goblins that die to the first hit (21:24 session), each round
+  had index 0 (the kill) and index 1, which the chat log labels "Attack Of
+  Opportunity" against the next goblin; at that moment +0x2148 had become 1.
+  So an attack of opportunity is resolved inside the round as an extra attack,
+  and the round's remaining main-hand attacks are not used once the target
+  dies.
+
 ## Open
 
+- Confirm with a target that survives several hits that indices 1 and 2 are
+  main-hand attacks (unarmed test pending).
 - Name 0x693890 (likely the combat information update) to confirm the
   empty-hand reading of threat 21 / x0, and name the multiplier's other
   damage callers (0x65E7D0, 0x697D10; 0x69AEB0 is GetDamageRoll).

@@ -60,6 +60,9 @@ monster AC by CR.
   flanking replaced, hidden/unseen, prone, ranged in melee, etc.).
 - Critical hits: natural 20 only, double damage dice, no confirmation.
 - Attacks per round: 1, Extra Attack (2/3/4 for Fighter), no iterative −5s.
+  NWN drops the rest of a round when its target dies (Cleave exists for
+  that); 2024 Extra Attack lets each attack pick a target, so remaining
+  attacks should move to the next enemy in reach.
 - 2024 weapon properties and **Weapon Mastery** (Cleave, Graze, Nick, Push,
   Sap, Slow, Topple, Vex) on NWN base items.
 - Two-weapon fighting per 2024 (Light property, Nick; bonus-action attack).
