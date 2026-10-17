@@ -10,7 +10,8 @@
 //   and returns the real HasFeat answer, so creatures with Great Cleave or
 //   Cleave still get their bonus attack as in NWN.
 // - Ranged: ResolvePostRangedDamage is hooked; after it marks the attack as a
-//   kill (attack data +0x40), the switch uses the weapon's long range.
+//   kill (attack data +0x40), the same switch runs within 20 m (the engine's
+//   cleave range for ranged weapons, close to a bow's normal range).
 
 #include <stdint.h>
 
@@ -44,9 +45,11 @@ ResolvePostRangedDamageFn g_resolve_post_ranged_damage = nullptr;
 LogOnce g_retarget_logged(500);
 
 // Switches the round's target to the nearest enemy within the attacker's
-// range. Returns the new target's id, or kObjectInvalid when there is none.
-uint32_t SwitchToNearestEnemy(void* attacker, void* round, uint32_t killed_id, int range_mode) {
-  const float range = g_max_attack_range(attacker, nullptr, nwmain::kObjectInvalid, 0, range_mode);
+// range (melee reach, or 20 m with a ranged weapon). Returns the new target's
+// id, or kObjectInvalid when there is none.
+uint32_t SwitchToNearestEnemy(void* attacker, void* round, uint32_t killed_id) {
+  const float range =
+      g_max_attack_range(attacker, nullptr, nwmain::kObjectInvalid, 0, nwmain::kMaxAttackRangeRetarget);
   const uint32_t enemy = g_get_nearest_enemy(attacker, nullptr, range, killed_id, 1, 0);
   void* server_internal = Field<void*>(*reinterpret_cast<void**>(nwmain::kServerExoAppInternalHolder), 4);
   if (enemy == nwmain::kObjectInvalid || !server_internal || !g_get_creature(server_internal, nullptr, enemy)) {
@@ -68,8 +71,7 @@ void RetargetAfterKill(void* attacker, bool ranged) {
   const void* attack = g_get_attack(round, nullptr, index);
   if (!attack) return;
   const uint32_t killed = Field<uint32_t>(attack, nwmain::kAttackDataTarget);
-  const uint32_t next = SwitchToNearestEnemy(attacker, round, killed,
-                                             ranged ? nwmain::kMaxAttackRangeRanged : nwmain::kMaxAttackRangeMelee);
+  const uint32_t next = SwitchToNearestEnemy(attacker, round, killed);
   const uint32_t id = Field<uint32_t>(attacker, nwmain::kCreatureObjectId);
   if (g_config.log_attacks && g_retarget_logged.First(LogOnce::Key(id ^ killed, index, total))) {
     if (next != nwmain::kObjectInvalid) {

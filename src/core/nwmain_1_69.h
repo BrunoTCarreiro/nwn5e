@@ -144,9 +144,10 @@ constexpr uintptr_t kAttackDataKilledTarget = 0x40;
 constexpr uintptr_t kResolvePostRangedDamage = 0x00746980;
 constexpr uint8_t kResolvePostRangedDamagePrologue[] = {0x6a, 0xff, 0x68, 0xfc, 0xed, 0x89, 0x00, 0x64};
 // MaxAttackRange's third argument: with a ranged weapon 1 -> 20.0, 0 -> 40.0;
-// melee -> reach + 1.5 either way. The engine's cleave passes 1.
-constexpr int kMaxAttackRangeMelee = 1;
-constexpr int kMaxAttackRangeRanged = 0;
+// melee -> reach + 1.5 either way. The engine's cleave passes 1. Retargeting
+// uses 1 for melee and ranged: 40 m picked a caged Hook Horror far across the
+// prelude arena over goblins in front of the archer (owner, 2026-10-17).
+constexpr int kMaxAttackRangeRetarget = 1;
 // int CNWSCombatRound::GetTotalAttacks() 0x73E970, plain ret: main-hand +0x2138
 // + off-hand +0x213C + extra +0x2148 + cleave +0x214C, at least 1.
 constexpr uintptr_t kGetTotalAttacks = 0x0073E970;
