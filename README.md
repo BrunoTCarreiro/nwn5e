@@ -21,15 +21,18 @@ in `nwn5e.ini`:
 | Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | verified in game (log) |
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
+| Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log) |
+| Henchmen use the player-character rules (decision 11) | — (always) | built; needs a henchman to check |
+| After a kill, the next attack moves to the nearest enemy (decision 14) | `retarget_remaining_attacks` | built, awaiting in-game test |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
-(decision 10; in the rules module, active from the next DLL build).
+(decision 10).
 
-Known gaps: NWN drops the rest of a round when its target dies (decision 14:
-remaining attacks should move to the next enemy); off-hand attacks keep NWN's
-rules (two-weapon fighting is Phase 1d); henchmen count as creatures until
-decision 11 is built; crits multiply all weapon damage until decision 13 is
-built; player AC is unchanged.
+Known gaps: one attack moves per kill (exact for two attacks a round), melee
+only; flat damage bonuses from effects (e.g. Divine Favor) still double on a
+crit; off-hand attacks keep NWN's rules (two-weapon fighting is Phase 1d);
+the character sheet still shows the 3e attack bonus (+5 where rolls use +6);
+player AC is unchanged.
 
 Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
 gives player characters N main-hand attacks per round; `creature_ac=N` gives
