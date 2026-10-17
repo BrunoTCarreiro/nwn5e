@@ -79,6 +79,16 @@ that `nwmain.exe` is exactly the mapped 1.69 build (SHA-256
 refuses to start anything else. The DLL writes `build\nwn5e.log`: which hooks
 were installed and each rule decision.
 
+## Changes to the game folder
+
+The mod itself changes nothing in `X:\GOG\NWN Diamond`. These two owner
+requests did, and each is reversible from `backup\` (not in git):
+
+| Change | Why | Undo |
+|---|---|---|
+| `nwnplayer.ini` `[Game Options] ClientEntireChatWindowLogging=1` | timestamped combat log in `logs\nwclientLog1.txt` for tests | set it back to `0` (original: `backup\nwnplayer.ini.before-chatlog`) |
+| `movies\AtariLogo.bik`, `BiowareLogo.bik`, `WOTCLogo.bik`, `fge_logo_black.bik`, `NWNintro.bik` moved out | skip the loud startup logos and intro | copy them back from `backup\movies\` |
+
 ## Reverse-engineering toolchain
 
 Portable, under `X:\tools` (Node 24.21, Ghidra 12.1.4, REA 6.5.0). Use
