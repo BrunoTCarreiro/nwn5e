@@ -1,8 +1,9 @@
 // 2024 Extra Attack in place of NWN's iterative attacks:
 //
 // - Player characters make the attacks of the 2024 Attack action, from their
-//   base class levels (rules::MainHandAttacksPerRound). Prestige and racial
-//   levels do not count yet (docs/PLAN.md, decision 10).
+//   class levels (rules::MainHandAttacksPerRound); prestige levels count as
+//   levels of their parent class (docs/PLAN.md, decision 10), racial levels
+//   do not count.
 // - Other creatures keep the engine's count, standing in for a Multiattack.
 // - No main-hand attack takes the 3e iterative penalty (-5, or -3 with monk
 //   attack tables). Off-hand attacks keep theirs until two-weapon fighting is

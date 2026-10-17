@@ -131,11 +131,12 @@ monster AC by CR.
 5. Prestige classes with no 2024 subclass equivalent: drop or adapt?
 6. Rituals and material components: model or ignore?
 7. Action economy design (Phase 6).
-10. Prestige classes and Extra Attack: prestige levels (Weapon Master,
-    Champion of Torm, Blackguard…) do not count toward Extra Attack yet, so a
-    Fighter 4 / Weapon Master 6 makes 1 attack. Recommendation: treat martial
-    prestige levels as levels of the character's martial base class for
-    Extra Attack (they become subclasses in Phase 3).
+12. Subclass selection UI: prestige classes become 2024 subclasses (decision
+    10). Proposed: pick the subclass at level 3 in the existing level-up feat
+    step (one "subclass" feat per option, custom names/descriptions/icons),
+    grant subclass features at their levels from the DLL, and hide prestige
+    classes from the class list. A dedicated subclass screen would need the
+    client's level-up UI code reworked — not planned.
 
 ## Decided (owner, 2026-10-17)
 
@@ -145,3 +146,16 @@ monster AC by CR.
 9. Creature AC conversion target: keep the 2014 DMG "Monster Statistics by
    Challenge Rating" AC column as a personal-use guideline
    (`rules::ExpectedMonsterArmorClass`); not shipped in anything shared.
+10. Prestige classes count as levels of the class they would be a 2024
+    subclass of (`rules::ClassFromNwnId`): Weapon Master, Arcane Archer,
+    Purple Dragon Knight, Dwarven Defender → Fighter; Champion of Torm,
+    Blackguard → Paladin; Assassin, Shadowdancer → Rogue; Harper Scout → Bard;
+    Red Dragon Disciple → Sorcerer; Pale Master → Wizard; Shifter → Druid.
+    Levels add to the parent class (Fighter 6 / Weapon Master 6 = Fighter 12).
+11. Henchmen use the player-character rules (gear AC, proficiency by level,
+    Extra Attack from their classes). Summons, familiars and animal companions
+    keep the creature rules (CR-based AC and proficiency, engine attack count)
+    — they have stat blocks, not gear.
+13. Critical hits double only the damage dice (2024), not modifiers.
+14. When the target dies mid-round, the remaining attacks move to the next
+    enemy in reach (2024 Extra Attack lets each attack choose a target).

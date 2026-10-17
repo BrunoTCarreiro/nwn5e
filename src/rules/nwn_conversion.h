@@ -12,8 +12,9 @@ namespace rules {
 
 // NWN class id (classes.2da row) -> 2024 class. The base classes are rows 0-10
 // (Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue,
-// Sorcerer, Wizard); monster/racial classes (11-26, 38) and prestige classes
-// (27-37, 41) have no 2024 class yet.
+// Sorcerer, Wizard). Prestige classes (27-37, 41) map to the class they would
+// be a 2024 subclass of (decision 10). Monster/racial classes (11-26, 38) have
+// no 2024 class.
 std::optional<CharacterClass> ClassFromNwnId(int nwn_class_id);
 
 struct NwnClassSlot {
@@ -22,8 +23,9 @@ struct NwnClassSlot {
 };
 
 // Main-hand attacks per round. Player characters make the attacks of the
-// 2024 Attack action (Extra Attack from their base classes); other creatures
-// keep the engine's count, standing in for a 5e Multiattack.
+// 2024 Attack action (Extra Attack from their classes, prestige levels added
+// to the parent class); other creatures keep the engine's count, standing in
+// for a 5e Multiattack.
 int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks);
 
 // Player characters use their total level; every other creature (monsters,

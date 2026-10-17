@@ -1,5 +1,6 @@
 #include "rules/nwn_conversion.h"
 
+#include <algorithm>
 #include <iterator>
 
 #include "rules/core.h"
@@ -26,19 +27,50 @@ std::optional<CharacterClass> ClassFromNwnId(int nwn_class_id) {
       CharacterClass::kFighter,   CharacterClass::kMonk,    CharacterClass::kPaladin, CharacterClass::kRanger,
       CharacterClass::kRogue,     CharacterClass::kSorcerer, CharacterClass::kWizard,
   };
-  if (nwn_class_id < 0 || nwn_class_id >= static_cast<int>(std::size(kBaseClasses))) return std::nullopt;
-  return kBaseClasses[nwn_class_id];
+  // Decision 10: prestige classes count as the class they would be a 2024
+  // subclass of (classes.2da rows 27-37 and 41).
+  struct Prestige {
+    int nwn_class_id;
+    CharacterClass parent;
+  };
+  static constexpr Prestige kPrestigeClasses[] = {
+      {27, CharacterClass::kRogue},    // Shadowdancer
+      {28, CharacterClass::kBard},     // Harper Scout
+      {29, CharacterClass::kFighter},  // Arcane Archer
+      {30, CharacterClass::kRogue},    // Assassin
+      {31, CharacterClass::kPaladin},  // Blackguard
+      {32, CharacterClass::kPaladin},  // Champion of Torm
+      {33, CharacterClass::kFighter},  // Weapon Master
+      {34, CharacterClass::kWizard},   // Pale Master
+      {35, CharacterClass::kDruid},    // Shifter
+      {36, CharacterClass::kFighter},  // Dwarven Defender
+      {37, CharacterClass::kSorcerer}, // Red Dragon Disciple
+      {41, CharacterClass::kFighter},  // Purple Dragon Knight
+  };
+  if (nwn_class_id >= 0 && nwn_class_id < static_cast<int>(std::size(kBaseClasses))) return kBaseClasses[nwn_class_id];
+  for (const Prestige& prestige : kPrestigeClasses) {
+    if (prestige.nwn_class_id == nwn_class_id) return prestige.parent;
+  }
+  return std::nullopt;
 }
 
 int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks) {
   if (!is_player_character) return engine_attacks;
-  std::vector<ClassLevels> base_classes;
+  // Levels of a prestige class add to its parent class (Fighter 6 + Weapon
+  // Master 6 is a Fighter 12); different classes still do not add up.
+  std::vector<ClassLevels> by_class;
   for (const NwnClassSlot& slot : classes) {
-    if (const auto character_class = ClassFromNwnId(slot.nwn_class_id)) {
-      base_classes.push_back({*character_class, slot.levels});
+    const auto character_class = ClassFromNwnId(slot.nwn_class_id);
+    if (!character_class) continue;
+    auto existing = std::find_if(by_class.begin(), by_class.end(),
+                                 [&](const ClassLevels& entry) { return entry.character_class == *character_class; });
+    if (existing != by_class.end()) {
+      existing->levels += slot.levels;
+    } else {
+      by_class.push_back({*character_class, slot.levels});
     }
   }
-  return AttacksPerAttackAction(base_classes);
+  return AttacksPerAttackAction(by_class);
 }
 
 int ConvertCriticalThreatFloor(int engine_threat_floor) { return engine_threat_floor > 20 ? engine_threat_floor : 20; }

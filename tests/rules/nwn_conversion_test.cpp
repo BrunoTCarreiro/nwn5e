@@ -28,8 +28,8 @@ TEST(AttackModifierSwapsBaseAttackBonusForProficiency) {
 }
 
 // Breaks caught: the classes.2da row order shifted by one (Fighter 4 / Monk 5 /
-// Wizard 10 mislabelled), or racial/prestige classes mapped to a base class.
-TEST(NwnClassIdsMapToBaseClassesOnly) {
+// Wizard 10 mislabelled), or racial classes mapped to a base class.
+TEST(NwnClassIdsMapToBaseClasses) {
   CHECK_EQ(ClassFromNwnId(0).value_or(CharacterClass::kWarlock), CharacterClass::kBarbarian);
   CHECK_EQ(ClassFromNwnId(4).value_or(CharacterClass::kWarlock), CharacterClass::kFighter);
   CHECK_EQ(ClassFromNwnId(5).value_or(CharacterClass::kWarlock), CharacterClass::kMonk);
@@ -38,9 +38,29 @@ TEST(NwnClassIdsMapToBaseClassesOnly) {
   CHECK_EQ(ClassFromNwnId(10).value_or(CharacterClass::kWarlock), CharacterClass::kWizard);
   CHECK_EQ(ClassFromNwnId(11).has_value(), false);   // Aberration
   CHECK_EQ(ClassFromNwnId(24).has_value(), false);   // Outsider
-  CHECK_EQ(ClassFromNwnId(33).has_value(), false);   // Weapon Master
+  CHECK_EQ(ClassFromNwnId(38).has_value(), false);   // Ooze
+  CHECK_EQ(ClassFromNwnId(39).has_value(), false);   // empty classes.2da row
   CHECK_EQ(ClassFromNwnId(255).has_value(), false);  // empty slot
   CHECK_EQ(ClassFromNwnId(-1).has_value(), false);
+}
+
+// Decision 10: a prestige class counts as levels of the class it would be a
+// 2024 subclass of. Breaks caught: a prestige class mapped to the wrong
+// parent, or left unmapped.
+TEST(PrestigeClassesCountAsTheirParentClass) {
+  const auto parent = [](int id) { return ClassFromNwnId(id).value_or(CharacterClass::kWarlock); };
+  CHECK_EQ(parent(27), CharacterClass::kRogue);    // Shadowdancer
+  CHECK_EQ(parent(28), CharacterClass::kBard);     // Harper Scout
+  CHECK_EQ(parent(29), CharacterClass::kFighter);  // Arcane Archer
+  CHECK_EQ(parent(30), CharacterClass::kRogue);    // Assassin
+  CHECK_EQ(parent(31), CharacterClass::kPaladin);  // Blackguard
+  CHECK_EQ(parent(32), CharacterClass::kPaladin);  // Champion of Torm
+  CHECK_EQ(parent(33), CharacterClass::kFighter);  // Weapon Master
+  CHECK_EQ(parent(34), CharacterClass::kWizard);   // Pale Master
+  CHECK_EQ(parent(35), CharacterClass::kDruid);    // Shifter
+  CHECK_EQ(parent(36), CharacterClass::kFighter);  // Dwarven Defender
+  CHECK_EQ(parent(37), CharacterClass::kSorcerer); // Red Dragon Disciple
+  CHECK_EQ(parent(41), CharacterClass::kFighter);  // Purple Dragon Knight
 }
 
 // Breaks caught: player characters keeping NWN's iterative count (a level 6
@@ -52,10 +72,14 @@ TEST(PlayerCharactersAttackPerExtraAttack) {
   CHECK_EQ(MainHandAttacksPerRound(true, {{4, 20}}, 4), 4);
 }
 
-// Breaks caught: prestige or racial levels counting toward Extra Attack, or a
-// multiclass adding levels across classes.
-TEST(OnlyBaseClassLevelsGrantExtraAttack) {
-  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 4}, {33, 6}}, 2), 1);
+// Breaks caught: prestige levels not adding to their parent class (Fighter 6 /
+// Weapon Master 6 is Fighter 12: 3 attacks, not 2), racial levels counting, or
+// a multiclass adding levels across different classes.
+TEST(PrestigeLevelsAddToTheParentClassForExtraAttack) {
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 4}, {33, 6}}, 2), 2);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 6}, {33, 6}}, 3), 3);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{8, 10}, {30, 10}}, 4), 1);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{24, 10}}, 3), 1);
   CHECK_EQ(MainHandAttacksPerRound(true, {{4, 4}, {0, 4}}, 2), 1);
   CHECK_EQ(MainHandAttacksPerRound(true, {{4, 5}, {6, 5}}, 2), 2);
 }

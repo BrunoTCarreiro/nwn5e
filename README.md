@@ -25,7 +25,7 @@ in `nwn5e.ini`:
 Known gaps: NWN drops the rest of a round when its target dies (2024 lets
 remaining attacks pick a new target); off-hand attacks keep NWN's rules
 (two-weapon fighting is Phase 1d); prestige levels do not count toward Extra
-Attack (decision 10); henchmen and summons count as creatures; player AC is
+Attack (decision 10, now decided: built in rules, active from the next DLL build); henchmen and summons count as creatures; player AC is
 unchanged.
 
 Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
