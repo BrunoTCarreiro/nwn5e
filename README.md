@@ -23,14 +23,14 @@ in `nwn5e.ini`:
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
 | Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log) |
 | Henchmen use the player-character rules (decision 11) | — (always) | built; needs a henchman to check |
-| After a kill, the next attack moves to the nearest enemy (decision 14) | `retarget_remaining_attacks` | built, awaiting in-game test |
+| After a kill, the round's remaining attacks go to the nearest enemy (decision 14) | `retarget_remaining_attacks` | verified in game (debug switches) |
+| No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).
 
-Known gaps: one attack moves per kill (exact for two attacks a round), melee
-only; flat damage bonuses from effects (e.g. Divine Favor) still double on a
-crit; off-hand attacks keep NWN's rules (two-weapon fighting is Phase 1d);
+Known gaps: retargeting is melee only; flat damage bonuses from effects (e.g.
+Divine Favor) still double on a crit; off-hand attacks keep NWN's rules (two-weapon fighting is Phase 1d);
 the character sheet still shows the 3e attack bonus (+5 where rolls use +6);
 player AC is unchanged.
 

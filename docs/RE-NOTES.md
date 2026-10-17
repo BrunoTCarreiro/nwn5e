@@ -202,6 +202,26 @@ Class ids (game's `2dasource.zip` classes.2da): 0 Barbarian, 1 Bard,
 9 Sorcerer, 10 Wizard; 11–26 and 38 monster/racial classes; 27–37 and 41
 prestige classes.
 
+## Retargeting after a kill (decompiled and verified 2026-10-17)
+
+- `CNWSCombatRound::GetWeaponAttackType()` 0x73E510 types each attack by its
+  index: 1 main-hand weapon (7 unarmed); 2 off-hand when the round has off-hand
+  attacks and the index is past main + extra + cleave; 6 "additional" weapon
+  attack (8 unarmed) past the main-hand count once extra/cleave attacks exist;
+  3/4/5 creature weapons (random).
+- GetAttackModifierVersus: additional attacks take −5 × round +0x2144 (`add
+  ebx, ecx` 0x695AD9) unless special 0x363/0x364/0x187; off-hand −5 × +0x2140.
+- `CNWSCombatRound::GetTotalAttacks()` 0x73E970 = +0x2138 + +0x213C + +0x2148
+  + +0x214C (main, off-hand, extra, cleave).
+- ResolvePostMeleeDamage's Great Cleave branch (0x746745..0x746797): see
+  nwmain_1_69.h. Setting round +0x2134 to the new enemy sends the round's
+  remaining attacks there; AddCleaveAttack (0x73D4B0) adds one more.
+- 0.5.0 (answered "has Great Cleave"): 6 attacks in a round, the added ones at
+  −5/−10. 0.5.1 (switch the target only, NOP the additional-attack penalty):
+  22:41 session — kill on attack 3 of 4, attack 4 went to the next goblin and
+  killed it in the same round; 4 attacks total; every attack +6; with no enemy
+  left: "no enemy in reach".
+
 ## Damage roll and critical damage (decompiled 2026-10-17)
 
 `CNWSCreatureStats::GetDamageRoll(defender, bOffHand, bCritical, bSneakAttack,
