@@ -27,6 +27,10 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.debug_attacks_per_round = GetPrivateProfileIntW(L"debug", L"attacks_per_round", 0, ini);
   g_config.debug_attack_trace = ReadBool(ini, L"attack_trace", g_config.debug_attack_trace, L"debug");
   if (g_config.debug_attack_trace) Log("config: [debug] attack_trace=1 — logging round setup and PC attack rolls");
+  g_config.debug_creature_ac = GetPrivateProfileIntW(L"debug", L"creature_ac", 0, ini);
+  if (g_config.debug_creature_ac > 0) {
+    Log("config: [debug] creature_ac=%d — every non-player creature has this AC", g_config.debug_creature_ac);
+  }
   Log("config: crit_nat20_only=%d crit_no_confirmation=%d crit_double_damage=%d attack_proficiency=%d "
       "creature_ac_by_cr=%d extra_attack=%d log_attacks=%d",
       g_config.crit_nat20_only, g_config.crit_no_confirmation, g_config.crit_double_damage,

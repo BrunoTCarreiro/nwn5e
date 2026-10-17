@@ -88,11 +88,22 @@ int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
 
 int __fastcall GetArmorClassVersus(void* stats, void* edx, void* attacker, int touch) {
   const int engine_armor_class = g_get_armor_class_versus(stats, edx, attacker, touch);
-  if (!g_config.creature_ac_by_cr) return engine_armor_class;
+  if (!g_config.creature_ac_by_cr && g_config.debug_creature_ac <= 0) return engine_armor_class;
   const CreatureFacts facts = ReadFacts(stats);
-  if (facts.is_player || !facts.plausible) return engine_armor_class;
+  if (facts.is_player) return engine_armor_class;
   // ResolveAttackRoll reads the result as a 16-bit value.
   const int engine_value = static_cast<int16_t>(engine_armor_class & 0xFFFF);
+  if (g_config.debug_creature_ac > 0) {
+    // Test switch: attacks against creatures miss (except natural 20s), so a
+    // round's attacks are all rolled instead of ending with the first kill.
+    if (g_config.log_attacks &&
+        g_armor_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_value, g_config.debug_creature_ac))) {
+      Log("AC: object 0x%08X creature: 3e %d -> debug %d", ObjectIdOf(stats), engine_value,
+          g_config.debug_creature_ac);
+    }
+    return g_config.debug_creature_ac;
+  }
+  if (!g_config.creature_ac_by_cr || !facts.plausible) return engine_armor_class;
   const int converted = rules::ConvertArmorClass(false, engine_value, facts.challenge_rating);
   if (g_config.log_attacks && g_armor_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_value, converted))) {
     Log("AC: object 0x%08X creature CR %.2f%s: 3e %d -> 5e %d", ObjectIdOf(stats), facts.challenge_rating,

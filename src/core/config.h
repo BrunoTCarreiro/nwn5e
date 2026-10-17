@@ -15,6 +15,7 @@ struct Config {
   bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored
   int debug_attacks_per_round = 0;     // >0: player characters make this many main-hand attacks
   bool debug_attack_trace = false;     // log round setup and every PC attack roll
+  int debug_creature_ac = 0;           // >0: every non-player creature has this AC (forces misses)
 };
 
 extern Config g_config;
