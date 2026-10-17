@@ -20,14 +20,21 @@ in `nwn5e.ini`:
 | No critical confirmation roll | `crit_no_confirmation` | verified in game (debug switch) |
 | Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | verified in game (log) |
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
-| PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | built, awaiting in-game test |
+| PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
 
-Known gaps: off-hand attacks keep NWN's rules (two-weapon fighting is Phase
-1d); prestige levels do not count toward Extra Attack (decision 10);
-henchmen and summons count as creatures; player AC is unchanged.
+Known gaps: NWN drops the rest of a round when its target dies (2024 lets
+remaining attacks pick a new target); off-hand attacks keep NWN's rules
+(two-weapon fighting is Phase 1d); prestige levels do not count toward Extra
+Attack (decision 10); henchmen and summons count as creatures; player AC is
+unchanged.
 
-Test switch `[debug] attacks_per_round=N` (1–6) makes player characters take
-N main-hand attacks per round, to see Extra Attack before level 5.
+Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
+gives player characters N main-hand attacks per round; `creature_ac=N` gives
+every non-player creature AC N (40 forces misses, so a round's attacks are all
+rolled); `attack_trace=1` logs round setup and every PC attack roll. With
+`ClientEntireChatWindowLogging=1` in the game's `nwnplayer.ini`, the game
+writes its chat window (combat log included, timestamped) to
+`logs\nwclientLog1.txt`.
 
 Pipeline verified in game (2026-10-17): with the test switch
 `[debug] every_hit_crits=1` every hit was a critical, and `nwn5e.log` showed
