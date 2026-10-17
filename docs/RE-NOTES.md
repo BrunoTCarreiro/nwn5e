@@ -202,6 +202,27 @@ Class ids (game's `2dasource.zip` classes.2da): 0 Barbarian, 1 Bard,
 9 Sorcerer, 10 Wizard; 11–26 and 38 monster/racial classes; 27–37 and 41
 prestige classes.
 
+## Damage roll and critical damage (decompiled 2026-10-17)
+
+`CNWSCreatureStats::GetDamageRoll(defender, bOffHand, bCritical, bSneakAttack,
+bDeathAttack, bForceMax)` 0x69AEB0, `ret 0x18`:
+
+- Weapon dice come from the base item (`NumDice` +0x1A, `DieToRoll` +0x1B,
+  via 0x4BC890); unarmed uses 0x6957D0 (monk/unarmed dice 0x695190/0x695320).
+  Dice are rolled with `RollDice(count, sides)` 0x47E120 (`this` = the rules
+  object at [0x92DC64]; the attack roll calls it as (1, 20)).
+- On a critical each dice loop runs `GetCriticalHitMultiplier()` times,
+  re-rolling the dice each time (the 3e "x2" is two separate rolls, already the
+  2024 behaviour with x2).
+- Flat bonuses: `0x697D10` returns the sum of Strength / two-handed /
+  off-hand / special-attack bonuses unmultiplied (its multiplier calls only
+  build debug strings like "Strength Bonus (Critical x%d)"); GetDamageRoll
+  keeps it in ebp and adds it once per x in the loop 0x69BEA7–0x69BEC3
+  (`add [esp+10h], ebp`). 0.4.0 answers multiplier 1 to those two calls.
+- Effect damage bonuses: `CNWSCreature::GetTotalEffectBonus` 0x65E7D0 (type 2),
+  on attack result 3/10: dice effects re-rolled per x, flat effects added per
+  x through the same calls — so flat effect bonuses still double (known gap).
+
 ## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
 
 Prelude fight, `nwn5e.log`: the PC (object 0x7FFFFFFF — NWN numbers player
