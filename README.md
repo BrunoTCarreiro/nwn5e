@@ -37,7 +37,10 @@ Outputs `build\nwn5e.exe`, `build\nwn5e.dll`, `build\nwn5e.ini`.
 
 ## Run
 
-Run `build\nwn5e.exe`. It finds the game through the registry key the GOG
+Run `build\nwn5e.exe` and accept the UAC prompt: `nwmain.exe`'s own manifest
+requires administrator rights (and the GOG installer sets RUNASADMIN on it),
+so the loader must be elevated to start it — the same prompt the normal NWN
+shortcut shows. It finds the game through the registry key the GOG
 installer writes (override with `[loader] game_dir` in `nwn5e.ini`), checks
 that `nwmain.exe` is exactly the mapped 1.69 build (SHA-256
 `4d8aa22b1bc9a48c108f3c5d4dc08f49dcddad98d863b89dc3684968d2211c49`), and

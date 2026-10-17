@@ -29,8 +29,9 @@ int wmain() {
   const std::wstring exe = std::wstring(windows) + L"\\SysWOW64\\whoami.exe";
 
   PROCESS_INFORMATION process = {};
-  if (!StartWithDll(exe, L"\"" + exe + L"\"", L"", dll, &process)) {
-    wprintf(L"FAIL: could not start %s with the DLL (error %lu)\n", exe.c_str(), GetLastError());
+  DWORD error = 0;
+  if (const wchar_t* step = StartWithDll(exe, L"\"" + exe + L"\"", L"", dll, &process, &error)) {
+    wprintf(L"FAIL: could not start %s with the DLL: %s failed (error %lu)\n", exe.c_str(), step, error);
     return 1;
   }
   WaitForSingleObject(process.hProcess, 15000);

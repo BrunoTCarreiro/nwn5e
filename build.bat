@@ -17,8 +17,11 @@ cl %CFLAGS% /LD /Ithird_party\minhook\include ^
   third_party\minhook\src\trampoline.c third_party\minhook\src\hde\hde32.c ^
   /Fe:build\nwn5e.dll /link /DLL user32.lib || exit /b 1
 
+rem nwmain.exe's manifest requires administrator, and a non-elevated process
+rem cannot create it (error 740), so the loader asks for the same rights.
 cl %CFLAGS% src\loader\main.cpp /Fe:build\nwn5e.exe ^
-  /link /SUBSYSTEM:WINDOWS user32.lib advapi32.lib shell32.lib || exit /b 1
+  /link /SUBSYSTEM:WINDOWS /MANIFEST:EMBED /MANIFESTUAC:"level='requireAdministrator' uiAccess='false'" ^
+  user32.lib advapi32.lib shell32.lib || exit /b 1
 
 cl %CFLAGS% tests\inject_test.cpp /Fe:build\inject_test.exe /link /SUBSYSTEM:CONSOLE || exit /b 1
 

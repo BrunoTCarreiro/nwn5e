@@ -112,7 +112,18 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
   }
 
   PROCESS_INFORMATION process = {};
-  if (!StartWithDll(exe, command, game, dll, &process)) Fail(L"Could not start nwmain.exe with nwn5e.dll.");
+  DWORD error = 0;
+  if (const wchar_t* step = StartWithDll(exe, command, game, dll, &process, &error)) {
+    wchar_t message[512];
+    if (error == ERROR_ELEVATION_REQUIRED) {
+      swprintf_s(message, L"nwmain.exe requires administrator rights (its manifest asks for them), so nwn5e.exe must "
+                          L"run as administrator too. Accept the UAC prompt, or right-click nwn5e.exe > Run as "
+                          L"administrator. (%s, error 740)", step);
+    } else {
+      swprintf_s(message, L"Could not start nwmain.exe with nwn5e.dll: %s failed with Windows error %lu.", step, error);
+    }
+    Fail(message);
+  }
   CloseHandle(process.hThread);
   CloseHandle(process.hProcess);
   LocalFree(argv);
