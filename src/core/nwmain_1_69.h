@@ -148,6 +148,50 @@ constexpr uint8_t kResolvePostRangedDamagePrologue[] = {0x6a, 0xff, 0x68, 0xfc, 
 // uses 1 for melee and ranged: 40 m picked a caged Hook Horror far across the
 // prelude arena over goblins in front of the archer (owner, 2026-10-17).
 constexpr int kMaxAttackRangeRetarget = 1;
+
+// Ranged retargeting keeps GetNearestEnemy's own checks and adds "in the
+// fight", so it walks the area itself. GetNearestEnemy (0x658C00, ret 0x10;
+// args range, exclude id, bMustBeSeen, bCheckPath), decompiled 2026-10-17:
+// over the area's object ids (GetArea 0x63ECC0, ecx = creature, plain ret;
+// area +0x150 id array, +0x154 count) it keeps the closest creature that is
+// not the caller or `exclude`, that the caller's reaction (0x731520, ecx =
+// caller, push id, ret 4, result in AL) marks 2 = enemy, that is neither dead
+// (0x640750: hit points < 1, or < -9 for player-controlled) nor dying
+// (0x6407E0) — both ecx = candidate, plain ret, result in EAX — and, with
+// bMustBeSeen, whose entry in the caller's visible list (0x687BF0, ecx =
+// caller, push id, ret 4; null when absent) has bit 0 of byte +4 set.
+// Distance: centre to centre (floats x, y, z at +0x78) minus both creatures'
+// personal space (float at [+0x304] + 8), strictly under the range.
+// bCheckPath (a path test, 0x6DD2F0) is 0 in the engine's cleave and here.
+constexpr uintptr_t kGetArea = 0x0063ECC0;
+constexpr uintptr_t kAreaObjectIds = 0x150;    // uint32* object ids
+constexpr uintptr_t kAreaObjectCount = 0x154;  // int32
+constexpr uintptr_t kGetReactionTo = 0x00731520;
+constexpr uint8_t kReactionEnemy = 2;
+constexpr uintptr_t kGetDead = 0x00640750;
+constexpr uintptr_t kGetDying = 0x006407E0;
+constexpr uintptr_t kGetVisibleListElement = 0x00687BF0;
+constexpr uintptr_t kVisibleElementFlags = 0x04;  // uint8, bit 0 = seen
+constexpr uintptr_t kObjectPosition = 0x78;       // float x, y, z
+constexpr uintptr_t kCreaturePersonalSpaceInfo = 0x304;  // pointer
+constexpr uintptr_t kPersonalSpace = 0x08;               // float, in that block
+
+// A creature's attack order, read the way 0x64B770 rebuilds the action status
+// the client shows (+0xB0A = 2 "attacking", +0xB0C = target): the current
+// action (int16 id at +0x68, -1 for none; its target at +0x6C), then the
+// queued actions (+0xD4 -> CExoLinkedListInternal; +0 head node; node +4 next,
+// +8 data; data +0 action id, +0x34 first parameter = an attack's target).
+// Action 0xC = attack object (AddAttackActions 0x646D80 queues it; it stays
+// the current action while the creature charges and fights).
+constexpr uintptr_t kObjectCurrentAction = 0x68;        // int16
+constexpr uintptr_t kObjectCurrentActionTarget = 0x6C;  // uint32
+constexpr uintptr_t kObjectActionQueue = 0xD4;
+constexpr uintptr_t kListHead = 0x00;
+constexpr uintptr_t kListNodeNext = 0x04;
+constexpr uintptr_t kListNodeData = 0x08;
+constexpr uintptr_t kActionId = 0x00;          // int32
+constexpr uintptr_t kActionFirstParam = 0x34;  // uint32
+constexpr int kActionAttackObject = 0x0C;
 // int CNWSCombatRound::GetTotalAttacks() 0x73E970, plain ret: main-hand +0x2138
 // + off-hand +0x213C + extra +0x2148 + cleave +0x214C, at least 1.
 constexpr uintptr_t kGetTotalAttacks = 0x0073E970;
@@ -207,6 +251,8 @@ constexpr uintptr_t kStatsChallengeRating = 0x9C;  // float — NOT read in code
                                                    // right before the class count at +0xA1
                                                    // (verified). Guarded by IsPlausibleChallengeRating.
 constexpr uintptr_t kStatsClassCount = 0xA1;   // uint8 (GetLevel, GetBaseAttackBonus)
+constexpr uintptr_t kStatsFaction = 0x90;      // int32 faction id (CNWSCreature::GetFaction
+                                               // 0x687370 passes it to CFactionManager::GetFaction)
 
 // CNWSCreature fields.
 constexpr uintptr_t kCreatureObjectId = 0x04;  // uint32 object id (passed as id in ResolveAttack)
@@ -216,5 +262,6 @@ constexpr uintptr_t kCreatureStats = 0xC64;    // CNWSCreatureStats* (ResolveAtt
 // associate list at +0xB34 and compares each associate's +0xB38 with `type`;
 // ResolveAttack reads it too. Master object id at +0xB30.
 constexpr uintptr_t kCreatureAssociateType = 0xB38;
+constexpr uintptr_t kCreatureMaster = 0xB30;  // uint32 master object id (community layout)
 
 }  // namespace nwmain

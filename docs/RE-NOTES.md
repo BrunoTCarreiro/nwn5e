@@ -227,11 +227,48 @@ prestige classes.
   to the next and killed it; round 2 shot 2 killed the last one, "no enemy in
   range", and the round stopped there. The Hook Horror was never targeted. A kill
   on a round's last shot logs nothing (no attack left to move).
-- Open: the engine's per-shot ranged modifier varied in that session (3e +1,
-  −3, −1, −1, −1, so 5e +2, −2, +0, +0, +0, against a sheet +3); the goblins'
-  melee modifiers varied by 2 as well. Not the iterative penalty (patched;
-  it would be 0/−5/−10). The situational terms after BAB in
-  GetAttackModifierVersus aren't decompiled yet.
+- 0.6.2 (owner: a bow must not pick idle enemies): GetNearestEnemy decompiled
+  (nwmain_1_69.h) — with bMustBeSeen = 1 it already skips enemies the attacker
+  hasn't seen, but anything seen counts (the caged Hook Horror was). Ranged
+  retargeting now walks the area with the same checks and keeps only enemies
+  whose attack order (current or queued action 0xC, the state 0x64B770 turns
+  into the client's "attacking" status) targets the attacker, an associate of
+  the attacker, or a creature of the attacker's faction. Melee still calls
+  GetNearestEnemy. Also found: combat round +0x20EC = 1 while a round runs
+  (StartCombatRound 0x73B160), +0x2154 = the round's defender.
+- The per-shot ranged modifier varied in that session (5e +2, −2, +0, +0, +0;
+  sheet +3). Explained by GetAttackModifierVersus's situational terms
+  (decompiled 2026-10-17, each labelled by a debug string, see below): shot 1
+  at a charging goblin −2 (moving target), shot 2 at a goblin arriving within
+  its reach −6 (moving −2, ranged within melee distance −4), later shots at a
+  goblin standing next to the archer −4. Base +4 — still one above the sheet's
+  +3 (unexplained). The goblins' ±2 is likely the same family (flanking +2).
+
+## GetAttackModifierVersus situational terms (decompiled 2026-10-17)
+
+After the BAB part (above), each term has a debug label (`[%d] <label>`),
+added in this order: off-hand penalty, size, combat-mode modifiers (Power
+Attack, Improved Power Attack, Flurry, Rapid Shot, Expertise, Improved
+Expertise), special attack, Nature Sense, Epic Prowess, Superior Weapon Focus,
+Bane of Enemies, Good Aim, Halfling sling, Enchant Arrow, Offensive Training,
+Dex/Str/Wis modifier, Weapon Focus, Epic Weapon Focus, effect attack bonus,
+then the situational ones:
+
+| Label | Value | When |
+|---|---|---|
+| Target Blind / Attacker Invisible | (not read yet) | |
+| Can't see my target | −4 | target not in the attacker's visible list with bit 0 (0x687BF0) |
+| Moving Target | −2 | ranged only; target +0xAC (animation) 4, 0x56 or 0x57 |
+| Target Prone | melee +4 / ranged −4 | target +0xAC 0x05, 0x07, 0x20, 0x21, 0x24 |
+| Target Stunned | +2 | target +0x9DD == 6 |
+| Target Flanked | +2 | 0x749E50(target) == 1; ranged only within 10 m |
+| Ranged Attack Within Melee Distance | −4 | ranged, no Point Blank Shot (feat 27), distance ≤ MaxAttackRange from the target's side, and 0x6499A0 == 0 |
+| Point Blank Shot Attack Bonus | +1 | ranged, has feat 27, within 5 m |
+| Enemy Attack Bonus | target stats +0x413 (int8) | always |
+
+2024 equivalents (Phase 1b): ranged in close combat, unseen target and prone
+at range → Disadvantage; prone within 5 ft, stunned and (optional) flanking →
+Advantage; moving target has none.
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 

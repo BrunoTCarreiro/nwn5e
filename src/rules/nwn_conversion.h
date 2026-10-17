@@ -3,6 +3,8 @@
 // Converts NWN's 3e engine values to 2024 values. The hooks read the engine's
 // numbers, call these, and hand the result back to the engine.
 
+#include <stdint.h>
+
 #include <optional>
 #include <vector>
 
@@ -67,6 +69,30 @@ int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier);
 // kills its target and this is above 0, the next attack moves to the nearest
 // enemy in reach instead of being lost.
 int RemainingAttacksInRound(int total_attacks, int current_attack_index);
+
+// Decision 14, ranged (owner, 2026-10-17): a ranged attack's remaining shots
+// may only move to an enemy already in the fight, never to one that is idle,
+// caged or asleep. A creature's attack order (its current or queued attack
+// action: charging or fighting) is against the attacker's side when it
+// targets the attacker, one of the attacker's associates (master = attacker),
+// or a creature of the attacker's faction (the party). -1 = faction unknown.
+struct AttackOrder {
+  bool exists;
+  uint32_t target;
+  uint32_t target_master;
+  int target_faction;
+};
+bool IsAgainstSide(const AttackOrder& order, uint32_t attacker, int attacker_faction);
+
+// A living enemy the attacker has seen (the engine's own nearest-enemy checks),
+// measured edge to edge as the engine does.
+struct RetargetCandidate {
+  float distance;
+  bool against_our_side;
+};
+// Index of the nearest candidate under `range` that is against the attacker's
+// side (the first one on a tie), or -1.
+int NearestEnemyInTheFight(const RetargetCandidate* candidates, int count, float range);
 
 // Guards the challenge rating read from engine memory: a finite value in
 // [0, 60]. Anything else means a wrong read, and the hooks leave the engine's

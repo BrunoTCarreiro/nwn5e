@@ -159,3 +159,7 @@ monster AC by CR.
 13. Critical hits double only the damage dice (2024), not modifiers.
 14. When the target dies mid-round, the remaining attacks move to the next
     enemy in reach (2024 Extra Attack lets each attack choose a target).
+    Ranged (owner, 2026-10-17): within 20 m, and only to an enemy already in
+    the fight — one charging or attacking the attacker or the party — so a
+    bow never picks an idle, caged or sleeping enemy. With none, the
+    remaining shots are lost, as in NWN.

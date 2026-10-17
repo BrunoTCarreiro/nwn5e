@@ -146,6 +146,41 @@ TEST(RemainingAttacksAfterTheCurrentOne) {
   CHECK_EQ(RemainingAttacksInRound(0, 0), 0);
 }
 
+// Decision 14, ranged. Breaks caught: a nearer enemy that isn't fighting (the
+// caged Hook Horror, a sleeping guard) chosen over one that is; the range
+// limit dropped or made inclusive (the engine's own search uses "<"); a far
+// candidate beating a near one.
+TEST(RangedShotsMoveOnlyToEnemiesInTheFight) {
+  const RetargetCandidate idle_near_fighting_far[] = {{5.0f, false}, {8.0f, true}};
+  CHECK_EQ(NearestEnemyInTheFight(idle_near_fighting_far, 2, 20.0f), 1);
+  const RetargetCandidate only_idle[] = {{5.0f, false}};
+  CHECK_EQ(NearestEnemyInTheFight(only_idle, 1, 20.0f), -1);
+  const RetargetCandidate beyond_range[] = {{25.0f, true}};
+  CHECK_EQ(NearestEnemyInTheFight(beyond_range, 1, 20.0f), -1);
+  const RetargetCandidate at_range[] = {{20.0f, true}};
+  CHECK_EQ(NearestEnemyInTheFight(at_range, 1, 20.0f), -1);
+  const RetargetCandidate far_then_near[] = {{12.0f, true}, {6.0f, true}};
+  CHECK_EQ(NearestEnemyInTheFight(far_then_near, 2, 20.0f), 1);
+  const RetargetCandidate tie[] = {{3.0f, true}, {3.0f, true}};
+  CHECK_EQ(NearestEnemyInTheFight(tie, 2, 20.0f), 0);
+  CHECK_EQ(NearestEnemyInTheFight(nullptr, 0, 20.0f), -1);
+}
+
+// Decision 14, ranged: "in the fight" = its attack order targets the attacker
+// or the attacker's side. Breaks caught: an enemy with no attack order counted
+// (idle, caged, asleep); an enemy fighting a henchman (same faction) or a
+// summon (master = attacker) left out; an enemy fighting a third party
+// counted; two unknown factions (-1) taken as the same side.
+TEST(AttackOrderAgainstTheAttackersSide) {
+  const uint32_t pc = 0x7FFFFFFF, henchman = 0x300, summon = 0x301, other = 0x302, none = 0x7F000000;
+  CHECK_EQ(IsAgainstSide({false, pc, none, 5}, pc, 5), false);
+  CHECK_EQ(IsAgainstSide({true, pc, none, 5}, pc, 5), true);
+  CHECK_EQ(IsAgainstSide({true, henchman, none, 5}, pc, 5), true);
+  CHECK_EQ(IsAgainstSide({true, summon, pc, 9}, pc, 5), true);
+  CHECK_EQ(IsAgainstSide({true, other, none, 2}, pc, 5), false);
+  CHECK_EQ(IsAgainstSide({true, none, none, -1}, pc, -1), false);
+}
+
 // Breaks caught: garbage from a wrong memory offset (NaN, huge, negative)
 // accepted as a challenge rating; real CRs (0, fractions, 30+) rejected.
 TEST(PlausibleChallengeRatingsOnly) {

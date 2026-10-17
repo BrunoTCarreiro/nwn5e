@@ -90,6 +90,24 @@ int RemainingAttacksInRound(int total_attacks, int current_attack_index) {
   return std::max(0, total_attacks - 1 - current_attack_index);
 }
 
+bool IsAgainstSide(const AttackOrder& order, uint32_t attacker, int attacker_faction) {
+  if (!order.exists) return false;
+  if (order.target == attacker || order.target_master == attacker) return true;
+  return order.target_faction >= 0 && order.target_faction == attacker_faction;
+}
+
+int NearestEnemyInTheFight(const RetargetCandidate* candidates, int count, float range) {
+  int best = -1;
+  float best_distance = range;
+  for (int i = 0; i < count; ++i) {
+    if (candidates[i].against_our_side && candidates[i].distance < best_distance) {
+      best = i;
+      best_distance = candidates[i].distance;
+    }
+  }
+  return best;
+}
+
 bool IsPlausibleChallengeRating(float challenge_rating) {
   // Written so NaN fails both comparisons.
   return challenge_rating >= 0.0f && challenge_rating <= 60.0f;
