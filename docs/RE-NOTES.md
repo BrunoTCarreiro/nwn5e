@@ -63,10 +63,56 @@ Semantics:
 - Both are `__thiscall` on `CNWSCreatureStats`; hooks use `__fastcall` with an
   unused `edx`.
 
+## Attack resolution (decompiled with REA + Ghidra 12.1.4)
+
+Ghidra's full auto-analysis of `nwmain.exe` takes ~8.5 min (511,861 ms) on
+this PC; after that, REA queries answer in well under a second.
+
+```
+CNWSCreature::ResolveAttack            0x740180  (community name, confirmed)
+ ├─ ranged → ResolveRangedAttack        0x740480  (REA: branch on 0x6499A0)
+ │           └─ ResolveRangedSpecialAttack 0x740650 (community name, confirmed)
+ └─ melee  → ResolveMeleeAttack         0x742A80  (REA: branch on 0x6499A0)
+             ├─ special (+0x52 != 0) → ResolveMeleeSpecialAttack 0x742BC0 (community name, confirmed)
+             └─ normal → ResolveAttackRoll 0x744390, then damage if result ∈ {1,3,5,6,7,10}
+```
+
+The two special-attack functions were located independently by the byte map
+and by REA's decompiled call structure — the two methods agree.
+
+`ResolveAttackRoll(CNWSObject* target)` 0x744390, per attack:
+
+1. `d20 = Rand(1,20)` (0x47E120); attack modifier = 0x6958E0(target); AC.
+2. 0x746EF0 — defensive effects (concealment etc.); may end the attack.
+3. Parry mode: `d20 + Parry skill (10)` vs the attack total → result 2
+   (parried); beating it by 10 queues a riposte (0x73D120).
+4. Natural 1, or total < AC without a natural 20 → result 4 (miss);
+   `+0x14` = miss margin.
+5. `GetCriticalHitRoll(offhand)` (0x69C290); on a threat: `+0x48 = 1`,
+   threat roll `d20` into `+0x0F`, then
+
+   ```
+   0x744721  cmp eax, [esp+18h]   ; threat roll + attack modifier vs AC
+   0x744725  jl  0x744875         ; 0F 8C 4A 01 00 00 → ordinary hit
+   ```
+
+   then critical-immunity checks (immunity 0x1F, feat 0x380) → result 3
+   (critical) or result 1 with a feedback message.
+
+Attack-data fields seen (`CNWSCombatAttackData`, from 0x73C0A0):
+`+0x0E` to-hit roll, `+0x0F` threat roll, `+0x10` attack modifier,
+`+0x14` miss margin, `+0x48` critical threat, `+0x50` attack result
+(1 hit, 2 parried, 3 critical, 4 miss, 7 automatic hit when `+0x44 == 1`),
+`+0x52` special attack.
+
+Callers (REA `procedure_callers`):
+
+- `GetCriticalHitRoll` 0x69C290 ← 0x744390 (ResolveAttackRoll), 0x693890
+  (unverified: likely the combat information shown on the character sheet).
+- `GetCriticalHitMultiplier` 0x69C400 ← 0x65E7D0, 0x693890, 0x697D10, 0x69AEB0.
+
 ## Open
 
-- Critical confirmation roll: inside the attack resolution called from
-  `CNWSCreature::ResolveAttack` (0x740180). Next: REA `procedure_callees` +
-  `procedure_pseudo_code` to find the attack-roll function and the confirm
-  comparison.
-- Verify the 2 predicted and 3 ambiguous entries with REA decompilation.
+- Name 0x693890 and the multiplier's damage callers.
+- Verify the 2 predicted and 3 ambiguous map entries with REA decompilation.
+- The threat roll is still rolled and shown in the combat log.

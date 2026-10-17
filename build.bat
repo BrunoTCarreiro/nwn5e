@@ -20,6 +20,8 @@ cl %CFLAGS% /LD /Ithird_party\minhook\include ^
 cl %CFLAGS% src\loader\main.cpp /Fe:build\nwn5e.exe ^
   /link /SUBSYSTEM:WINDOWS user32.lib advapi32.lib shell32.lib || exit /b 1
 
+cl %CFLAGS% tests\inject_test.cpp /Fe:build\inject_test.exe /link /SUBSYSTEM:CONSOLE || exit /b 1
+
 copy /y nwn5e.ini build\nwn5e.ini >nul
 echo built build\nwn5e.exe build\nwn5e.dll
 exit /b 0

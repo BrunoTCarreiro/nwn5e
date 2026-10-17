@@ -1,5 +1,6 @@
 #include "hooks.h"
 
+#include <windows.h>
 #include <string.h>
 
 #include "MinHook.h"
@@ -31,4 +32,22 @@ bool HooksCommit() {
   const MH_STATUS status = MH_ApplyQueued();
   if (status != MH_OK) Log("MinHook apply failed: %s", MH_StatusToString(status));
   return status == MH_OK;
+}
+
+bool PatchBytes(const char* name, uintptr_t address, const uint8_t* expected, const uint8_t* replacement, size_t size) {
+  void* target = reinterpret_cast<void*>(address);
+  if (memcmp(target, expected, size) != 0) {
+    Log("SKIP patch %s at 0x%08X: bytes do not match the mapped build", name, address);
+    return false;
+  }
+  DWORD old_protect = 0;
+  if (!VirtualProtect(target, size, PAGE_EXECUTE_READWRITE, &old_protect)) {
+    Log("FAIL patch %s at 0x%08X: VirtualProtect error %lu", name, address, GetLastError());
+    return false;
+  }
+  memcpy(target, replacement, size);
+  VirtualProtect(target, size, old_protect, &old_protect);
+  FlushInstructionCache(GetCurrentProcess(), target, size);
+  Log("patch %s at 0x%08X (%u bytes)", name, address, static_cast<unsigned>(size));
+  return true;
 }

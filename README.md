@@ -16,7 +16,10 @@ Phase 0 (foundation). Rules implemented so far, each switchable in `nwn5e.ini`:
 |---|---|---|
 | Critical threat only on a natural 20 | `crit_nat20_only` | built, awaiting in-game test |
 | x2 critical multiplier for every weapon | `crit_double_damage` | built, awaiting in-game test |
-| No critical confirmation roll | `crit_no_confirmation` | not mapped yet (logged no-op) |
+| No critical confirmation roll | `crit_no_confirmation` | built, awaiting in-game test |
+
+`build\inject_test.exe` checks the injection path without starting the game
+(starts SysWOW64\whoami.exe with the DLL; expects it to load and refuse the host).
 
 ## Build
 

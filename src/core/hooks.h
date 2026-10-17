@@ -18,3 +18,7 @@ struct HookSpec {
 bool HooksBegin();
 bool InstallHook(const HookSpec& spec);
 bool HooksCommit();
+
+// Overwrites `size` bytes at `address` with `replacement`, only if they are
+// exactly `expected` (the mapped build); otherwise logs and leaves them alone.
+bool PatchBytes(const char* name, uintptr_t address, const uint8_t* expected, const uint8_t* replacement, size_t size);

@@ -15,6 +15,8 @@
 #include <string>
 #include <vector>
 
+#include "inject.h"
+
 #pragma comment(lib, "bcrypt.lib")
 #pragma comment(lib, "shlwapi.lib")
 
@@ -109,25 +111,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     command += L"\"";
   }
 
-  STARTUPINFOW startup = {sizeof(startup)};
   PROCESS_INFORMATION process = {};
-  if (!CreateProcessW(exe.c_str(), &command[0], nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, game.c_str(),
-                      &startup, &process)) {
-    Fail(L"Could not start nwmain.exe.");
-  }
-
-  // Queue LoadLibraryW on the suspended main thread: it runs while the process
-  // initialises, before nwmain.exe's entry point, so hooks are in place first.
-  const SIZE_T bytes = (dll.size() + 1) * sizeof(wchar_t);
-  void* remote = VirtualAllocEx(process.hProcess, nullptr, bytes, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-  auto load_library = reinterpret_cast<PAPCFUNC>(GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "LoadLibraryW"));
-  if (!remote || !WriteProcessMemory(process.hProcess, remote, dll.c_str(), bytes, nullptr) ||
-      !QueueUserAPC(load_library, process.hThread, reinterpret_cast<ULONG_PTR>(remote))) {
-    TerminateProcess(process.hProcess, 1);
-    Fail(L"Could not load nwn5e.dll into the game.");
-  }
-
-  ResumeThread(process.hThread);
+  if (!StartWithDll(exe, command, game, dll, &process)) Fail(L"Could not start nwmain.exe with nwn5e.dll.");
   CloseHandle(process.hThread);
   CloseHandle(process.hProcess);
   LocalFree(argv);
