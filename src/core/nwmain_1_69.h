@@ -78,6 +78,13 @@ constexpr uintptr_t kIterativePenaltyMonk = 0x006959F4;
 constexpr uint8_t kIterativePenaltyMonkBytes[] = {0x2b, 0xd9};
 constexpr uintptr_t kIterativePenalty = 0x00695A05;
 constexpr uint8_t kIterativePenaltyBytes[] = {0x2b, 0xda};
+// "Additional" attacks (GetWeaponAttackType 6/8: attacks of opportunity,
+// Haste, Flurry, Rapid Shot, cleave) take -5 x combat round +0x2144 unless they
+// are special attacks 0x363/0x364/0x187:
+//   0x695AD0  mov ecx, eax / neg ecx / shl ecx, 2 / sub ecx, eax  ; -5 x count
+//   0x695AD9  add ebx, ecx                                        ; 03 D9
+constexpr uintptr_t kAdditionalAttackPenalty = 0x00695AD9;
+constexpr uint8_t kAdditionalAttackPenaltyBytes[] = {0x03, 0xd9};
 
 // int CNWSCreatureStats::GetDamageRoll(CNWSObject* defender, int bOffHand,
 // int bCritical, int bSneakAttack, int bDeathAttack, int bForceMax) 0x69AEB0,
@@ -110,6 +117,24 @@ constexpr uintptr_t kGreatCleaveCheckCall = 0x0074673C;
 constexpr uint8_t kGreatCleaveCheckCallBytes[] = {0xe8, 0xef, 0xce, 0xf5, 0xff};
 // int CNWSCreatureStats::HasFeat(uint16 feat), ret 4 (community: CNWSCreature__HasFeat).
 constexpr uintptr_t kHasFeat = 0x006A3630;
+// The Great Cleave branch then does (0x746745..0x746797):
+//   range = MaxAttackRange(attacker, 0x7F000000, 0, 1)           ; 0x64B5D0, ret 0xC, float in ST0
+//   id    = GetNearestEnemy(attacker, range, killedId, 1, 0)     ; 0x658C00, ret 0x10
+//   if (GetCreatureByGameObjectID(id))                           ; 0x5FFAD0 on [[0x92DC50]+4], ret 4
+//     round+0x2134 = id; AddCleaveAttack(id, 1); attacker+0x4C4 = 1
+// Setting the round's target (+0x2134) is what sends the round's remaining
+// attacks to the new enemy; AddCleaveAttack adds an extra one on top.
+constexpr uintptr_t kMaxAttackRange = 0x0064B5D0;
+constexpr uintptr_t kGetNearestEnemy = 0x00658C00;
+constexpr uintptr_t kGetCreatureByGameObjectId = 0x005FFAD0;
+constexpr uintptr_t kServerExoAppInternalHolder = 0x0092DC50;  // [[0x92DC50]+4] = CServerExoAppInternal*
+constexpr uint32_t kObjectInvalid = 0x7F000000;
+// CNWSCombatAttackData* CNWSCombatRound::GetAttack(int index) 0x73C0A0, ret 4;
+// attack data +0x04 is the attack's target object id (ResolveMeleeAttack).
+constexpr uintptr_t kGetAttack = 0x0073C0A0;
+constexpr uintptr_t kAttackDataTarget = 0x04;
+constexpr uintptr_t kRoundTarget = 0x2134;          // uint32 object id the round attacks
+constexpr uintptr_t kCreatureTargetSwitched = 0x4C4;  // set to 1 by the cleave branch
 // int CNWSCombatRound::GetTotalAttacks() 0x73E970, plain ret: main-hand +0x2138
 // + off-hand +0x213C + extra +0x2148 + cleave +0x214C, at least 1.
 constexpr uintptr_t kGetTotalAttacks = 0x0073E970;

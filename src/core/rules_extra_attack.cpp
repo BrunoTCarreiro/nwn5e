@@ -7,8 +7,9 @@
 // - Other creatures (monsters, summons, familiars, animal companions) keep
 //   the engine's count, standing in for a Multiattack.
 // - No main-hand attack takes the 3e iterative penalty (-5, or -3 with monk
-//   attack tables). Off-hand attacks keep theirs until two-weapon fighting is
-//   converted (Phase 1d).
+//   attack tables), and no "additional" attack (attacks of opportunity, Haste,
+//   Flurry, Rapid Shot) takes -5 per additional attack. Off-hand attacks keep
+//   theirs until two-weapon fighting is converted (Phase 1d).
 //
 // The engine's own exceptions still apply because they sit around the hooked
 // count: script overrides of the number of attacks, crossbows without Rapid
@@ -95,4 +96,6 @@ void InstallExtraAttackRules() {
              nwmain::kIterativePenaltyMonkBytes, kNops, sizeof(kNops));
   PatchBytes("GetAttackModifierVersus iterative penalty", nwmain::kIterativePenalty, nwmain::kIterativePenaltyBytes,
              kNops, sizeof(kNops));
+  PatchBytes("GetAttackModifierVersus additional-attack penalty", nwmain::kAdditionalAttackPenalty,
+             nwmain::kAdditionalAttackPenaltyBytes, kNops, sizeof(kNops));
 }
