@@ -229,10 +229,16 @@ log (`ClientEntireChatWindowLogging=1` in **nwnplayer.ini** `[Game Options]`
   and the round's remaining main-hand attacks are not used once the target
   dies.
 
-## Open
+**Confirmed (21:31 session, 0.3.2, `creature_ac=40` so attacks miss):** eight
+rounds in a row, each set up with main 3, each with attack indices 0, 1, 2 —
+and the game's chat log shows three "Unen Amakiir attacks Weak Goblin" lines per
+round at the same seconds, every one at +6 (no iterative penalty). Rounds were
+set up 6.0–7.0 s apart (mean ≈ 6.5 s); the three attacks ~2 s apart. A goblin's
+natural 20 against the PC came out as a plain *hit* with a threat roll shown —
+probably the game-difficulty check in ResolveAttackRoll's crit path (0x600100),
+not confirmed.
 
-- Confirm with a target that survives several hits that indices 1 and 2 are
-  main-hand attacks (unarmed test pending).
+## Open
 - Name 0x693890 (likely the combat information update) to confirm the
   empty-hand reading of threat 21 / x0, and name the multiplier's other
   damage callers (0x65E7D0, 0x697D10; 0x69AEB0 is GetDamageRoll).
