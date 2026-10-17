@@ -22,11 +22,14 @@ in `nwn5e.ini`:
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
 
-Known gaps: NWN drops the rest of a round when its target dies (2024 lets
-remaining attacks pick a new target); off-hand attacks keep NWN's rules
-(two-weapon fighting is Phase 1d); prestige levels do not count toward Extra
-Attack (decision 10, now decided: built in rules, active from the next DLL build); henchmen and summons count as creatures; player AC is
-unchanged.
+Prestige-class levels count as levels of their parent class for Extra Attack
+(decision 10; in the rules module, active from the next DLL build).
+
+Known gaps: NWN drops the rest of a round when its target dies (decision 14:
+remaining attacks should move to the next enemy); off-hand attacks keep NWN's
+rules (two-weapon fighting is Phase 1d); henchmen count as creatures until
+decision 11 is built; crits multiply all weapon damage until decision 13 is
+built; player AC is unchanged.
 
 Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
 gives player characters N main-hand attacks per round; `creature_ac=N` gives
