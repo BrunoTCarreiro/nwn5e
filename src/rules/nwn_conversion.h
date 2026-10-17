@@ -18,6 +18,13 @@ int ConvertAttackModifier(int engine_attack_modifier, int base_attack_bonus, int
 // for their challenge rating (rules::ExpectedMonsterArmorClass).
 int ConvertArmorClass(bool is_player_character, int engine_armor_class, double challenge_rating);
 
+// 2024 critical hits on NWN's crit functions. The engine answers 21 / x0 for a
+// hand that has nothing to attack with (seen for the empty off-hand when the
+// character sheet's combat information is computed); those stay as they are.
+// Every real attack threatens only on a natural 20 and crits for x2.
+int ConvertCriticalThreatFloor(int engine_threat_floor);
+int ConvertCriticalMultiplier(int engine_multiplier);
+
 // Guards the challenge rating read from engine memory: a finite value in
 // [0, 60]. Anything else means a wrong read, and the hooks leave the engine's
 // numbers alone.

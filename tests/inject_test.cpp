@@ -3,6 +3,9 @@
 // expects nwn5e.log to show that the DLL loaded during initialisation and
 // refused to hook a host that is not the mapped nwmain.exe.
 //
+// The DLL writes its log next to itself, so the test runs a copy from
+// %TEMP%\nwn5e-inject-test and never touches the game's build\nwn5e.log.
+//
 //   build\inject_test.exe   (exit 0 = pass)
 
 #include <windows.h>
@@ -19,9 +22,16 @@ int wmain() {
   wchar_t here[MAX_PATH];
   GetModuleFileNameW(nullptr, here, MAX_PATH);
   PathRemoveFileSpecW(here);
-  const std::wstring dir = here;
+  wchar_t temp[MAX_PATH];
+  GetTempPathW(MAX_PATH, temp);
+  const std::wstring dir = std::wstring(temp) + L"nwn5e-inject-test";
+  CreateDirectoryW(dir.c_str(), nullptr);
   const std::wstring dll = dir + L"\\nwn5e.dll";
   const std::wstring log = dir + L"\\nwn5e.log";
+  if (!CopyFileW((std::wstring(here) + L"\\nwn5e.dll").c_str(), dll.c_str(), FALSE)) {
+    wprintf(L"FAIL: could not copy nwn5e.dll to %s (error %lu)\n", dir.c_str(), GetLastError());
+    return 1;
+  }
   DeleteFileW(log.c_str());
 
   wchar_t windows[MAX_PATH];
@@ -49,7 +59,7 @@ int wmain() {
   fread(text, 1, sizeof(text) - 1, file);
   fclose(file);
   printf("--- nwn5e.log ---\n%s-----------------\n", text);
-  const bool loaded = strstr(text, "nwn5e 0.2.0 loaded") != nullptr;
+  const bool loaded = strstr(text, "nwn5e 0.2.1 loaded") != nullptr;
   const bool refused = strstr(text, "host is not the mapped nwmain.exe 1.69 build") != nullptr;
   const bool hooked = strstr(text, "hook ") != nullptr || strstr(text, "patch ") != nullptr;
   printf("whoami exit code: %lu\n", code);

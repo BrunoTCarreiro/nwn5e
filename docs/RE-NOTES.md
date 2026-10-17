@@ -165,16 +165,26 @@ AL: sums slot +0x1B3 levels (minus +0x1B4 negative levels when asked).
 | +0x24 | owning CNWSCreature* | GetLevel follows it to +0xC64 |
 | +0x70 | XP | AddExperience adds to it; CanLevelUp compares it to the XP table |
 | +0x74 | is player character | CanLevelUp runs the XP check only when it is non-zero |
-| +0x9C | challenge rating (float) | **not read in code yet**: the community layout puts ten 4-byte fields between +0x74 and the class count at +0xA1 (verified), ending at +0x9C. Runtime guard: `rules::IsPlausibleChallengeRating`; the log shows the values read. |
+| +0x9C | challenge rating (float) | Not read in code yet: the community layout puts ten 4-byte fields between +0x74 and the class count at +0xA1 (verified), ending at +0x9C. **Confirmed in game** (2026-10-17): the values read were 0.17, 0.50, 1.00, 2.00 — NWN's fractional CRs — with 0 implausible reads. Runtime guard stays: `rules::IsPlausibleChallengeRating`. |
 | +0xA1 | class count | GetLevel, GetBaseAttackBonus, CanLevelUp |
 
 `CNWSCreature` +0xC64 is its stats (ResolveAttackRoll, GetLevel); +0x04 is used
 as the object id (logging only).
 
+## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
+
+Prelude fight, `nwn5e.log`: the PC (object 0x7FFFFFFF — NWN numbers player
+objects down from there) level 1: +5 → +6 and +3 → +4 (BAB 1 → PB 2);
+creatures level 1 CR 0.5: +3 → +4, +4 → +5; creature AC: CR 1 10 → 13,
+CR 0.17 10 → 13, CR 2 14 → 13. Threat 21 / multiplier x0 came only in pairs
+at the same instant, outside attacks — the empty off-hand during the combat
+information update; 0.2.1 leaves them unchanged.
+
 ## Open
 
-- Confirm the CR offset from the in-game log (values should look like CRs).
-- What vanilla threat 21 and multiplier x0 mean (see above).
-- Name 0x693890 and the multiplier's damage callers.
-- Verify the 2 predicted and 3 ambiguous map entries with REA decompilation.
+- Name 0x693890 (likely the combat information update) to confirm the
+  empty-hand reading of threat 21 / x0, and name the multiplier's other
+  damage callers (0x65E7D0, 0x697D10; 0x69AEB0 is GetDamageRoll).
+- Verify the predicted and ambiguous map entries with REA decompilation
+  before using any of them.
 - The threat roll is still rolled and shown in the combat log.

@@ -27,6 +27,23 @@ TEST(AttackModifierSwapsBaseAttackBonusForProficiency) {
   CHECK_EQ(ConvertAttackModifier(2, 0, 2), 4);
 }
 
+// Breaks caught: 3e threat ranges (19-20, 18-20, Keen/Improved Critical 15-20)
+// surviving, or "no weapon in this hand" (21) turned into a usable threat.
+TEST(CriticalThreatOnlyOnTwentyExceptEmptyHand) {
+  CHECK_EQ(ConvertCriticalThreatFloor(20), 20);
+  CHECK_EQ(ConvertCriticalThreatFloor(19), 20);
+  CHECK_EQ(ConvertCriticalThreatFloor(15), 20);
+  CHECK_EQ(ConvertCriticalThreatFloor(21), 21);
+}
+
+// Breaks caught: 3e x3/x4 multipliers surviving, or "no weapon" (x0) turned into x2.
+TEST(CriticalMultiplierIsTwoExceptEmptyHand) {
+  CHECK_EQ(ConvertCriticalMultiplier(2), 2);
+  CHECK_EQ(ConvertCriticalMultiplier(3), 2);
+  CHECK_EQ(ConvertCriticalMultiplier(4), 2);
+  CHECK_EQ(ConvertCriticalMultiplier(0), 0);
+}
+
 // Breaks caught: garbage from a wrong memory offset (NaN, huge, negative)
 // accepted as a challenge rating; real CRs (0, fractions, 30+) rejected.
 TEST(PlausibleChallengeRatingsOnly) {

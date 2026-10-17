@@ -3,13 +3,19 @@
 //
 // Phase 0 covers the threat range and the multiplier. NWN multiplies all
 // weapon damage, not only the dice; doubling dice alone needs the damage-roll
-// hooks planned for Phase 1. The confirmation roll lives inside the attack
-// resolution and is handled in rules_crit_confirm.cpp once mapped.
+// hooks planned for Phase 1. The confirmation roll is removed in
+// rules_crit_confirm.cpp.
+//
+// The engine answers threat 21 / multiplier x0 for a hand with nothing to
+// attack with (the empty off-hand, when the character sheet's combat
+// information is computed); rules::ConvertCritical* leave those unchanged.
 
 #include "config.h"
 #include "hooks.h"
 #include "log.h"
+#include "log_once.h"
 #include "nwmain_1_69.h"
+#include "rules/nwn_conversion.h"
 
 namespace {
 
@@ -17,24 +23,36 @@ using GetCritFn = int(__fastcall*)(void* stats, void* edx, int offhand);
 GetCritFn g_get_critical_hit_roll = nullptr;
 GetCritFn g_get_critical_hit_multiplier = nullptr;
 
+// Crit values depend on the weapon, not the creature: log each distinct one once.
+LogOnce g_threat_logged(64);
+LogOnce g_multiplier_logged(64);
+
 int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_roll(stats, edx, offhand);
   if (g_config.debug_every_hit_crits) {
     // Every d20 roll threatens; with the confirmation removed every hit crits.
-    static int logged = 0;
-    if (g_config.log_attacks && logged < 50) Log("debug every_hit_crits: threat %d-20 -> 1-20 (%d)", vanilla, ++logged);
+    if (g_config.log_attacks && g_threat_logged.First(LogOnce::Key(0, vanilla, 1))) {
+      Log("debug every_hit_crits: threat %d-20 -> 1-20", vanilla);
+    }
     return 1;
   }
   if (!g_config.crit_nat20_only) return vanilla;
-  if (g_config.log_attacks && vanilla != 20) Log("crit threat: 3e %d-20 -> 5e 20", vanilla);
-  return 20;
+  const int converted = rules::ConvertCriticalThreatFloor(vanilla);
+  if (g_config.log_attacks && converted != vanilla && g_threat_logged.First(LogOnce::Key(0, vanilla, converted))) {
+    Log("crit threat: 3e %d-20 -> 5e %d-20 (logged once per value)", vanilla, converted);
+  }
+  return converted;
 }
 
 int __fastcall GetCriticalHitMultiplier(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_multiplier(stats, edx, offhand);
   if (!g_config.crit_double_damage) return vanilla;
-  if (g_config.log_attacks && vanilla != 2) Log("crit multiplier: 3e x%d -> 5e x2", vanilla);
-  return 2;
+  const int converted = rules::ConvertCriticalMultiplier(vanilla);
+  if (g_config.log_attacks && converted != vanilla &&
+      g_multiplier_logged.First(LogOnce::Key(0, vanilla, converted))) {
+    Log("crit multiplier: 3e x%d -> 5e x%d (logged once per value)", vanilla, converted);
+  }
+  return converted;
 }
 
 }  // namespace

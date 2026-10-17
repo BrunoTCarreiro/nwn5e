@@ -18,6 +18,7 @@
 #include "config.h"
 #include "hooks.h"
 #include "log.h"
+#include "log_once.h"
 #include "nwmain_1_69.h"
 #include "rules/nwn_conversion.h"
 
@@ -33,12 +34,11 @@ ArmorClassFn g_get_armor_class_versus = nullptr;
 const auto g_get_base_attack_bonus = reinterpret_cast<BaseAttackBonusFn>(nwmain::kGetBaseAttackBonus);
 const auto g_get_level = reinterpret_cast<LevelFn>(nwmain::kGetLevel);
 
-// Each kind of decision is logged a limited number of times, to show the
-// conversion working without filling the log during long fights.
-constexpr int kLogLimit = 40;
-int g_attack_logs = 0;
-int g_armor_logs = 0;
-int g_implausible_logs = 0;
+// Each creature's conversion is logged once, and again when its numbers
+// change (another weapon, a buff, a level), so every combatant shows up.
+LogOnce g_attack_logged(2000);
+LogOnce g_armor_logged(2000);
+LogOnce g_implausible_logged(200);
 
 template <typename T>
 T Field(const void* object, uintptr_t offset) {
@@ -63,8 +63,7 @@ CreatureFacts ReadFacts(void* stats) {
   facts.level = g_get_level(stats, nullptr, 0) & 0xFF;
   facts.challenge_rating = Field<float>(stats, nwmain::kStatsChallengeRating);
   facts.plausible = facts.is_player || rules::IsPlausibleChallengeRating(facts.challenge_rating);
-  if (!facts.plausible && g_implausible_logs < kLogLimit) {
-    ++g_implausible_logs;
+  if (!facts.plausible && g_implausible_logged.First(LogOnce::Key(ObjectIdOf(stats), 0, 0))) {
     const uint32_t raw = Field<uint32_t>(stats, nwmain::kStatsChallengeRating);
     Log("implausible CR read for object 0x%08X (raw 0x%08X); engine numbers kept", ObjectIdOf(stats), raw);
   }
@@ -79,8 +78,7 @@ int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
   const int base_attack_bonus = g_get_base_attack_bonus(stats, nullptr, 0);
   const int proficiency = rules::ProficiencyBonusForCreature(facts.is_player, facts.level, facts.challenge_rating);
   const int converted = rules::ConvertAttackModifier(engine_modifier, base_attack_bonus, proficiency);
-  if (g_config.log_attacks && g_attack_logs < kLogLimit) {
-    ++g_attack_logs;
+  if (g_config.log_attacks && g_attack_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_modifier, converted))) {
     Log("attack: object 0x%08X %s level %d CR %.2f: 3e %+d (BAB %d) -> 5e %+d (PB %d)", ObjectIdOf(stats),
         facts.is_player ? "PC" : "creature", facts.level, facts.challenge_rating, engine_modifier,
         base_attack_bonus, converted, proficiency);
@@ -96,8 +94,7 @@ int __fastcall GetArmorClassVersus(void* stats, void* edx, void* attacker, int t
   // ResolveAttackRoll reads the result as a 16-bit value.
   const int engine_value = static_cast<int16_t>(engine_armor_class & 0xFFFF);
   const int converted = rules::ConvertArmorClass(false, engine_value, facts.challenge_rating);
-  if (g_config.log_attacks && g_armor_logs < kLogLimit) {
-    ++g_armor_logs;
+  if (g_config.log_attacks && g_armor_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_value, converted))) {
     Log("AC: object 0x%08X creature CR %.2f%s: 3e %d -> 5e %d", ObjectIdOf(stats), facts.challenge_rating,
         touch ? " (touch)" : "", engine_value, converted);
   }
