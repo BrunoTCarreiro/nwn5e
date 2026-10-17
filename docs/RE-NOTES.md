@@ -19,10 +19,12 @@ compiled into it. Their addresses differ from `nwserver.exe`.
 ## Function map
 
 Source of names: the 1.69 `nwserver.exe` addresses used by Shadooow's
-Community Patch plugin (`github.com/Shad000w/nwnx_patch-win`, `CreateHook`
-calls in `patch.cpp`; repository has no license, so only addresses/names are
-used, no code). Spot-checked: every address starts a function (preceded by
-`0x90` padding) in the GOG `nwserver.exe`.
+Community Patch plugin (`github.com/Shad000w/nwnx_patch-win`): the
+`CreateHook` calls in `patch.cpp` and the function-pointer addresses (with
+signatures) in `nwn_internals/*.cpp`. The repository has no license, so only
+addresses, names and signatures are used, no code. Spot-checked: every
+`CreateHook` address starts a function (preceded by `0x90` padding) in the
+GOG `nwserver.exe`. Seeds: `re/seeds/nwserver-1.69-names.tsv` (573 names).
 
 `re/match-bytes.mjs` locates each in `nwmain.exe`:
 
@@ -35,8 +37,15 @@ used, no code). Spot-checked: every address starts a function (preceded by
    **confirmed**; ambiguous or missing entries are resolved from a confirmed
    neighbour's distance when the predicted address starts a function.
 
-Result (`re/maps/nwmain-1.69-bytematch.tsv`, 113 names): 83 confirmed,
-15 unique, 7 by-spacing, 2 predicted, 3 ambiguous, 3 none.
+Result (`re/maps/nwmain-1.69-bytematch.tsv`, 573 names): 446 confirmed,
+33 unique, 31 by-spacing, 34 predicted, 25 ambiguous, 4 none.
+
+Independent cross-check: the functions REA/Ghidra showed being called from
+`ResolveAttackRoll` (0x744390) match the map's names —
+`GetAttackModifierVersus` 0x6958E0, `GetArmorClassVersus` 0x6925E0,
+`GetCriticalHitRoll` 0x69C290 — and the map places `ResolveAttackRoll`
+itself at 0x744390. `GetDamageRoll` (0x69AEB0) is one of the callers REA
+listed for `GetCriticalHitMultiplier`.
 
 Rule functions used so far:
 

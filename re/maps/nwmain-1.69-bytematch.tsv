@@ -1,85 +1,551 @@
 # server_addr	name	nwmain_addr	status	signature_bytes	note
-0x454610	CServerExoAppInternal__ValidateCreateServerCharacter	0x602200	unique	48	
-0x45B990	CServerExoAppInternal__RemovePCFromWorld	0x6095C0	unique	48	
+0x40FE60	CExoLinkedListInternal__AddTail	0x5BEB50	confirmed	48	
+0x410080	CExoLinkedListInternal__Remove	0x5BED70	confirmed	24	
+0x415AD0	CResRef__CResRef	0x5CAEA0	confirmed	24	
+0x415B50	CResRef__CResRef	0x5CAF20	confirmed	24	
+0x416BE0	CExoResMan__Exists	0x5CC1C0	unique	48	
+0x416D10	CExoResMan__FreeChunk	0x5CC350	confirmed	24	
+0x417B30	CExoResMan__ServiceFromResFile	0x5CD170	confirmed	48	
+0x41DF10	C2DA__C2DA	0x40F880,0x412E80,0x422CE0,0x4327B0,0x4381A0,0x4389A0,0x468CA0,0x477330	ambiguous(8)	24	
+0x41E0B0	C2DA__vect_destructor	0x5CE7E0	confirmed	96	
+0x41E250	C2DA__GetCExoStringEntry	0x5CE980	by-spacing	48	from ambiguous(3) via C2DA__vect_destructor
+0x41E430	C2DA__GetINTEntry_intcol	0x5CEB60	confirmed	24	
+0x41E540	C2DA__GetINTEntry_strcol	0x5CEDC0	confirmed	96	
+0x41E720	C2DA__Load2DArray	0x5CEFA0	confirmed	48	
+0x41EE20	C2DA__Unload2DArray	0x5CF6A0	confirmed	24	
+0x41F380	CNetLayer__SetGameMasterPassword	0x5F26F0,0x5F2780	ambiguous(2)	256	
+0x41F490	CNetLayer__DisconnectPlayer	0x5F2970	unique	24	
+0x41F890	CNetLayer__SetConnectionsDisallowed	0x5F2F90	unique	24	
+0x42C800	CServerExoApp__GetObjectArray	0x5FFA90	confirmed	96	
+0x42C810	CServerExoApp__GetGameObject	0x5FFAA0	predicted	0	from none via CServerExoApp__GetObjectArray
+0x42C900	CServerExoApp__GetModuleLanguage	0x5FFB90	confirmed	96	
+0x42C910	CServerExoApp__GetServerAIMaster	0x5FFBA0	confirmed	96	
+0x42C920	CServerExoApp__GetPlayerList	0x5FFBB0	confirmed	96	
+0x42C940	CServerExoApp__GetNWSMessage	0x5FFBD0	confirmed	48	
+0x42C980	CServerExoApp__GetActiveTimer	0x5FFC10	predicted	0	from none via CServerExoApp__GetNWSMessage
+0x42CD20	CServerExoApp__GetClientObjectByObjectId	0x5FFFA0	confirmed	96	
+0x42CD30	CServerExoApp__GetClientObjectByPlayerId	0x5FFFB0	confirmed	96	
+0x42CD70	CServerExoApp__GetIsControlledByPlayer	0x5FFFF0	confirmed	24	
+0x42D250	CServerExoApp__GetFirstPCObject	0x4072D0,0x4072E0,0x4072F0,0x407310,0x407320,0x407330,0x407340,0x407370	ambiguous(8)	24	
+0x42D260	CServerExoApp__GetNextPCObject	0x4073A0,0x4074B0,0x408680,0x408A00,0x5C1D60,0x5FFE20,0x600050,0x6004D0	ambiguous(8)	48	
+0x42E120	CNWSPlayerCharSheetGUI__ComputeCharacterSheetUpdateRequired	0x612430	confirmed	24	
+0x42EEA0	CNWSPlayer__vec_dtor	0x6131B0	confirmed	96	
+0x42FA30	CNWSPlayer__GetLastUpdateObject	0x613D40	confirmed	24	
+0x436280	CNWSPlayer__SetGameObject	0x61A590	confirmed	24	
+0x4364E0	CNWSPlayer__GetGameObject	0x61A7F0	confirmed	24	
+0x436560	CNWSPlayer__AddArea	0x61A870	confirmed	24	
+0x4365A0	CNWSPlayer__GetPlayerName	0x61A8B0	confirmed	24	
+0x436720	CNWSPlayer__HasExpansionPack	0x61AA30	confirmed	24	
+0x436A70	CNWSCreature__GetStats	0x61ACD0	unique	24	
+0x439EB0	CNWSMessage__SendServerToPlayerArea_ClientArea	0x4036B0,0x403B90,0x403D80,0x409D50,0x424E10,0x433360,0x4357A0,0x437310	ambiguous(8)	24	
+0x43A2B0	CNWSMessage__SendServerToPlayerArea_VisualEffect	0x61E4E0	confirmed	24	
+0x43C370	CTlkTable__GetCustomTokenValue	0x6205A0	confirmed	96	
+0x43CA00	CNWSMessage__SendServerToPlayerChatMessage	0x620C30	confirmed	96	
+0x43D790	CNWSMessage__SendServerToPlayerChat_Party	0x6219C0	confirmed	160	
+0x43D9A0	CNWSMessage__SendServerToPlayerChat_Talk	0x621BD0	by-spacing	48	from ambiguous(3) via CNWSMessage__SendServerToPlayerChat_Party
+0x43DA80	CNWSMessage__SendServerToPlayerChat_DM_Talk	0x621CB0	by-spacing	256	from ambiguous(3) via CNWSMessage__SendServerToPlayerChat_Party
+0x43DC90	CNWSMessage__SendServerToPlayerChat_Tell	0x621EC0	by-spacing	256	from ambiguous(3) via CNWSMessage__SendServerToPlayerChat_ServerTell
+0x43DEA0	CNWSMessage__SendServerToPlayerChat_ServerTell	0x6220D0	confirmed	48	
+0x43DF80	CNWSMessage__SendServerToPlayerChat_Shout	0x6221B0	by-spacing	48	from ambiguous(2) via CNWSMessage__SendServerToPlayerChat_ServerTell
+0x43E230	CNWSMessage__SendServerToPlayerChat_Silent_Shout	0x622460	by-spacing	48	from ambiguous(2) via CNWSMessage__SendServerToPlayerChat_ServerTell
+0x43E4E0	CNWSMessage__SendServerToPlayerChat_Whisper	0x622710	by-spacing	48	from ambiguous(3) via CNWSMessage__SendServerToPlayerChat_DM_Whisper
+0x43E7D0	CNWSMessage__SendServerToPlayerChat_DM_Whisper	0x622A00	confirmed	48	
+0x43E9C0	CNWSMessage__WriteGameObjUpdate_UpdateAppearance	0x622BF0	confirmed	48	
+0x440110	CNWSMessage__SendServerToPlayerGameObjUpdate	0x624340	confirmed	24	
+0x445160	CNWSMessage__WriteGameObjUpdate_UpdateObject	0x629380	confirmed	48	
+0x446AA0	CNWSCreatureStats__GetAnimalCompanionName	0x62ACC0	confirmed	160	
+0x446AD0	CNWSCreatureStats__GetFamiliarName	0x62ACF0	confirmed	96	
+0x447B10	CNWSMessage__WriteGameObjUpdate_CharacterSheet	0x62BD30	confirmed	24	
+0x448700	CNWSMessage__SendServerToPlayerDungeonMasterAreaList	0x62C920	predicted	0	from none via CNWSMessage__WriteGameObjUpdate_CharacterSheet
+0x449E30	CNWSMessage__SendServerToPlayerInventory_UnequipCancel	0x62E080	confirmed	96	
+0x449F40	CNWSMessage__SendServerToPlayerMessage	0x62E190	confirmed	24	
+0x449FF0	CNWSMessage__SendServerToPlayerModule_Info	0x62E240	confirmed	24	
+0x44A4C0	CNWSMessage__SendServerToPlayerPlayerList_All	0x62E710	by-spacing	24	from ambiguous(8) via CNWSMessage__SendServerToPlayerModule_Info
+0x44B630	CNWSMessage__SendServerToPlayerCCMessage	0x62F850	confirmed	48	
+0x44E950	CNWSMessage__SendServerToPlayerGuiQuickbar_SetButton	0x632B70	confirmed	24	
+0x450630	CNWSMessage__SendServerToPlayerPVP_Attitude_Change	0x634870	confirmed	24	
+0x4515B0	CNWSMessage__SendServerToPlayerPolymorph	0x6357F0	confirmed	48	
+0x452F70	CServerExoAppInternal__GetClientObjectByObjectId	0x600B60	by-spacing	24	from ambiguous(2) via CServerExoAppInternal__GetClientObjectByPlayerId
+0x452FF0	CServerExoAppInternal__GetClientObjectByPlayerId	0x600BE0	confirmed	24	
+0x4530A0	CServerExoAppInternal__GetModule	0x600C90	confirmed	24	
+0x45BF40	CServerExoAppInternal__GetGameObject	0x609B70	confirmed	48	
+0x45BF80	CServerExoAppInternal__GetStoreByGameObjectID	0x609BB0	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetGameObject
+0x45BFD0	CServerExoAppInternal__GetItemByGameObjectID	0x609C00	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetGameObject
+0x45C020	CServerExoAppInternal__GetCreatureByGameObjectID	0x609C50	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetGameObject
+0x45C0C0	CServerExoAppInternal__GetAreaByGameObjectID	0x609CF0	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetGameObject
+0x45C110	CServerExoAppInternal__GetTriggerByGameObjectID	0x609D40	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetWaypointByGameObjectID
+0x45C160	CServerExoAppInternal__GetPlaceableByGameObjectID	0x609D90	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetWaypointByGameObjectID
+0x45C1B0	CServerExoAppInternal__GetDoorByGameObjectID	0x609DE0	by-spacing	256	from ambiguous(8) via CServerExoAppInternal__GetWaypointByGameObjectID
+0x45C200	CServerExoAppInternal__GetAreaOfEffectByGameObjectID	0x609BB0,0x609C00,0x609C50,0x609CA0,0x609CF0,0x609D40,0x609D90,0x609DE0	ambiguous(8)	256	
+0x45C250	CServerExoAppInternal__GetWaypointByGameObjectID	0x609E80	confirmed	256	
+0x45C2A0	CServerExoAppInternal__GetEncounterByGameObjectID	0x609ED0	confirmed	256	
+0x45C340	CServerExoAppInternal__GetPlayerLanguage	0x609F70	confirmed	24	
+0x4615A0	CServerExoAppInternal__GetFactionOfObject	0x60F1D0	confirmed	24	
+0x462C80	CServerExoAppInternal__GetPlayerIDByGameObjectID	0x6108B0	by-spacing	24	from ambiguous(2) via CServerExoAppInternal__GetFactionOfObject
+0x464490	CNWSStore__CNWSStore	0x715E80	confirmed	96	
+0x464940	CNWSStore__LoadStore	0x716330	confirmed	24	
+0x4652B0	CNWSStore__SaveStore	0x716CB0	confirmed	24	
+0x465640	CNWSStore__AddToArea	0x717040	predicted	0	from none via CNWSStore__CalculateItemBuyPrice
+0x4657E0	CNWSStore__CalculateItemBuyPrice	0x7171E0	confirmed	24	
+0x4658C0	CNWSStore__CalculateItemSellPrice	0x7172C0	confirmed	24	
+0x465960	CNWSStore__RemoveItem	0x717360	predicted	0	from none via CNWSStore__AcquireItem
+0x4659B0	CNWSStore__AcquireItem	0x7173B0	confirmed	24	
 0x465B30	CNWSStore__SellItem	0x4071C0,0x4084D0,0x408C60,0x409680,0x4116E0,0x423BB0,0x42F2A0,0x4306F0	ambiguous(8)	24	
+0x465C90	CNWSStore__AddItemToInventory	0x717690	confirmed	48	
+0x465F10	CNWSStore__RemoveItemFromInventory	0x717910	confirmed	24	
+0x465FA0	CNWSStore__GetIsRestrictedBuyItem	0x7179A0	confirmed	160	
+0x466010	CNWSStore__AddCustomer	0x717A10	confirmed	24	
+0x4660F0	CNWSStore__RemoveCustomer	-	none	0	
+0x466180	CNWSStore__GetCustomerSellRate	0x717B80	confirmed	24	
+0x4661E0	CNWSStore__GetCustomerBuyRate	0x717BE0	confirmed	24	
+0x466250	CNWSStore__GetItemInInventory	0x717C50	confirmed	48	
+0x4662A0	CNWSStore__GetItemInInventoryResRef	0x717CA0	confirmed	24	
+0x466360	CNWSObject__SetTag	0x4071C0,0x4084D0,0x408C60,0x409680,0x4116E0,0x423BB0,0x42F2A0,0x4306F0	ambiguous(8)	24	
+0x466460	CNWSStore__SetScriptName	0x717CF0	unique	160	
+0x4668C0	CGameObjectArray__delete	0x42E670	confirmed	48	
+0x466980	CGameObjectArray__GetGameObject	0x42E730	confirmed	24	
+0x4674A0	CServerAIMaster__AddEventDeltaTime	0x6BF770	unique	24	
+0x4675A0	CServerAIMaster__AddEventAbsoluteTime	0x6BF870,0x6BF940	ambiguous(2)	48	
+0x469950	CScriptEvent__dtor	0x6C1B40	unique	48	
+0x46BDD0	CNWSObject__UpdateEffectPointers	0x40A9C0,0x410FC0,0x42F4C0,0x436FB0,0x438F00,0x4697E0,0x4779E0,0x4792B0	ambiguous(8)	24	
+0x46C080	CNWSCreatureStats_ClassInfo__CNWSCreatureStats_ClassInfo	0x40CB80,0x424110,0x43D150,0x43E730,0x43E860,0x4834F0,0x486390,0x4963C0	ambiguous(8)	24	
+0x46C140	CNWSCreatureStats_ClassInfo_dtor	0x690B20	confirmed	48	
+0x46C220	CNWSCreatureStats_ClassInfo__SetMemorizedSpellSlot	0x690C00	confirmed	24	
+0x46C2C0	CNWSCreatureStats_ClassInfo__ClearMemorizedSpellSlot	0x690CA0	confirmed	24	
+0x46C310	CNWSCreatureStats_ClassInfo__ClearMemorizedKnownSpells	0x690CF0	confirmed	24	
+0x46C4B0	CNWSCreatureStats_ClassInfo__RemoveKnownSpell	0x690E90	confirmed	24	
+0x46C510	CNWSCreatureStats_ClassInfo__GetKnownSpell	0x690EF0	confirmed	24	
+0x46C550	CNWSCreatureStats_ClassInfo__GetMemorizedSpellInSlot	0x690F30	confirmed	24	
+0x46C5A0	CNWSCreatureStats_ClassInfo__GetIsDomainSpell	0x690F80	confirmed	24	
+0x46C5F0	CNWSCreatureStats_ClassInfo__GetMemorizedSpellInSlotDetails	0x690FD0	confirmed	24	
 0x46C630	CNWSCreatureStats_ClassInfo__SetNumberMemorizedSpellSlots	0x691010	confirmed	24	
+0x46C740	CNWSCreatureStats_ClassInfo__GetMemorizedSpellInSlotReady	0x691120	confirmed	96	
+0x46C780	CNWSCreatureStats_ClassInfo__SetMemorizedSpellInSlotReady	0x691160	confirmed	24	
+0x46C7C0	CNWSCreatureStats_ClassInfo__GetMemorizedSpellReadyCount	0x6911A0	confirmed	24	
+0x46CB90	CNWSCreatureStats_ClassInfo__GetMemorizedSpellInSlotMetaType	0x691570	confirmed	96	
 0x46CBD0	CNWSCreatureStats_ClassInfo__ConfirmDomainSpell	0x6915B0	confirmed	256	
+0x46CC60	CNWSCreatureStats_ClassInfo__GetNumberMemorizedSpellSlots	0x691640	confirmed	24	
 0x46D550	CNWSCreatureStats__GetSpellGainWithBonus	0x691F30	confirmed	24	
+0x46DB40	CNWSCreatureStats__GetLevel	0x692520	confirmed	24	
+0x46DC00	CNWSCreatureStats__GetArmorClassVersus	0x6925E0	confirmed	48	
 0x46ED40	CNWSCreatureStats__GetBaseAttackBonus	0x693720	confirmed	24	
+0x46EEB0	CNWSCreatureStats__UpdateCombatInformation	0x693890	confirmed	48	
+0x46FB40	CNWSCreatureStats__GetMeleeAttackBonus	0x694520	confirmed	24	
+0x470120	CNWSCreatureStats__GetRangedAttackBonus	0x694B00	confirmed	24	
 0x470730	CNWSCreatureStats__GetUseMonkAttackTables	0x695110	confirmed	24	
 0x4707B0	CNWSCreatureStats__GetUnarmedDamageDice	0x695190	confirmed	24	
 0x470940	CNWSCreatureStats__GetUnarmedDamageDie	0x695320	confirmed	24	
+0x470F00	CNWSCreatureStats__GetAttackModifierVersus	0x6958E0	confirmed	48	
+0x473270	CNWSCreatureStats__GetClass	0x42B6DA,0x4649F8,0x487627,0x48768A,0x487759,0x4877BF,0x4C29C6,0x4E6425	ambiguous(8)	24	
+0x4732A0	CNWSCreatureStats__GetClassInfo	0x697C80	predicted	0	from none via CNWSCreatureStats__GetIsClass
+0x4732D0	CNWSCreatureStats__GetIsClass	0x697CB0	confirmed	24	
 0x4744F0	CNWSCreatureStats__ResolveSpecialAttackAttackBonus	0x698ED0	confirmed	24	
-0x474710	CNWSCreatureStats__ResolveSpecialAttackDamageBonus	0x6990F0	confirmed	24	
-0x4778B0	CNWSCreatureStats__GetCriticalHitRoll	0x69C290	confirmed	24	
+0x474B80	CNWSCreatureStats__GetClassLevel	0x699560	confirmed	24	
+0x4764D0	CNWSCreatureStats__GetDamageRoll	0x69AEB0	confirmed	48	
 0x477A20	CNWSCreatureStats__GetCriticalHitMultiplier	0x69C400	confirmed	24	
+0x47C6B0	CNWSCreatureStats__GetSTRStat	0x6A0FF0	confirmed	96	
+0x47C760	CNWSCreatureStats__GetCONStat	0x6A10A0	confirmed	96	
+0x47C810	CNWSCreatureStats__GetINTStat	0x6A1150	confirmed	96	
+0x47C8C0	CNWSCreatureStats__GetWISStat	0x6A1200	confirmed	96	
+0x47C970	CNWSCreatureStats__GetCHAStat	0x6A12B0	confirmed	96	
+0x47CA20	CNWSCreatureStats__GetDEXStat	0x6A1360	confirmed	24	
+0x47CAF0	CNWSCreatureStats__GetDEXMod	0x6A1430	confirmed	48	
+0x47CBD0	CNWSCreatureStats__SetSTRBase	0x6A1510	predicted	0	from none via CNWSCreatureStats__GetDEXMod
+0x47CCC0	CNWSCreatureStats__SetDEXBase	0x6A1600	confirmed	24	
+0x47CDE0	CNWSCreatureStats__SetCONBase	0x6A1720	confirmed	24	
+0x47CEF0	CNWSCreatureStats__SetINTBase	0x6A1830	predicted	0	from none via CNWSCreatureStats__SetCONBase
+0x47CFE0	CNWSCreatureStats__SetWISBase	0x6A1920	predicted	0	from none via CNWSCreatureStats__UpdateNumberMemorizedSpellSlots
+0x47D0D0	CNWSCreatureStats__SetCHABase	0x6A1A10	predicted	0	from none via CNWSCreatureStats__UpdateNumberMemorizedSpellSlots
 0x47D1C0	CNWSCreatureStats__UpdateNumberMemorizedSpellSlots	0x6A1B00	confirmed	24	
-0x47DD90	CNWSCreatureStats__GetBaseFortSavingThrow	0x6A26D0	confirmed	256	
-0x47DED0	CNWSCreatureStats__GetBaseWillSavingThrow	0x6A2810	confirmed	256	
-0x47E020	CNWSCreatureStats__GetBaseReflexSavingThrow	0x6A2960	confirmed	256	
+0x47D6F0	CNWSCreatureStats__AddExperience	0x6A2030	confirmed	24	
+0x47E160	CNWSCreatureStats__GetCanUseSkill	0x6A2AA0	confirmed	24	
+0x47E2C0	CNWSCreatureStats__GetSkillRank	0x6A2C00	confirmed	24	
 0x47EBC0	CNWSCreatureStats__AddFeat	0x6A3500	confirmed	24	
+0x47ECF0	CNWSCreature__HasFeat	0x6A3630	confirmed	24	
 0x47EE20	CNWSCreatureStats__SetFeatRemainingUses	0x6A3760	confirmed	24	
 0x47EF10	CNWSCreatureStats__GetFeatRemainingUses	0x6A3850	confirmed	24	
 0x47F8C0	CNWSCreatureStats__GetFeatTotalUses	0x6A4200	confirmed	24	
 0x4801D0	CNWSCreatureStats__ResetFeatRemainingUses	0x6A4B10	confirmed	24	
 0x480200	CNWSCreatureStats__DecrementFeatRemainingUses	0x6A4B40	confirmed	24	
-0x480240	CNWSCreatureStats__IncrementFeatRemainingUses	0x6A4B80	confirmed	24	
+0x480280	CNWSCreatureStats__RemoveFeat	0x6A4BC0	confirmed	24	
+0x480320	CNWSCreatureStats__AddKnownSpell	0x6A4C60	confirmed	24	
+0x4804B0	CNWSCreatureStats__SetMemorizedSpellSlot	-	none	0	
+0x480820	CNWSCreatureStats__GetKnownSpell	0x6A5160	confirmed	96	
+0x480890	CNWSCreatureStats__GetMemorizedSpellInSlot	0x6A51D0	confirmed	96	
+0x480910	CNWSCreatureStats__GetMemorizedSpellInSlotReady	0x6A5250	confirmed	24	
+0x480980	CNWSCreatureStats__GetMemorizedSpellInSlotMetaType	0x6A52C0	confirmed	24	
+0x4809F0	CNWSCreatureStats__GetNumberKnownSpells	0x6A5330	confirmed	24	
+0x480A30	CNWSCreatureStats__GetHighestLevelKnown	0x6A5370	confirmed	24	
+0x480A80	CNWSCreatureStats__GetNumberMemorizedSpellSlots	0x6A53C0	confirmed	24	
 0x481210	CNWSCreatureStats__GetWeaponFinesse	0x6A5B50	confirmed	24	
 0x4812E0	CNWSCreatureStats__GetWeaponFocus	0x6A5C20	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetWeaponFinesse
 0x481510	CNWSCreatureStats__GetEpicWeaponFocus	0x6A5E50	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetWeaponFinesse
-0x4817E0	CNWSCreatureStats__GetWeaponSpecialization	0x6A6120	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetWeaponFinesse
-0x481AA0	CNWSCreatureStats__GetEpicWeaponSpecialization	0x6A5C20,0x6A5E50,0x6A6120,0x6A63E0,0x6A66B0,0x6A68F0,0x6A6BC0	ambiguous(7)	24	
 0x481D70	CNWSCreatureStats__GetWeaponImprovedCritical	0x6A66B0	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetSpellUsesLeft
-0x481FB0	CNWSCreatureStats__GetEpicWeaponOverwhelmingCritical	0x6A68F0	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetSpellUsesLeft
-0x482280	CNWSCreatureStats__GetEpicWeaponDevastatingCritical	0x6A6BC0	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetSpellUsesLeft
-0x482550	CNWSCreatureStats__GetSpellUsesLeft	0x6A6E90	confirmed	24	
 0x4828A0	CNWSCreatureStats__GetSpellMinAbilityMet	0x6A71E0	confirmed	24	
-0x483B00	CNWSCreatureStats__CanLevelUp	0x6A8440	confirmed	24	
+0x482A50	CNWSCreatureStats__ReadySpellLevel	0x6A7390	confirmed	24	
+0x482F10	CNWSCreatureStats__GetSpellsPerDayLeft	0x6A7850	confirmed	48	
+0x482F60	CNWSCreatureStats__DecrementSpellsPerDayLeft	0x6A78A0	predicted	0	from none via CNWSCreatureStats__GetSpellsPerDayLeft
 0x4847F0	CNWSCreatureStats__LevelUp	0x6A9120	confirmed	24	
-0x484F50	CNWSCreatureStats__LevelDown	0x6A9880	confirmed	24	
-0x489690	CNWSCreatureStats__ComputeNumberKnownSpellsLeft	0x6ADFB0	confirmed	24	
-0x489890	CNWSCreatureStats__GetSpellResistance	0x6AE1B0	confirmed	24	
+0x488990	CNWSCreatureStats__SetMovementRate	0x6AD2B0	confirmed	48	
+0x488BD0	CNWSCreatureStats__GetFortSavingThrow	0x6AD4F0	confirmed	24	
+0x488C70	CNWSCreatureStats__GetWillSavingThrow	0x6AD590	confirmed	24	
+0x488D10	CNWSCreatureStats__GetReflexSavingThrow	0x6AD630	confirmed	24	
+0x488E40	CNWSCreatureStats__ResetSpellLikeAbilities	0x6AD760	confirmed	24	
+0x4895D0	CNWSCreatureStats__GetTotalSTRBonus	0x6ADEF0	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x4895F0	CNWSCreatureStats__GetTotalDEXBonus	0x6ADF10	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x489610	CNWSCreatureStats__GetTotalCONBonus	0x6ADF30	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x489630	CNWSCreatureStats__GetTotalINTBonus	0x6ADF50	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x489650	CNWSCreatureStats__GetTotalWISBonus	0x6ADF70	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x489670	CNWSCreatureStats__GetTotalCHABonus	0x6ADF90	predicted	0	from none via CNWSCreatureStats__ComputeNumberKnownSpellsLeft
+0x489B00	CNWSCreatureStats__GetACNaturalBase	0x6AE420	confirmed	24	
 0x489E50	CNWSCreatureStats__GetFavoredEnemyBonus	0x6AE770	confirmed	24	
+0x48B660	CNWSCreatureStats__SetNumberBonusSpells	0x6AFF80	confirmed	24	
 0x48B770	CNWSCreatureStats__GetEffectImmunity	0x6B0090	confirmed	24	
 0x48B920	CNWSCreatureStats__AdjustSpellUsesPerDay	0x6B0240	confirmed	24	
 0x48CB10	CNWSCreatureStats__GetIsWeaponOfChoice	0x6B1460	by-spacing	24	from ambiguous(8) via CNWSCreatureStats__GetSpellGainWithBonusAfterLevelUp
+0x48DF60	CNWSCreatureStats__GetFeatSourceClass	0x6B28B0	confirmed	24	
+0x48E080	CNWSCreatureStats__GetSpellsOfLevelReady	0x6B29D0	confirmed	24	
+0x48E850	CNWSCreatureStats__ComputeFeatBonuses	0x6B31A0	confirmed	24	
+0x48F240	CNWSCreatureStats__GetNumLevelsOfClass2	0x6B3B90	confirmed	24	
+0x48F400	CNWSCreatureStats__GetNumLevelsOfClass	0x6B3D50	confirmed	24	
+0x48F480	CExoArrayList_uint32___Add	0x6B3DD0	confirmed	96	
+0x48F5B0	CNWSCreature__CNWSCreature	0x642B20	confirmed	48	
+0x490000	CNWSCreature___CNWSCreature	0x643570	confirmed	48	
+0x490630	CNWSCreature__ActivityManager	0x643BA0	confirmed	24	
+0x490690	CNWSCreature__SetActivity	0x643C00	confirmed	48	
+0x493810	CNWSCreature__AddAttackActions	0x646D80	confirmed	48	
+0x494C50	CNWSCreature__UpdateAutoMap	0x6481B0	unique	24	
+0x4960C0	CNWSCreature__SetAnimation	0x649600	confirmed	48	
+0x4961E0	CNWSCreature__EquipItem	0x649720	by-spacing	24	from ambiguous(8) via CNWSCreature__SetAnimation
+0x496330	CNWSCreature__UnequipItem	0x649870	confirmed	24	
+0x496460	CNWSCreature__GetRangeWeaponEquipped	0x6499A0	predicted	0	from none via CNWSCreature__RemoveFromArea
+0x4964C0	CNWSCreature__RemoveFromArea	0x649A00	confirmed	48	
+0x498090	CNWSCreature__MaxAttackRange	0x64B5D0	confirmed	24	
+0x4986C0	CNWSCreature__UpdateEffectPointers	0x64BC00	confirmed	24	
+0x49E180	CNWSCreature__GetMovementRateFactor	0x651790	confirmed	24	
+0x49E2B0	CNWSCreature__SetMovementRateFactor	0x6518C0	confirmed	24	
+0x49E370	CNWSCreature__GetUseMonkAbilities	0x651980	confirmed	24	
+0x49E450	CNWSCreature__PostProcess	0x651A60	confirmed	48	
+0x49F8D0	CNWSCreature__SetScriptName	0x652EE0	confirmed	48	
+0x4A11F0	CNWSCreature__SetEffectSpellId	0x6548A0	confirmed	24	
+0x4A2440	CNWSCreature__ResolveInitiative	0x655AF0	confirmed	48	
+0x4A4F20	CNWSCreature__RestoreItemProperties	0x6585B0	confirmed	24	
+0x4A5080	CNWSCreature__ToggleMode	0x658710	confirmed	24	
+0x4A53C0	CNWSCreature__GetMode	0x658A50	confirmed	24	
+0x4A5570	CNWSCreature__GetNearestEnemy	0x658C00	confirmed	24	
+0x4A65C0	CNWSCreature__Rest	0x659C50	confirmed	48	
+0x4A6840	CNWSCreature__CancelRest	0x659ED0	confirmed	48	
+0x4A6C20	CNWSCreature__RemoveBadEffects	0x65A2B0	confirmed	24	
+0x4A6D00	CNWSCreature__GetRelativeWeaponSize	0x65A390	confirmed	24	
+0x4A6E00	CNWSCreature__GetArmorClass	0x65A490	confirmed	24	
+0x4A6ED0	CNWSCreature__GetMaxHitPoints	0x65A560	confirmed	24	
+0x4A7A90	CNWSCreature__UpdateAppearanceForEquippedItems	0x65B120	confirmed	24	
+0x4A81D0	CNWSCreature__UpdatePersonalSpace	0x413570,0x42E790,0x42F800,0x437770,0x441D50,0x468A90,0x468B90,0x48B4B0	ambiguous(8)	24	
+0x4A83F0	CNWSCreature__UpdateAppearanceDependantInfo	0x65BA80	confirmed	48	
+0x4A8D20	CNWSCreature__SetQuickbarButton_Item	0x65C3B0	confirmed	24	
+0x4A8D70	CNWSCreature__SetQuickbarButton_Spell	0x65C400	confirmed	24	
+0x4A8DD0	CNWSCreature__SetQuickbarButton_SpellLikeAbility	0x65C460	confirmed	24	
+0x4A8E10	CNWSCreature__SetQuickbarButton_AssociateCommand	0x65C4A0	confirmed	24	
+0x4A8E60	CNWSCreature__SetQuickbarButton_DungeonMaster_CreateCreature	0x65C4F0	confirmed	48	
+0x4A8EC0	CNWSCreature__SetQuickbarButton_DungeonMaster_CreateItem	0x65C550	confirmed	48	
+0x4A8F20	CNWSCreature__SetQuickbarButton_DungeonMaster_CreateEncounter	0x65C5B0	confirmed	48	
+0x4A8F80	CNWSCreature__SetQuickbarButton_DungeonMaster_CreateWaypoint	0x65C610	confirmed	48	
+0x4A8FE0	CNWSCreature__SetQuickbarButton_DungeonMaster_CreateTrigger	0x65C670	confirmed	48	
+0x4A9040	CNWSCreature__SetQuickbarButton_DungeonMaster_CreatePortal	0x65C6D0	confirmed	48	
+0x4A90A0	CNWSCreature__SetQuickbarButton_DungeonMaster_CreatePlaceable	0x65C730	confirmed	48	
+0x4A9100	CNWSCreature__SetQuickbarButton_CommandLine	0x65C790	confirmed	24	
+0x4A9160	CNWSCreature__SetQuickbarButton_DM_General_ResRefParam	0x65C7F0	confirmed	24	
+0x4A91B0	CNWSCreature__SetQuickbarButton_GeneralNoParam	0x65C840	confirmed	24	
+0x4A91E0	CNWSCreature__SetQuickbarButton_GeneralINTParam	0x65C870	confirmed	24	
+0x4AA8A0	CNWSCreature__GetWeaponPower	0x65DF30	confirmed	24	
+0x4AB140	CNWSCreature__GetTotalEffectBonus	0x65E7D0	confirmed	48	
+0x4AD4D0	CNWSCreature__SendFeedbackMessage	0x4082C0,0x409900,0x4320B0,0x433D90,0x43B260,0x43E7C0,0x4975E0,0x4BC3D0	ambiguous(8)	24	
+0x4AD960	CNWSCreature__Polymorph	0x660FF0	confirmed	48	
+0x4AE6C0	CNWSCreature__UnPolymorph	0x661D50	confirmed	48	
+0x4AEB40	CNWSCreature__GetBlind	0x6621D0	confirmed	24	
+0x4AEB60	CNWSCreature__GetInvisible	0x6621F0	confirmed	24	
+0x4AF2B0	CNWSCreature__GetIsInUseRange	0x662940	confirmed	24	
+0x4B0170	CNWSCreature__ApplyDiseasePayload	0x663800	confirmed	48	
+0x4B0770	CNWSCreature__ApplyPoisonPayload	0x663E00	confirmed	48	
+0x4B1A90	CNWSCreature__StartGuiTimingBar	0x665120	confirmed	24	
+0x4B1AF0	CNWSCreature__StopGuiTimingBar	0x665180	confirmed	24	
+0x4B1DD0	CNWSCreature__SetAutoMapData	0x665460	confirmed	24	
+0x4B2870	CNWSCreature__RemoveItemFromRepository	0x665F00	confirmed	24	
+0x4B2A20	CNWSCreature__GetQuickbarButton	0x6660B0	predicted	0	from none via CNWSCreature__NotifyAssociateActionToggle
+0x4B2A70	CNWSCreature__NotifyAssociateActionToggle	0x666100	confirmed	48	
+0x4B4B90	CNWRules__LoadFeatInfo	0x47AD70	confirmed	96	
+0x4B5F10	CNWRules__LoadClassInfo	0x47C280	unique	24	
+0x4B6DB0	CNWRules__LoadRaceInfo	0x47D170	unique	96	
+0x4B7510	CNWRules__LoadSkillInfo	0x47D880	unique	48	
+0x4B7A00	CNWRules__LoadDomainInfo	0x47DDC0	unique	48	
+0x4B7DE0	CNWRules__GetMetaMagicLevelCost	0x47E170	unique	24	
+0x4B7E70	CNWRules__GetFeat	0x47E1E0	confirmed	24	
+0x4B7EB0	CNWRules__GetDomain	0x47E220	confirmed	24	
+0x4B7EF0	CNWRules__GetDifficultyOption	0x47E260	confirmed	24	
+0x4B80F0	CNWRules__GetFeatExpansionLevel	0x47E460	predicted	0	from none via CNWRules__GetFamiliarExpansionLevel
+0x4B8230	CNWRules__GetFamiliarExpansionLevel	0x47E5A0	confirmed	24	
+0x4B8270	CNWRules__IsArcaneClass	0x47E5E0	predicted	0	from none via CNWRules__GetFamiliarExpansionLevel
+0x4BB4D0	CNWSCreature__SetCombatMode	0x67B0D0	confirmed	24	
+0x4C0110	CNWSCreature__CanEquipItem	0x67FD10	confirmed	24	
+0x4C0580	CNWSCreature__AcquireItem	0x680180	confirmed	24	
+0x4C0830	CNWSCreature__RemoveItem	0x680430	confirmed	24	
+0x4C7770	CNWSCreature__GetFaction	0x687370	confirmed	24	
+0x4C7FF0	CNWSCreature__GetVisibleListElement	0x687BF0	confirmed	24	
+0x4CB2A0	CNWSCreature__AddToAssociateList	0x68AEA0	confirmed	48	
+0x4CB390	CNWSCreature__ReprocessAssociateList	0x68AF90	confirmed	24	
+0x4CB430	CNWSCreature__AddAssociate	0x423A50,0x440DB0,0x4697F0,0x4791D0,0x483DF0,0x48FB60,0x4919C0,0x494930	ambiguous(8)	24	
+0x4CB790	CNWSTrigger__SetScriptName	0x68B390	confirmed	48	
+0x4CB7F0	CNWSCreature__RemoveToAssociateList	0x4071C0,0x4084D0,0x408C60,0x409680,0x4116E0,0x423BB0,0x42F2A0,0x4306F0	ambiguous(8)	24	
+0x4CBC60	CNWSCreature__ReceiveAssociateCommand	0x68B860	confirmed	48	
+0x4CC670	CNWSDoor__SetScriptName	0x68C260	by-spacing	24	from ambiguous(2) via CNWSCreature__SummonFamiliar
+0x4CCAC0	CNWSCreature__PossessFamiliar	0x68C6B0	confirmed	48	
+0x4CCD60	CNWSCreature__UnpossessFamiliar	0x68C950	confirmed	48	
+0x4CD150	CNWSPlaceable__SetScriptName	0x68CD40	confirmed	48	
+0x4CD1B0	CNWSCreature__PossessCreature	0x68CDA0	confirmed	24	
+0x4CD450	CNWSCreature__UnpossessCreature	0x68D040	predicted	0	from none via CNWSCreature__PossessCreature
+0x4CDD80	CNWSCreature__GetAssociateId	0x68D970	confirmed	24	
+0x4CE920	CNWSCreature__GetIsPossessedFamiliar	0x68E510	confirmed	24	
+0x4CE950	CNWSCreature__CanUseItem	0x68E540	confirmed	48	
+0x4CFC70	CNWSCreature__UpdateEncumbranceState	0x68F860	confirmed	48	
+0x4D0450	CNWSCreature__SetPVPPlayerLikesMe	0x690040	confirmed	24	
+0x4D0D50	CExoArrayList_uint32___Remove	0x690940	confirmed	24	
+0x4D2390	CNWSModule__GetArea	0x6B53D0	confirmed	24	
+0x4D7330	CNWSModule__GetPlayerTURDFromList	0x6BA360	confirmed	48	
+0x4D97F0	CNWSModule__SetScriptName	0x6BC820	confirmed	48	
+0x4DA3C0	CNWSModule__AddObjectToLookupTable	0x6BD3F0	confirmed	48	
+0x4DA5E0	CNWSModule__RemoveObjectFromLookupTable	0x6BD610	confirmed	48	
+0x4DA780	CNWSModule__FindObjectByTagOrdinal	0x6BD7B0	confirmed	48	
+0x4DA8E0	CNWSModule__FindObjectByTagTypeOrdinal	0x6BD910	confirmed	48	
+0x4DB3D0	CNWSModule__AddObjectToLimbo	0x6BE3B0	unique	24	
+0x4DBFF0	CNWSPlayerTURD__scalar_deleting_destructor	0x719940	unique	96	
+0x4DEF20	CNWSObject__LoadVarTable	0x639BD0	confirmed	48	
+0x4DEF40	CNWSObject__SaveVarTable	0x639BF0	confirmed	48	
+0x4DF9A0	CNWSObject__ClearAllActions	0x63A650	confirmed	24	
+0x4DFDA0	CNWSObject__GetCurrentHitPoints	0x63AA50	predicted	0	from none via CNWSObject__ClearAllPartyInvalidActions
+0x4E07D0	CNWSObject__DoDamageResistance	0x63B480	confirmed	48	
+0x4E1920	CNWSObject__GetMaximumDamageResistanceVsDamageFlag	0x63C5D0	confirmed	24	
+0x4E1A00	CNWSObject__DoDamageImmunity	0x63C6B0	confirmed	48	
+0x4E1D50	CNWSObject__GetDamageImmunityByFlags	0x63CA00	confirmed	24	
+0x4E25B0	CNWSObject__SetOrientation	0x481750,0x5173D0,0x57161F,0x57174B,0x571877,0x5719A3,0x571ACF,0x571BFB	ambiguous(8)	24	
+0x4E25D0	CNWSObject__SetPosition	0x63D2D0	confirmed	24	
+0x4E27A0	CNWSObject__ApplyEffect	0x63D4A0	confirmed	24	
+0x4E2CE0	CNWSObject__RemoveEffect	0x63D9F0	unique	24	
+0x4E2DE0	CNWSObject__RemoveEffectById	0x63DB50	confirmed	24	
+0x4E2FE0	CNWSObject__UpdateEffectList	0x63DD50	confirmed	48	
+0x4E3E20	CNWSObject__ClearSpellEffectsOnOthers	0x63EB90	confirmed	24	
+0x4E3F50	CNWSObject__GetArea	0x63ECC0	predicted	0	from none via CNWSObject__ClearSpellEffectsOnOthers
+0x4E3F90	CNWSObject__SetArea	0x63ED00	predicted	0	from none via CNWSObject__ClearSpellEffectsOnOthers
+0x4E54B0	CNWSObject__BroadcastDialog	0x640220	confirmed	48	
+0x4E5990	CNWSObject__HasSpellEffectApplied	0x640710	confirmed	24	
+0x4E59D0	CNWSObject__GetDead	0x640750	confirmed	24	
+0x4E5A60	CNWSObject__GetIsPCDying	0x6407E0	confirmed	24	
+0x4E7D30	CGameEffect__CGameEffect	0x666680	confirmed	48	
+0x4E7E70	CGameEffect__CGameEffect_c	0x6667C0	confirmed	48	
+0x4E7FD0	CGameEffect__dtor	0x666920	confirmed	48	
+0x4E8070	CGameEffect__SetNumIntegers	0x6669C0	confirmed	96	
+0x4E80D0	CGameEffect__SetNumIntegersInitializeToNegativeOne	0x666A20	confirmed	96	
+0x4E8130	CGameEffect__GetInteger	0x666A80	confirmed	24	
+0x4E8140	CGameEffect__SetInteger	0x666A90	confirmed	24	
+0x4E8270	CGameEffect__CopyEffect	0x666BC0	confirmed	48	
+0x4E8450	CGameEffect__SetLinked	0x666DA0	confirmed	24	
+0x4E8470	CGameEffect__UpdateLinked	0x666DC0	confirmed	24	
+0x4E8C00	CGameEffect__SetCreator	0x667550	confirmed	24	
+0x4E8CD0	CGameEffect__GetScriptEffectType	0x667620	confirmed	24	
+0x4E99A0	CNWSFaction__SendChatMessage	0x4071C0,0x4084D0,0x408C60,0x409680,0x4116E0,0x423BB0,0x42F2A0,0x4306F0	ambiguous(8)	24	
+0x4EA9E0	CNWSFaction__GetFactionMember	0x6C4000	unique	24	
+0x4F2F20	CNWSAreaOfEffectObject__SetScriptName	0x66FED0	confirmed	160	
+0x4FAA90	CNWSItem__CNWSItem	0x423A50,0x440DB0,0x4697F0,0x4791D0,0x483DF0,0x48FB60,0x4919C0,0x494930	ambiguous(8)	24	
+0x4FAF10	CNWSItem__SetPossessor	0x71B290	confirmed	48	
+0x4FB6F0	CNWSItem__AddToArea	0x71BA70	confirmed	24	
+0x4FB7C0	CNWSItem__AIUpdate	0x71BB40	confirmed	24	
+0x4FBAE0	CNWSItem__LoadFromTemplate	0x71BE60	confirmed	48	
+0x4FD0D0	CNWSItem__LoadItem	0x40E600,0x411930,0x414510,0x43DB70,0x46C280,0x495290,0x4C8320,0x4D3310	ambiguous(8)	24	
+0x4FD300	CNWSItem__SaveItem	0x71D680	confirmed	48	
+0x4FDEE0	CNWSItem__UpdateUsedActiveProperties	0x71E260	confirmed	24	
+0x4FE220	CNWSItem__RestoreUsedActiveProperties	0x71E5A0	confirmed	24	
+0x4FE370	CNWSItem__GetPropertyByTypeExists	0x71E6F0	confirmed	24	
+0x4FE670	CNWSItem__GetPropertyByType	0x71E9F0	confirmed	24	
+0x4FE870	CNWSItem__ComputeArmorClass	0x71EBF0	confirmed	48	
+0x4FE9B0	CNWSItem__CompareItem	0x71ED30	confirmed	24	
+0x4FF650	CItemRepository__CheckFit	0x71F9D0	confirmed	24	
+0x4FF980	CItemRepository__FindItemWithBaseItemId	0x71FD00	confirmed	24	
+0x4FFA40	CItemRepository__FindItemWithTag	0x71FDC0	confirmed	48	
+0x4FFB50	CItemRepository__FindPosition	0x71FED0	by-spacing	24	from ambiguous(6) via CItemRepository__FindItemWithTag
+0x501660	CNWSItem__GetDamageFlags	0x7219E0	predicted	0	from none via CNWSItem__GetMinEquipLevel
+0x5017A0	CNWSItem__GetMinEquipLevel	0x721B20	confirmed	48	
+0x5021E0	CNWSInventory__GetItemInInventory	0x7224B0	confirmed	24	
+0x502210	CNWSInventory__GetSlotFromItem	0x7224E0	confirmed	24	
+0x502240	CNWSInventory__GetItemInSlot	0x722510	confirmed	48	
+0x502490	CNWSInventory__RemoveItem	0x722760	confirmed	24	
+0x5024D0	CNWSInventory__PutItemInSlot	0x7227A0	confirmed	48	
+0x502AC0	CNWSpell__GetSpellLevel	0x4F8350	unique	24	
+0x502C90	CNWSpellArray__GetSpell	0x4F85F0	confirmed	24	
+0x502CC0	CNWSpellArray__Load	0x4F8620	confirmed	96	
+0x504910	CNWClass__ctor	0x53B480	confirmed	48	
+0x504A50	CNWClass__dtor	0x53B5C0	confirmed	48	
+0x504B90	CNWClass__GetFortSaveBonus	0x53B700	confirmed	96	
+0x504BB0	CNWClass__GetRefSaveBonus	0x53B720	confirmed	48	
+0x504BD0	CNWClass__GetWillSaveBonus	0x53B740	confirmed	48	
+0x504BF0	CNWClass__GetSpellGain	0x53B760	confirmed	24	
+0x504C30	CNWClass__GetSpellsKnownPerLevel	0x53B7A0	confirmed	24	
+0x505E80	CNWClass__IsBonusFeat	0x53CC00	confirmed	96	
+0x505ED0	CNWClass__IsNormalFeat	0x53CC50	confirmed	24	
+0x505F40	CNWClass__IsGrantedFeat	0x53CCC0	confirmed	24	
+0x506330	CNWLevelStats__CNWLevelStats	0x722AA0	confirmed	48	
+0x506570	CNWLevelStats__AddFeat	0x722CE0	confirmed	24	
+0x506630	CNWCCMessageData__ctor	0x4FA230	confirmed	96	
+0x506680	CNWCCMessageData__dtor	0x401230,0x4012D0,0x407250,0x4074E0,0x407570,0x407AB0,0x407C00,0x407E30	ambiguous(8)	24	
+0x506720	CNWCCMessageData__SetInteger	0x4FA320	confirmed	24	
+0x5067D0	CNWCCMessageData__SetObjectID	0x4FA3D0	confirmed	24	
+0x506880	CNWCCMessageData__SetString	0x4FA480	by-spacing	256	from ambiguous(2) via CNWCCMessageData__SetObjectID
+0x506EC0	CNWCCMessageData__CopyTo	0x4FAAC0	confirmed	24	
+0x507030	CNWMessage__CNWMessage	0x4FAC30	confirmed	24	
+0x5078C0	CNWMessage__ReadBOOL	0x4FB4C0	confirmed	24	
+0x507BC0	CNWMessage__ReadCResRef	0x4FB930	confirmed	24	
+0x507DD0	CNWMessage__MessageReadOverflow	0x4FBB40	confirmed	24	
+0x507E30	CNWMessage__CreateWriteMessage	0x4FBBD0	confirmed	24	
+0x5084F0	CNWMessage__WriteINT	0x4FC290	confirmed	24	
+0x508900	CNWMessage__WriteCExoString	0x4FC6A0	confirmed	48	
+0x508B80	CNWMessage__GetWriteMessage	0x4FC920	confirmed	24	
+0x508C80	CNWSMessage__ReadOBJECTIDServer	0x715790	unique	24	
+0x508CB0	CNWMessage__WriteOBJECTIDServer	0x4FCA50	predicted	0	from none via CNWMessage__GetWriteMessage
+0x50A2E0	CNWSArea__CNWSArea	0x723D10	confirmed	48	
+0x50A760	CNWSArea__scalar_Destructor	0x724190	confirmed	96	
+0x50A780	CNWSArea__Destructor	0x423A50,0x440DB0,0x4697F0,0x4791D0,0x483DF0,0x48FB60,0x4919C0,0x494930	ambiguous(8)	24	
+0x50BAA0	CNWSArea__AddObjectToArea	0x7254D0	confirmed	48	
+0x50BEE0	CNWSArea__RemoveObjectFromArea	0x725910	confirmed	48	
+0x50C070	CNWSArea__GetFirstObjectInArea	0x725AA0	confirmed	48	
+0x50C0A0	CNWSArea__GetNextObjectInArea	0x725AD0	confirmed	24	
+0x50C0E0	CNWSArea__GetTile	0x725B10	confirmed	24	
+0x50C380	CNWSArea__LoadArea	0x725DB0	confirmed	48	
+0x510C00	CNWSArea__SetScriptName	0x72A630	confirmed	160	
+0x5114E0	CNWSArea__ClearLineOfSight	0x72AF10	confirmed	48	
+0x512AA0	CNWSpellArray__CNWSpellArray	0x4F85A0	unique	24	
+0x512AF0	CNWBaseItemArray__GetBaseItem	0x4BC890	unique	24	
+0x518630	CTwoDimArrays__GetEpicFortSaveBonus	0x56A930	confirmed	160	
+0x518650	CTwoDimArrays__GetEpicRefSaveBonus	0x56A950	confirmed	96	
+0x518670	CTwoDimArrays__GetEpicWillSaveBonus	0x56A970	confirmed	48	
+0x51DEC0	CNWSPlaceable__CNWSPlaceable	0x7316A0	confirmed	48	
+0x51E4D0	CNWSPlaceable__LoadPlaceable	0x731CB0	confirmed	48	
+0x51FBD0	CNWSPlaceable__SavePlaceable	0x7333B0	confirmed	48	
+0x5206F0	CNWSPlaceable__AddToArea	0x733ED0	confirmed	24	
+0x521AD0	CNWSPlaceable__AcquireItem	0x7352B0	confirmed	24	
+0x523150	CNWTile__GetLocation	0x56CCA0	confirmed	24	
+0x523480	CNWTile__GetAnimLoop	0x56CFD0	confirmed	24	
+0x5234E0	CNWTile__SetReplaceTexture	0x56D030	confirmed	24	
+0x5234F0	CNWTile__SetAnimLoop	0x56D040	confirmed	24	
+0x5276D0	CNWSArea__ComputeHeight	0x6D9730	unique	24	
+0x529C50	CNWSArea__ExploreArea	0x6DBC80	unique	24	
+0x529D90	CNWSArea__UpdatePlayerAutomaps	-	none	0	
+0x52ECC0	CNWSCombatAttackData__CNWSCombatAttackData	0x401230,0x4012D0,0x407250,0x4074E0,0x407570,0x407AB0,0x407C00,0x407E30	ambiguous(8)	24	
+0x52ED60	CNWSCombatAttackData___CNWSCombatAttackData	0x73A4C0	confirmed	96	
+0x52EFD0	CNWSCombatAttackData__GetDamage	0x73A730	confirmed	24	
+0x52F0F0	CNWSCombatAttackData__GetTotalDamage	0x73A850	confirmed	24	
+0x52FA00	CNWSCombatRound__StartCombatRound	0x73B160	confirmed	24	
+0x5307A0	CNWSCombatRound__RemoveAllActions	0x73BF00	predicted	0	from none via CNWSCombatRound__ClearAllAttacks
+0x530980	CNWSCombatRound__ClearAllAttacks	0x73C0E0	confirmed	24	
+0x531000	CNWSCombatRound__AddSpecialAttack	0x73C760	confirmed	24	
+0x531690	CNWSCombatRound__ClearAllSpecialAttacks	0x73CDF0	confirmed	24	
+0x532C90	CNWSCombatRound__GetCurrentAttackWeapon	0x73E3F0	confirmed	48	
+0x532DB0	CNWSCombatRound__GetWeaponAttackType	0x73E510	confirmed	24	
+0x5331A0	CNWSCombatRound__UpdateAttackTargetForAllActions	0x73E900	confirmed	24	
+0x533EE0	CFactionManager__GetFaction	0x6D83B0	unique	24	
+0x534C30	CNWMessage_dtor	-	none	0	
+0x547580	CNWSCreature__ResolveAttack	0x740180	confirmed	24	
+0x547880	CNWSCreature__ResolveRangedAttack	0x740480	confirmed	24	
+0x548860	CNWSCreature__ResolveRangedAnimations	0x741460	confirmed	24	
+0x549E80	CNWSCreature__ResolveMeleeAttack	0x742A80	confirmed	24	
+0x54B0D0	CNWSCreature__ResolveMeleeAnimations	0x743CD0	confirmed	24	
+0x54B790	CNWSCreature__ResolveAttackRoll	0x744390	confirmed	48	
+0x54CA70	CNWSCreature__ResolveDamage	0x745670	confirmed	48	
+0x54D470	CNWSCreature__ResolvePostMeleeDamage	0x746070	confirmed	48	
+0x54DD80	CNWSCreature__ResolvePostRangedDamage	0x746980	confirmed	48	
+0x551170	CNWSCreature__GetFlatFooted	0x749D70	confirmed	24	
+0x551250	CNWSCreature__GetFlanked	0x749E50	confirmed	24	
+0x596AB0	CNWSItem__SetDisplayName	0x713E90	unique	256	
+0x5A0F20	CNWSScriptVarTable__MatchIndex	0x74E640	confirmed	48	
+0x5A1090	CNWSScriptVarTable__GetInt	0x74E7B0	confirmed	24	
+0x5A10C0	CNWSScriptVarTable__GetFloat	0x74E7E0	confirmed	24	
+0x5A10F0	CNWSScriptVarTable__GetString	0x74E810	confirmed	96	
+0x5A1180	CNWSScriptVarTable__GetObject	0x74E8A0	predicted	0	from none via CNWSScriptVarTable__GetLocation
+0x5A11B0	CNWSScriptVarTable__GetLocation	0x74E8D0	confirmed	48	
+0x5A1250	CNWSScriptVarTable__SetInt	0x74E970	confirmed	48	
+0x5A1420	CNWSScriptVarTable__SetFloat	0x74EB40	confirmed	48	
+0x5A1440	CNWSScriptVarTable__SetString	0x74EB60	predicted	0	from none via CNWSScriptVarTable__SetFloat
+0x5A1460	CNWSScriptVarTable__SetObject	0x74EB80	confirmed	48	
+0x5A15A0	CNWSScriptVarTable__DestroyInt	0x74ECC0	confirmed	48	
+0x5A16D0	CNWSScriptVarTable__DestroyFloat	0x74EDF0	by-spacing	256	from ambiguous(3) via CNWSScriptVarTable__DestroyInt
+0x5A1760	CNWSScriptVarTable__DestroyString	0x74EE80	by-spacing	256	from ambiguous(3) via CNWSScriptVarTable__DestroyInt
+0x5A17F0	CNWSScriptVarTable__DestroyObject	0x74EF10	by-spacing	256	from ambiguous(3) via CNWSScriptVarTable__DestroyInt
+0x5ADA00	CNWSEncounter__SetScriptName	0x75F130	unique	48	
+0x5B4CB0	CNWSTile__GetSurfaceMaterial	0x768F60	unique	24	
+0x5BA590	CWorldTimer__SetWorldTime	0x76B1F0	unique	24	
+0x5BA630	CWorldTimer__GetWorldTime	0x76B2F0	confirmed	24	
+0x5BA7B0	CWorldTimer__SubtractWorldTimes	0x76B470	confirmed	24	
+0x5BA9C0	CWorldTimer__GetWorldTimeHour	0x76B7A0	confirmed	96	
+0x5BAA40	CWorldTimer__GetWorldTimeSecond	0x76B820	confirmed	24	
+0x5BAAA0	CWorldTimer__GetCalendarDayFromSeconds	0x76B8A0	unique	24	
+0x5BF9D0	CVirtualMachine__RunScript	0x85E270	confirmed	48	
+0x5C0590	CVirtualMachine__StackPopInteger	0x85EE30	confirmed	96	
+0x5C05E0	CVirtualMachine__StackPushInteger	0x85EE80	confirmed	96	
+0x5C0610	CVirtualMachine__StackPopFloat	0x85EEB0	confirmed	96	
+0x5C0660	CVirtualMachine__StackPushFloat	0x85EF00	confirmed	96	
+0x5C0800	CVirtualMachine__StackPopString	0x85F0A0	confirmed	24	
+0x5C08F0	CVirtualMachine__StackPopEngineStructure	0x85F190	confirmed	24	
+0x5C0970	CVirtualMachine__StackPushEngineStructure	0x85F210	confirmed	24	
+0x5C09C0	CVirtualMachine__StackPopObject	0x85F260	confirmed	48	
+0x5C0A10	CVirtualMachine__StackPushObject	0x85F2B0	confirmed	24	
+0x611920	CResGFF__CResGFF	0x5D0910	confirmed	24	
+0x611AF0	CResGFF_dtor	0x5D0AE0	confirmed	48	
+0x612A20	CResGFF__GetDataFromPointer	0x5D1A10	confirmed	48	
+0x612C60	CResGFF__GetGFFFileInfo	0x5D1C50	confirmed	24	
+0x612D30	CResGFF__GetList	0x5D1D20	confirmed	24	
+0x612DC0	CResGFF__GetListCount	0x5D1DB0	confirmed	24	
+0x612E20	CResGFF__GetListElement	0x5D1E10	confirmed	24	
+0x612EF0	CResGFF__GetTopLevelStruct	0x5D1EE0	predicted	0	from none via CResGFF__ReadFieldBYTE
+0x612F10	CResGFF__ReadFieldBYTE	0x5D1F00	confirmed	24	
+0x612FF0	CResGFF__ReadFieldWORD	0x5D1FE0	confirmed	160	
+0x613140	CResGFF__ReadFieldINT	0x5D2130	confirmed	24	
+0x613690	CResGFF__ReadFieldVOID	0x5D2680	confirmed	24	
+0x614190	CResGFF__CreateGFFFile	0x5D3180	confirmed	48	
+0x614300	CResGFF__WriteGFFFile	0x5D32F0	confirmed	48	
+0x614570	CResGFF__WriteGFFToPointer	0x5D3560	confirmed	24	
+0x454610	CServerExoAppInternal__ValidateCreateServerCharacter	0x602200	confirmed	48	
+0x45B990	CServerExoAppInternal__RemovePCFromWorld	0x6095C0	confirmed	48	
+0x474710	CNWSCreatureStats__ResolveSpecialAttackDamageBonus	0x6990F0	confirmed	24	
+0x4778B0	CNWSCreatureStats__GetCriticalHitRoll	0x69C290	confirmed	24	
+0x47DD90	CNWSCreatureStats__GetBaseFortSavingThrow	0x6A26D0	confirmed	256	
+0x47DED0	CNWSCreatureStats__GetBaseWillSavingThrow	0x6A2810	confirmed	256	
+0x47E020	CNWSCreatureStats__GetBaseReflexSavingThrow	0x6A2960	confirmed	256	
+0x480240	CNWSCreatureStats__IncrementFeatRemainingUses	0x6A4B80	confirmed	24	
+0x4817E0	CNWSCreatureStats__GetWeaponSpecialization	0x6A6120	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetWeaponFinesse
+0x481AA0	CNWSCreatureStats__GetEpicWeaponSpecialization	0x6A5C20,0x6A5E50,0x6A6120,0x6A63E0,0x6A66B0,0x6A68F0,0x6A6BC0	ambiguous(7)	24	
+0x481FB0	CNWSCreatureStats__GetEpicWeaponOverwhelmingCritical	0x6A68F0	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetSpellUsesLeft
+0x482280	CNWSCreatureStats__GetEpicWeaponDevastatingCritical	0x6A6BC0	by-spacing	24	from ambiguous(7) via CNWSCreatureStats__GetSpellUsesLeft
+0x482550	CNWSCreatureStats__GetSpellUsesLeft	0x6A6E90	confirmed	24	
+0x483B00	CNWSCreatureStats__CanLevelUp	0x6A8440	confirmed	24	
+0x484F50	CNWSCreatureStats__LevelDown	0x6A9880	confirmed	24	
+0x489690	CNWSCreatureStats__ComputeNumberKnownSpellsLeft	0x6ADFB0	confirmed	24	
+0x489890	CNWSCreatureStats__GetSpellResistance	0x6AE1B0	confirmed	24	
 0x48D6F0	CNWSCreatureStats__GetSpellGainWithBonusAfterLevelUp	0x6B2040	confirmed	24	
 0x48E050	CNWSCreatureStats__GetTotalACSkillMod	0x6B29A0	confirmed	24	
-0x48E850	CNWSCreatureStats__ComputeFeatBonuses	0x6B31A0	confirmed	24	
-0x490690	CNWSCreature__SetActivity	0x643C00	confirmed	48	
 0x491F10	CNWSCreature__AddEquipItemActions	0x645480	confirmed	24	
 0x493120	CNWSCreature__AddPickPocketAction	0x646690	confirmed	24	
 0x496CE0	CNWSCreature__EventHandler	0x64A220	confirmed	48	
 0x498AB0	CNWSCreature__UpdateAttributesOnEffect	0x64BFF0	confirmed	48	
 0x499500	CNWSCreature__ReadItemsFromGff	0x64CAB0	unique	48	
-0x49E180	CNWSCreature__GetMovementRateFactor	0x651790	confirmed	24	
-0x49E370	CNWSCreature__GetUseMonkAbilities	0x651980	confirmed	24	
-0x4A3700	CNWSCreature__UseFeat	0x656DB0	unique	48	
+0x4A3700	CNWSCreature__UseFeat	0x656DB0	confirmed	48	
 0x4A4CB0	CNWSCreature__UseItem	0x658340	confirmed	24	
-0x4A4F20	CNWSCreature__RestoreItemProperties	0x6585B0	confirmed	24	
-0x4A5080	CNWSCreature__ToggleMode	0x658710	confirmed	24	
 0x4A5CA0	CNWSCreature__AddAnimalEmpathyAction	0x659330	predicted	0	from none via CNWSCreature__AddTauntActions
 0x4A5D90	CNWSCreature__AddTauntActions	0x659420	confirmed	24	
-0x4A6D00	CNWSCreature__GetRelativeWeaponSize	0x65A390	confirmed	24	
-0x4A6ED0	CNWSCreature__GetMaxHitPoints	0x65A560	confirmed	24	
 0x4A7A40	CNWSCreature__GetDamageFlags	0x65B0D0	confirmed	24	
 0x4A8800	CNWSCreature__StartBarter	0x65BE90	confirmed	48	
-0x4AB140	CNWSCreature__GetTotalEffectBonus	0x65E7D0	confirmed	48	
 0x4B1F70	CNWSCreature__LearnScroll	0x665600	confirmed	48	
-0x4B48E0	CNWRules__ReloadAll	0x47AAC0	unique	48	
-0x4B8270	CNWRules__IsArcaneClass	-	none	0	
-0x4BB4D0	CNWSCreature__SetCombatMode	0x67B0D0	unique	24	
+0x4B48E0	CNWRules__ReloadAll	0x47AAC0	confirmed	48	
 0x4CC070	CNWSCreature__SummonAnimalCompanion	0x68BC60	confirmed	160	
 0x4CC390	CNWSCreature__SummonFamiliar	0x68BF80	confirmed	160	
-0x4CCAC0	CNWSCreature__PossessFamiliar	0x68C6B0	confirmed	48	
-0x4CCD60	CNWSCreature__UnpossessFamiliar	0x68C950	confirmed	48	
-0x4CDD80	CNWSCreature__GetAssociateId	0x68D970	confirmed	24	
-0x4CE920	CNWSCreature__GetIsPossessedFamiliar	0x68E510	confirmed	24	
-0x4CE950	CNWSCreature__CanUseItem	0x68E540	confirmed	48	
-0x4D5230	CNWSModule__LoadModuleFinish	0x6B8270	unique	48	
-0x4DFA60	CNWSObject__ClearAllPartyInvalidActions	0x63A710	unique	48	
-0x4E5A60	CNWSObject__GetIsPCDying	0x6407E0	unique	24	
-0x4E8C00	CGameEffect__SetCreator	0x667550	unique	24	
+0x4D5230	CNWSModule__LoadModuleFinish	0x6B8270	confirmed	48	
+0x4DFA60	CNWSObject__ClearAllPartyInvalidActions	0x63A710	confirmed	48	
 0x4EB560	CNWSEffectListHandler__OnEffectApplied	0x668500	confirmed	24	
 0x4EB5A0	CNWSEffectListHandler__OnEffectRemoved	0x668540	confirmed	24	
 0x4ECA70	CNWSEffectListHandler__OnApplyDeath	0x669A10	confirmed	24	
@@ -88,19 +554,14 @@
 0x4F76D0	CNWSEffectListHandler__OnApplyPolymorph	0x674680	confirmed	48	
 0x4F78E0	CNWSEffectListHandler__OnRemovePolymorph	0x674890	confirmed	48	
 0x4FA850	CNWSEffectListHandler__OnApplyDefensiveStance	0x6777F0,0x763B80,0x764170	ambiguous(3)	48	
-0x4FE800	CNWSItem__RemoveItemProperties	-	none	0	
-0x5017A0	CNWSItem__GetMinEquipLevel	0x721B20	unique	48	
-0x502AC0	CNWSpell__GetSpellLevel	0x4F8350	unique	24	
-0x52FA00	CNWSCombatRound__StartCombatRound	0x73B160	confirmed	24	
+0x4FE800	CNWSItem__RemoveItemProperties	0x71EB80	predicted	0	from none via CNWSItem__ComputeArmorClass
 0x530E40	CNWSCombatRound__InitializeNumberOfAttacks	0x73C5A0	confirmed	24	
 0x5426A0	CNWSMessage__HandlePlayerToServerMessage	0x6D1BE0	unique	48	
-0x547580	CNWSCreature__ResolveAttack	0x740180	confirmed	24	
 0x547A50	CNWSCreature__ResolveRangedSpecialAttack	0x740650	confirmed	48	
 0x548100	CNWSCreature__ResolveAmmunition	0x740D00	confirmed	24	
 0x548220	CNWSCreature__GetAmmunitionAvailable	0x740E20	confirmed	48	
 0x549FC0	CNWSCreature__ResolveMeleeSpecialAttack	0x742BC0	confirmed	48	
 0x54FB70	CNWSCreature__ResolveDamageShields	0x748770	confirmed	48	
-0x551250	CNWSCreature__GetFlanked	0x749E50	confirmed	24	
 0x5700A0	CNWVirtualMachineCommands__ExecuteCommandGetEffectSubType	0x6ED350	predicted	0	from none via CNWVirtualMachineCommands__ExecuteCommandGetRacialType
 0x570D20	CNWVirtualMachineCommands__ExecuteCommandGetRacialType	0x6EDFD0	confirmed	24	
 0x577DF0	CNWVirtualMachineCommands__ExecuteCommandApplyEffectOnObject	0x6F50A0	confirmed	24	
@@ -110,5 +571,4 @@
 0x59D610	CNWSItemPropertyHandler__RemoveBonusSpellOfLevel	0x764540	confirmed	24	
 0x59F2E0	CNWSItemPropertyHandler__ApplyHolyAvenger	0x766210	confirmed	48	
 0x59FC80	CNWSItemPropertyHandler__RemoveHolyAvenger	0x766BB0	confirmed	24	
-0x5A1440	CNWSScriptVarTable__SetString	-	none	0	
 0x5A96F0	CNWSTrigger__GetCanFireTrapOnObject	0x75ACB0	unique	24	
