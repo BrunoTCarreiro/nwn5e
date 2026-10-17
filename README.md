@@ -21,7 +21,7 @@ in `nwn5e.ini`:
 | Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | verified in game (log) |
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
-| Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log) |
+| Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log); flat effect damage bonuses once too (0.6.4: call sites verified in game, the damage itself awaits a crit with such an effect) |
 | Henchmen use the player-character rules (decision 11) | — (always) | built; needs a henchman to check |
 | After a kill, the round's remaining attacks go to the nearest enemy (decision 14); ranged: only to enemies already in the fight, within `ranged_retarget_range` (40 m) | `retarget_remaining_attacks` | melee verified in game; ranged 20 m verified in game (0.6.1); "in the fight" filter + 40 m built (0.6.3), awaiting test |
 | No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
@@ -82,6 +82,13 @@ that `nwmain.exe` is exactly the mapped 1.69 build (SHA-256
 `4d8aa22b1bc9a48c108f3c5d4dc08f49dcddad98d863b89dc3684968d2211c49`), and
 refuses to start anything else. The DLL writes `build\nwn5e.log`: which hooks
 were installed and each rule decision.
+
+Quick check without the UAC prompt (used by Claude, owner-approved
+2026-10-18; the game runs windowed): from Git Bash in `build\`,
+`__COMPAT_LAYER=RunAsInvoker ./nwn5e.exe` runs the loader and the game with
+normal user rights (the game folder is user-writable). `build\nwn5e.log`
+then shows the version, the verified call sites and "hooks active"; close
+the game with `taskkill //IM nwmain.exe` before building again.
 
 ## Changes to the game folder
 

@@ -133,6 +133,18 @@ TEST(CriticalsRollDiceTwiceAndAddFlatBonusesOnce) {
   CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kFlatBonus, 0), 0);
 }
 
+// Decision 13, effect damage bonuses (GetTotalEffectBonus: each entry is a
+// dice count and a die size or constant). Breaks caught: a constant bonus
+// (Damage Bonus +2) repeated on a critical, or a dice bonus (+1d6 fire) rolled
+// only once; the engine's own test is "dice count != 0".
+TEST(EffectDamageBonusesDiceTwiceConstantsOnce) {
+  CHECK_EQ(EffectDamagePart(0), CritDamagePart::kFlatBonus);
+  CHECK_EQ(EffectDamagePart(1), CritDamagePart::kDice);
+  CHECK_EQ(EffectDamagePart(2), CritDamagePart::kDice);
+  CHECK_EQ(CriticalMultiplierFor(EffectDamagePart(0), 2), 1);
+  CHECK_EQ(CriticalMultiplierFor(EffectDamagePart(1), 2), 2);
+}
+
 // Decision 14. Breaks caught: off-by-one (the killing attack counted as still
 // to come, so a single-attack creature would "cleave"), or a negative count
 // when the index runs past the total (extra attacks added mid-round).

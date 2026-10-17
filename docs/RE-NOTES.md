@@ -289,7 +289,12 @@ bDeathAttack, bForceMax)` 0x69AEB0, `ret 0x18`:
   (`add [esp+10h], ebp`). 0.4.0 answers multiplier 1 to those two calls.
 - Effect damage bonuses: `CNWSCreature::GetTotalEffectBonus` 0x65E7D0 (type 2),
   on attack result 3/10: dice effects re-rolled per x, flat effects added per
-  x through the same calls — so flat effect bonuses still double (known gap).
+  x through the same calls. Decompiled 2026-10-18: each entry is (dice count
+  [esp+0x2C], die size or constant [esp+0x1C]) from two 2DA lookups
+  (0x5CEDC0); four blocks, each with three GetCriticalHitMultiplier calls
+  (bForceMax product, loop start, loop test), every one after a single push.
+  0.6.4 answers 1 at those 12 sites when the entry's dice count is 0, read
+  from the caller's stack (nwmain_1_69.h); sites verified in game at load.
 
 ## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
 

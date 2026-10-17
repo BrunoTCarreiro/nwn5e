@@ -86,6 +86,10 @@ int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier) {
   return part == CritDamagePart::kDice ? 2 : 1;
 }
 
+CritDamagePart EffectDamagePart(int dice_count) {
+  return dice_count != 0 ? CritDamagePart::kDice : CritDamagePart::kFlatBonus;
+}
+
 int RemainingAttacksInRound(int total_attacks, int current_attack_index) {
   return std::max(0, total_attacks - 1 - current_attack_index);
 }

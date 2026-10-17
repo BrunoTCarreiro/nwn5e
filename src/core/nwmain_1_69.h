@@ -102,6 +102,21 @@ constexpr uintptr_t kFlatBonusLoopCall2 = 0x0069BEBC;
 constexpr uint8_t kFlatBonusLoopCall2Bytes[] = {0xe8, 0x3f, 0x05, 0x00, 0x00};
 constexpr uintptr_t kCallLength = 5;
 
+// Effect damage bonuses, CNWSCreature::GetTotalEffectBonus 0x65E7D0
+// (decompiled 2026-10-18): each entry is (dice count, die size or constant)
+// from a 2DA; on a critical (attack result 3 or 10) it is added
+// GetCriticalHitMultiplier() times — the dice rolled again each time (2024:
+// right), a constant added again (2024: wrong). Four blocks, three calls each
+// (bForceMax product, loop start, loop test). Every call pushes one argument,
+// and the entry's dice count is the caller's [esp+0x2C] at the call
+// (0 = constant); inside the multiplier hook that is the return-address slot
+// + 4 (return address) + 4 (argument) + 0x2C. Install checks each site is a
+// call to GetCriticalHitMultiplier.
+constexpr uintptr_t kEffectBonusMultiplierCalls[] = {0x0065F84D, 0x0065F8A2, 0x0065F8DD, 0x0065FA4A,
+                                                     0x0065FA9F, 0x0065FADA, 0x0065FC3E, 0x0065FC9A,
+                                                     0x0065FCDC, 0x0065FE68, 0x0065FEC4, 0x0065FF06};
+constexpr uintptr_t kEffectBonusDiceCountFromReturnSlot = 4 + 4 + 0x2C;
+
 // Cleave, in CNWSCreature::ResolvePostMeleeDamage 0x746070 (ret 4): when an
 // attack killed its target (attack data +0x40 == 1, not special attacks
 // 0x363/0x364) and the round has < 50 attacks (GetTotalAttacks), it asks

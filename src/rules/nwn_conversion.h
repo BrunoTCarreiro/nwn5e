@@ -64,6 +64,10 @@ int ConvertCriticalMultiplier(int engine_multiplier);
 enum class CritDamagePart { kDice, kFlatBonus };
 int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier);
 
+// An effect damage bonus entry (GetTotalEffectBonus) with dice is damage dice;
+// one with a dice count of 0 is a flat constant.
+CritDamagePart EffectDamagePart(int dice_count);
+
 // Decision 14: attacks of the round still to come after the one with index
 // `current_attack_index` (0-based) out of `total_attacks`. When an attack
 // kills its target and this is above 0, the next attack moves to the nearest

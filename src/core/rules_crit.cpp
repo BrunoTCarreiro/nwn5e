@@ -5,8 +5,9 @@
 // damage that many times: weapon dice are re-rolled (2024: twice) and the flat
 // bonuses (Strength etc.) are added again (2024: once). With crit_dice_only the
 // multiplier is 1 when asked from the flat-bonus loop (nwmain_1_69.h) and 2
-// everywhere else. Known gap: GetTotalEffectBonus repeats dice and flat effect
-// bonuses through the same calls, so flat effect bonuses still double.
+// everywhere else. Effect damage bonuses (GetTotalEffectBonus) ask from one
+// loop for dice and constants alike; there the hook reads the current entry's
+// dice count from the caller's stack and answers 1 for a constant.
 // The confirmation roll is removed in rules_crit_confirm.cpp.
 //
 // The engine answers threat 21 / multiplier x0 for a hand with nothing to
@@ -42,6 +43,17 @@ bool IsFlatBonusLoopCaller(uintptr_t return_address) {
           return_address == nwmain::kFlatBonusLoopCall2 + nwmain::kCallLength);
 }
 
+// Set at install when all GetTotalEffectBonus sites call GetCriticalHitMultiplier.
+bool g_effect_bonus_sites_verified = false;
+
+bool IsEffectBonusCaller(uintptr_t return_address) {
+  if (!g_effect_bonus_sites_verified) return false;
+  for (uintptr_t site : nwmain::kEffectBonusMultiplierCalls) {
+    if (return_address == site + nwmain::kCallLength) return true;
+  }
+  return false;
+}
+
 int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_roll(stats, edx, offhand);
   if (g_config.debug_every_hit_crits) {
@@ -72,6 +84,18 @@ int __fastcall GetCriticalHitMultiplier(void* stats, void* edx, int offhand) {
     }
     return converted;
   }
+  if (g_config.crit_dice_only && IsEffectBonusCaller(caller)) {
+    const auto* return_slot = static_cast<const uint8_t*>(_AddressOfReturnAddress());
+    const int dice_count =
+        *reinterpret_cast<const int32_t*>(return_slot + nwmain::kEffectBonusDiceCountFromReturnSlot);
+    const rules::CritDamagePart part = rules::EffectDamagePart(dice_count);
+    const int converted = rules::CriticalMultiplierFor(part, vanilla);
+    if (g_config.log_attacks && part == rules::CritDamagePart::kFlatBonus &&
+        g_multiplier_logged.First(LogOnce::Key(2, vanilla, converted))) {
+      Log("crit damage: flat effect damage bonuses 3e x%d -> 5e x%d (logged once per value)", vanilla, converted);
+    }
+    return converted;
+  }
   const int converted = rules::CriticalMultiplierFor(rules::CritDamagePart::kDice, vanilla);
   if (g_config.log_attacks && converted != vanilla &&
       g_multiplier_logged.First(LogOnce::Key(0, vanilla, converted))) {
@@ -94,10 +118,30 @@ bool VerifyFlatBonusSites() {
   return true;
 }
 
+// Each site must be E8 rel32 landing on GetCriticalHitMultiplier (checked
+// before the hook patches that function's entry; call sites are not patched).
+bool VerifyEffectBonusSites() {
+  for (uintptr_t site : nwmain::kEffectBonusMultiplierCalls) {
+    const auto* code = reinterpret_cast<const uint8_t*>(site);
+    int32_t rel = 0;
+    memcpy(&rel, code + 1, sizeof(rel));
+    if (code[0] != 0xe8 || site + nwmain::kCallLength + rel != nwmain::kGetCriticalHitMultiplier) {
+      Log("SKIP crit_dice_only for effect bonuses: GetTotalEffectBonus site 0x%08X is not the mapped call", site);
+      return false;
+    }
+  }
+  Log("crit_dice_only: GetTotalEffectBonus multiplier call sites verified (%u)",
+      static_cast<unsigned>(sizeof(nwmain::kEffectBonusMultiplierCalls) / sizeof(nwmain::kEffectBonusMultiplierCalls[0])));
+  return true;
+}
+
 }  // namespace
 
 void InstallCritRules() {
-  if (g_config.crit_dice_only) g_flat_bonus_sites_verified = VerifyFlatBonusSites();
+  if (g_config.crit_dice_only) {
+    g_flat_bonus_sites_verified = VerifyFlatBonusSites();
+    g_effect_bonus_sites_verified = VerifyEffectBonusSites();
+  }
   InstallHook({"CNWSCreatureStats::GetCriticalHitRoll", nwmain::kGetCriticalHitRoll, nwmain::kGetCriticalHitRollPrologue,
                sizeof(nwmain::kGetCriticalHitRollPrologue), reinterpret_cast<void*>(&GetCriticalHitRoll),
                reinterpret_cast<void**>(&g_get_critical_hit_roll)});
