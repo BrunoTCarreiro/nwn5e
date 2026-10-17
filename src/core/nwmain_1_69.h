@@ -39,4 +39,39 @@ constexpr uintptr_t kCritImmunityCheck = 0x0074472B;
 constexpr uint8_t kCritImmunityCheckBytes[] = {0x85, 0xff, 0x0f, 0x84, 0x48, 0x01, 0x00, 0x00};
 constexpr uint8_t kCritImmunityCheckSkip[] = {0xe9, 0x4b, 0x01, 0x00, 0x00, 0x90, 0x90, 0x90};
 
+// int CNWSCreatureStats::GetAttackModifierVersus(CNWSCreature* target), ret 4.
+// Starts from GetBaseAttackBonus(0) (every call site pushes 0), subtracts the
+// 3e iterative penalty (5 x attack index; 3 x for monk tables; 5 x off-hand
+// attacks made, combat round +0x2140), then adds everything else.
+constexpr uintptr_t kGetAttackModifierVersus = 0x006958E0;
+constexpr uint8_t kGetAttackModifierVersusPrologue[] = {0x6a, 0xff, 0x68, 0x28, 0x7e, 0x89, 0x00, 0x64};
+
+// short CNWSCreatureStats::GetArmorClassVersus(CNWSCreature* attacker, int bTouch), ret 8.
+// ResolveAttackRoll sign-extends the result from 16 bits.
+constexpr uintptr_t kGetArmorClassVersus = 0x006925E0;
+constexpr uint8_t kGetArmorClassVersusPrologue[] = {0x6a, 0xff, 0x68, 0x00, 0x7b, 0x89, 0x00, 0x64};
+
+// Called, not hooked.
+// int CNWSCreatureStats::GetBaseAttackBonus(int bPreEpicOnly), ret 4: class
+// table BAB per class slot, plus the epic bonus when bPreEpicOnly == 0; a
+// non-zero override byte at +0x411 replaces the total.
+constexpr uintptr_t kGetBaseAttackBonus = 0x00693720;
+// uint8 CNWSCreatureStats::GetLevel(int bCountNegativeLevels), ret 4 (result in AL).
+constexpr uintptr_t kGetLevel = 0x00692520;
+
+// CNWSCreatureStats fields (offsets verified in code unless noted).
+constexpr uintptr_t kStatsCreature = 0x24;     // CNWSCreature* (GetLevel)
+constexpr uintptr_t kStatsExperience = 0x70;   // uint32 XP (AddExperience, CanLevelUp)
+constexpr uintptr_t kStatsIsPlayer = 0x74;     // uint32, non-zero for player characters (CanLevelUp
+                                               // gates the XP check on it)
+constexpr uintptr_t kStatsChallengeRating = 0x9C;  // float — NOT read in code yet: ten 4-byte fields
+                                                   // after +0x74 in the community layout, ending
+                                                   // right before the class count at +0xA1
+                                                   // (verified). Guarded by IsPlausibleChallengeRating.
+constexpr uintptr_t kStatsClassCount = 0xA1;   // uint8 (GetLevel, GetBaseAttackBonus)
+
+// CNWSCreature fields.
+constexpr uintptr_t kCreatureObjectId = 0x04;  // uint32 object id (passed as id in ResolveAttack)
+constexpr uintptr_t kCreatureStats = 0xC64;    // CNWSCreatureStats* (ResolveAttackRoll, GetLevel)
+
 }  // namespace nwmain

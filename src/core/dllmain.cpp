@@ -11,6 +11,7 @@
 
 void InstallCritRules();
 void InstallCritConfirmRules();
+void InstallAttackRules();
 
 namespace {
 
@@ -31,7 +32,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.1.0 loaded");
+  Log("nwn5e 0.2.0 loaded");
   if (!HostIsMappedBuild()) {
     Log("host is not the mapped nwmain.exe 1.69 build; no hooks installed");
     return;
@@ -40,6 +41,7 @@ void Start(HMODULE self) {
   if (!HooksBegin()) return;
   InstallCritRules();
   InstallCritConfirmRules();
+  InstallAttackRules();
   Log(HooksCommit() ? "hooks active" : "hooks NOT active");
 }
 

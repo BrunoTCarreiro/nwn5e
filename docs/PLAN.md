@@ -128,10 +128,12 @@ monster AC by CR.
 5. Prestige classes with no 2024 subclass equivalent: drop or adapt?
 6. Rituals and material components: model or ignore?
 7. Action economy design (Phase 6).
-8. Expanded critical range (Champion's Improved Critical, 19–20): does a
-   natural 19 that misses the AC still hit as a critical? Implemented for now:
-   **no** — the expanded range only upgrades a hit; only a natural 20 always
-   hits (`rules::ResolveAttackRoll`).
-9. Creature AC conversion target: `rules::ExpectedMonsterArmorClass` uses the
-   2014 DMG "Monster Statistics by Challenge Rating" AC column (not SRD 5.2).
-   Keep as a personal-use guideline, or derive AC another way?
+
+## Decided (owner, 2026-10-17)
+
+8. Expanded critical range (Champion's Improved Critical, 19–20): the expanded
+   range only upgrades a hit; a natural 19 that does not reach the AC misses.
+   Only a natural 20 always hits (`rules::ResolveAttackRoll`).
+9. Creature AC conversion target: keep the 2014 DMG "Monster Statistics by
+   Challenge Rating" AC column as a personal-use guideline
+   (`rules::ExpectedMonsterArmorClass`); not shipped in anything shared.

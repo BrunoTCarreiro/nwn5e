@@ -4,7 +4,7 @@
 //
 // Provenance: the expected-AC-by-CR values are the 2014 DMG guideline table
 // ("Monster Statistics by Challenge Rating"), NOT SRD 5.2 — personal use only,
-// replaceable (docs/PLAN.md, Phase 8 / open decision 9).
+// replaceable (docs/PLAN.md, Phase 8 / decision 9).
 
 namespace rules {
 

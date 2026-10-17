@@ -22,7 +22,7 @@ enum class AttackOutcome { kMiss, kHit, kCritical };
 // Hit regardless of AC. `critical_floor` is the lowest natural roll that can
 // be critical (20 normally, 19 with Improved Critical); a value above 20
 // (the engine's "cannot crit") still lets a natural 20 be critical.
-// Ruling (docs/PLAN.md, open decision 8): an expanded range only upgrades a
+// Ruling (docs/PLAN.md, decision 8): an expanded range only upgrades a
 // hit — a natural 19 that does not reach the AC still misses.
 AttackOutcome ResolveAttackRoll(int natural_roll, int attack_bonus, int armor_class, int critical_floor);
 

@@ -10,13 +10,20 @@ NWN the usual way is the unmodified game.
 
 ## Status
 
-Phase 0 (foundation). Rules implemented so far, each switchable in `nwn5e.ini`:
+Phase 0 done; Phase 1a in progress. Rules implemented so far, each switchable
+in `nwn5e.ini`:
 
 | Rule | Setting | State |
 |---|---|---|
 | Critical threat only on a natural 20 | `crit_nat20_only` | built, awaiting in-game test |
 | x2 critical multiplier for every weapon | `crit_double_damage` | built, awaiting in-game test |
 | No critical confirmation roll | `crit_no_confirmation` | built, awaiting in-game test |
+| Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | built, awaiting in-game test |
+| Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | built, awaiting in-game test |
+
+Known gaps of the attack/AC step: the 3e −5 per extra attack still applies
+(until Extra Attack replaces iterative attacks); henchmen and summons count as
+creatures; player AC is unchanged.
 
 Pipeline verified in game (2026-10-17): with the test switch
 `[debug] every_hit_crits=1` every hit was a critical, and `nwn5e.log` showed

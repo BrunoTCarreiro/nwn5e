@@ -133,8 +133,47 @@ Callers (REA `procedure_callers`):
   the hooks currently force 20 / x2. 2024 rules let any attack roll crit, but
   confirm what 21 / x0 encode before relying on it.
 
+## Attack modifier and AC (decompiled 2026-10-17)
+
+`GetAttackModifierVersus(target)` 0x6958E0, `ret 4`. Every one of its five
+`GetBaseAttackBonus` calls pushes 0 with `ecx` = the stats; the result goes to
+`ebx`, then the 3e iterative penalty is subtracted before the other bonuses
+are added:
+
+| Branch (attack data +0x30) | ebx |
+|---|---|
+| normal | BAB − 5 × attack index (`edi`) |
+| monk attack tables (0x695110) | BAB − 3 × attack index |
+| 2 (off-hand) | BAB − 5 × off-hand attacks made (combat round +0x2140) |
+| 6 / 8, special attacks 0x363/0x364 | BAB |
+
+So `engine result − GetBaseAttackBonus(0) + PB` swaps only the 3e BAB.
+
+`GetArmorClassVersus(attacker, bTouch)` 0x6925E0, `ret 8`; the attack roll
+sign-extends its 16-bit result.
+
+`GetBaseAttackBonus(bPreEpicOnly)` 0x693720, `ret 4`: sums each class slot's
+table BAB (class id at slot +0x1B2, slots 0x118 apart), adds the epic bonus
+when the argument is 0, and returns the override byte at +0x411 instead when
+it is non-zero. `GetLevel(bCountNegativeLevels)` 0x692520, `ret 4`, result in
+AL: sums slot +0x1B3 levels (minus +0x1B4 negative levels when asked).
+
+`CNWSCreatureStats` fields used by the hooks:
+
+| Offset | Field | Evidence |
+|---|---|---|
+| +0x24 | owning CNWSCreature* | GetLevel follows it to +0xC64 |
+| +0x70 | XP | AddExperience adds to it; CanLevelUp compares it to the XP table |
+| +0x74 | is player character | CanLevelUp runs the XP check only when it is non-zero |
+| +0x9C | challenge rating (float) | **not read in code yet**: the community layout puts ten 4-byte fields between +0x74 and the class count at +0xA1 (verified), ending at +0x9C. Runtime guard: `rules::IsPlausibleChallengeRating`; the log shows the values read. |
+| +0xA1 | class count | GetLevel, GetBaseAttackBonus, CanLevelUp |
+
+`CNWSCreature` +0xC64 is its stats (ResolveAttackRoll, GetLevel); +0x04 is used
+as the object id (logging only).
+
 ## Open
 
+- Confirm the CR offset from the in-game log (values should look like CRs).
 - What vanilla threat 21 and multiplier x0 mean (see above).
 - Name 0x693890 and the multiplier's damage callers.
 - Verify the 2 predicted and 3 ambiguous map entries with REA decompilation.
