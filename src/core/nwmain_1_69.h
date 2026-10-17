@@ -144,10 +144,13 @@ constexpr uintptr_t kAttackDataKilledTarget = 0x40;
 constexpr uintptr_t kResolvePostRangedDamage = 0x00746980;
 constexpr uint8_t kResolvePostRangedDamagePrologue[] = {0x6a, 0xff, 0x68, 0xfc, 0xed, 0x89, 0x00, 0x64};
 // MaxAttackRange's third argument: with a ranged weapon 1 -> 20.0, 0 -> 40.0;
-// melee -> reach + 1.5 either way. The engine's cleave passes 1. Retargeting
-// uses 1 for melee and ranged: 40 m picked a caged Hook Horror far across the
-// prelude arena over goblins in front of the archer (owner, 2026-10-17).
+// melee -> reach + 1.5 either way. The engine's cleave passes 1, and so does
+// melee retargeting. Ranged retargeting first used 1 as well (0.6.1: 40 m had
+// picked a caged Hook Horror across the prelude arena); since it only picks
+// enemies in the fight (0.6.2) it looks [rules] ranged_retarget_range metres
+// (default 40), capped at the weapon's range (argument 0).
 constexpr int kMaxAttackRangeRetarget = 1;
+constexpr int kMaxAttackRangeWeapon = 0;
 
 // Ranged retargeting keeps GetNearestEnemy's own checks and adds "in the
 // fight", so it walks the area itself. GetNearestEnemy (0x658C00, ret 0x10;

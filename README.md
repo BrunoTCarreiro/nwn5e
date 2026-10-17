@@ -23,7 +23,7 @@ in `nwn5e.ini`:
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
 | Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log) |
 | Henchmen use the player-character rules (decision 11) | — (always) | built; needs a henchman to check |
-| After a kill, the round's remaining attacks go to the nearest enemy (decision 14); ranged: within 20 m and only to enemies already in the fight | `retarget_remaining_attacks` | melee verified in game; ranged 20 m verified in game (0.6.1), "in the fight" filter built (0.6.2), awaiting test |
+| After a kill, the round's remaining attacks go to the nearest enemy (decision 14); ranged: only to enemies already in the fight, within `ranged_retarget_range` (40 m) | `retarget_remaining_attacks` | melee verified in game; ranged 20 m verified in game (0.6.1); "in the fight" filter + 40 m built (0.6.3), awaiting test |
 | No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
 | Character sheet shows the 2024 attack bonus and attacks per round | with `attack_proficiency` / `extra_attack` | attack bonus verified in game (+6 with a sword) |
 

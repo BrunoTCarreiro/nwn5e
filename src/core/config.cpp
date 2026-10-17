@@ -26,7 +26,9 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.extra_attack = ReadBool(ini, L"extra_attack", g_config.extra_attack);
   g_config.retarget_remaining_attacks =
       ReadBool(ini, L"retarget_remaining_attacks", g_config.retarget_remaining_attacks);
-  Log("config: retarget_remaining_attacks=%d", g_config.retarget_remaining_attacks);
+  g_config.ranged_retarget_range = GetPrivateProfileIntW(L"rules", L"ranged_retarget_range", 40, ini);
+  Log("config: retarget_remaining_attacks=%d ranged_retarget_range=%d m", g_config.retarget_remaining_attacks,
+      g_config.ranged_retarget_range);
   g_config.log_attacks = ReadBool(ini, L"log_attacks", g_config.log_attacks);
   g_config.debug_every_hit_crits = ReadBool(ini, L"every_hit_crits", g_config.debug_every_hit_crits, L"debug");
   g_config.debug_attacks_per_round = GetPrivateProfileIntW(L"debug", L"attacks_per_round", 0, ini);

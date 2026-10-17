@@ -10,16 +10,17 @@
 //   and returns the real HasFeat answer, so creatures with Great Cleave or
 //   Cleave still get their bonus attack as in NWN.
 // - Ranged: ResolvePostRangedDamage is hooked; after it marks the attack as a
-//   kill (attack data +0x40), the switch runs within 20 m (the engine's cleave
-//   range for ranged weapons, close to a bow's normal range), and only to an
-//   enemy already in the fight — one whose attack order targets the attacker
-//   or the attacker's side (owner, 2026-10-17: a bow must not pick an idle,
-//   caged or sleeping enemy). GetNearestEnemy can't filter that, so the area
-//   is walked here with GetNearestEnemy's own checks (nwmain_1_69.h).
+//   kill (attack data +0x40), the switch goes only to an enemy already in the
+//   fight — one whose attack order targets the attacker or the attacker's
+//   side (owner, 2026-10-17: a bow must not pick an idle, caged or sleeping
+//   enemy) — within [rules] ranged_retarget_range (default 40 m, the weapon's
+//   range). GetNearestEnemy can't filter that, so the area is walked here
+//   with GetNearestEnemy's own checks (nwmain_1_69.h).
 
 #include <math.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <vector>
 
 #include "config.h"
@@ -59,6 +60,7 @@ const auto g_get_visible_list_element = reinterpret_cast<GetVisibleListElementFn
 ResolvePostRangedDamageFn g_resolve_post_ranged_damage = nullptr;
 
 LogOnce g_retarget_logged(500);
+int g_candidate_trace_lines = 0;  // [debug] attack_trace: first 100 candidates
 
 void* ServerInternal() {
   return Field<void*>(*reinterpret_cast<void**>(nwmain::kServerExoAppInternalHolder), 4);
@@ -136,8 +138,16 @@ uint32_t NearestEnemyInTheFight(void* attacker, float range, uint32_t exclude, R
     const void* seen = g_get_visible_list_element(attacker, nullptr, id);
     if (!seen || (Field<uint8_t>(seen, nwmain::kVisibleElementFlags) & 1) == 0) continue;
     const float distance = EdgeDistance(attacker, creature);
+    const rules::AttackOrder order = ReadAttackOrder(server_internal, creature);
+    const bool fighting = rules::IsAgainstSide(order, self, faction);
+    if (g_config.debug_attack_trace && g_candidate_trace_lines < 100) {
+      ++g_candidate_trace_lines;
+      Log("trace: ranged retarget candidate 0x%08X at %.1f m (range %.0f): %s; attack order %s 0x%08X, its faction "
+          "%d, ours %d",
+          id, distance, range, fighting ? "in the fight" : "not in the fight", order.exists ? "on" : "none",
+          order.target, order.target_faction, faction);
+    }
     if (!(distance < range)) continue;
-    const bool fighting = rules::IsAgainstSide(ReadAttackOrder(server_internal, creature), self, faction);
     candidates.push_back({distance, fighting});
     candidate_ids.push_back(id);
     ++search->seen_in_range;
@@ -148,11 +158,14 @@ uint32_t NearestEnemyInTheFight(void* attacker, float range, uint32_t exclude, R
 }
 
 // Switches the round's target to the nearest enemy within the attacker's
-// range (melee reach, or 20 m and in the fight with a ranged weapon). Returns
-// the new target's id, or kObjectInvalid when there is none.
+// range (melee reach; with a ranged weapon, ranged_retarget_range metres capped
+// at the weapon's range, and only an enemy in the fight). Returns the new
+// target's id, or kObjectInvalid when there is none.
 uint32_t SwitchToNearestEnemy(void* attacker, void* round, uint32_t killed_id, bool ranged, RangedSearch* search) {
   const float range =
-      g_max_attack_range(attacker, nullptr, nwmain::kObjectInvalid, 0, nwmain::kMaxAttackRangeRetarget);
+      ranged ? std::min(static_cast<float>(g_config.ranged_retarget_range),
+                        g_max_attack_range(attacker, nullptr, nwmain::kObjectInvalid, 0, nwmain::kMaxAttackRangeWeapon))
+             : g_max_attack_range(attacker, nullptr, nwmain::kObjectInvalid, 0, nwmain::kMaxAttackRangeRetarget);
   const uint32_t enemy = ranged ? NearestEnemyInTheFight(attacker, range, killed_id, search)
                                 : g_get_nearest_enemy(attacker, nullptr, range, killed_id, 1, 0);
   void* server_internal = ServerInternal();
@@ -165,8 +178,7 @@ uint32_t SwitchToNearestEnemy(void* attacker, void* round, uint32_t killed_id, b
 }
 
 // After the current attack killed its target: if attacks are left, move the
-// rest of the round to the nearest enemy (for `ranged`, within 20 m and in the
-// fight).
+// rest of the round to the nearest enemy (for `ranged`, one in the fight).
 void RetargetAfterKill(void* attacker, bool ranged) {
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
   if (!round) return;
