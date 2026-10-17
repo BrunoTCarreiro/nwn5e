@@ -19,6 +19,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.crit_nat20_only = ReadBool(ini, L"crit_nat20_only", g_config.crit_nat20_only);
   g_config.crit_no_confirmation = ReadBool(ini, L"crit_no_confirmation", g_config.crit_no_confirmation);
   g_config.crit_double_damage = ReadBool(ini, L"crit_double_damage", g_config.crit_double_damage);
+  g_config.crit_dice_only = ReadBool(ini, L"crit_dice_only", g_config.crit_dice_only);
+  Log("config: crit_dice_only=%d", g_config.crit_dice_only);
   g_config.attack_proficiency = ReadBool(ini, L"attack_proficiency", g_config.attack_proficiency);
   g_config.creature_ac_by_cr = ReadBool(ini, L"creature_ac_by_cr", g_config.creature_ac_by_cr);
   g_config.extra_attack = ReadBool(ini, L"extra_attack", g_config.extra_attack);

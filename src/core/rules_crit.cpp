@@ -1,14 +1,20 @@
 // 2024 critical hits (SRD 5.2): a critical hit happens on a natural 20 only,
 // with no confirmation roll, and the attack's damage dice are rolled twice.
 //
-// Phase 0 covers the threat range and the multiplier. NWN multiplies all
-// weapon damage, not only the dice; doubling dice alone needs the damage-roll
-// hooks planned for Phase 1. The confirmation roll is removed in
-// rules_crit_confirm.cpp.
+// NWN's GetDamageRoll asks for the multiplier and repeats each part of the
+// damage that many times: weapon dice are re-rolled (2024: twice) and the flat
+// bonuses (Strength etc.) are added again (2024: once). With crit_dice_only the
+// multiplier is 1 when asked from the flat-bonus loop (nwmain_1_69.h) and 2
+// everywhere else. Known gap: GetTotalEffectBonus repeats dice and flat effect
+// bonuses through the same calls, so flat effect bonuses still double.
+// The confirmation roll is removed in rules_crit_confirm.cpp.
 //
 // The engine answers threat 21 / multiplier x0 for a hand with nothing to
 // attack with (the empty off-hand, when the character sheet's combat
 // information is computed); rules::ConvertCritical* leave those unchanged.
+
+#include <intrin.h>
+#include <string.h>
 
 #include "config.h"
 #include "hooks.h"
@@ -26,6 +32,15 @@ GetCritFn g_get_critical_hit_multiplier = nullptr;
 // Crit values depend on the weapon, not the creature: log each distinct one once.
 LogOnce g_threat_logged(64);
 LogOnce g_multiplier_logged(64);
+
+// Set at install when both flat-bonus call sites hold the mapped call bytes.
+bool g_flat_bonus_sites_verified = false;
+
+bool IsFlatBonusLoopCaller(uintptr_t return_address) {
+  return g_flat_bonus_sites_verified &&
+         (return_address == nwmain::kFlatBonusLoopCall1 + nwmain::kCallLength ||
+          return_address == nwmain::kFlatBonusLoopCall2 + nwmain::kCallLength);
+}
 
 int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_roll(stats, edx, offhand);
@@ -47,7 +62,17 @@ int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
 int __fastcall GetCriticalHitMultiplier(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_multiplier(stats, edx, offhand);
   if (!g_config.crit_double_damage) return vanilla;
-  const int converted = rules::ConvertCriticalMultiplier(vanilla);
+  // The detour is reached by a jmp from the hooked entry, so this is the
+  // engine call site's return address.
+  const uintptr_t caller = reinterpret_cast<uintptr_t>(_ReturnAddress());
+  if (g_config.crit_dice_only && IsFlatBonusLoopCaller(caller)) {
+    const int converted = rules::CriticalMultiplierFor(rules::CritDamagePart::kFlatBonus, vanilla);
+    if (g_config.log_attacks && g_multiplier_logged.First(LogOnce::Key(1, vanilla, converted))) {
+      Log("crit damage: flat bonuses (Strength etc.) 3e x%d -> 5e x%d (logged once per value)", vanilla, converted);
+    }
+    return converted;
+  }
+  const int converted = rules::CriticalMultiplierFor(rules::CritDamagePart::kDice, vanilla);
   if (g_config.log_attacks && converted != vanilla &&
       g_multiplier_logged.First(LogOnce::Key(0, vanilla, converted))) {
     Log("crit multiplier: 3e x%d -> 5e x%d (logged once per value)", vanilla, converted);
@@ -55,9 +80,24 @@ int __fastcall GetCriticalHitMultiplier(void* stats, void* edx, int offhand) {
   return converted;
 }
 
+bool VerifyFlatBonusSites() {
+  const bool first = memcmp(reinterpret_cast<const void*>(nwmain::kFlatBonusLoopCall1), nwmain::kFlatBonusLoopCall1Bytes,
+                            sizeof(nwmain::kFlatBonusLoopCall1Bytes)) == 0;
+  const bool second = memcmp(reinterpret_cast<const void*>(nwmain::kFlatBonusLoopCall2),
+                             nwmain::kFlatBonusLoopCall2Bytes, sizeof(nwmain::kFlatBonusLoopCall2Bytes)) == 0;
+  if (!first || !second) {
+    Log("SKIP crit_dice_only: GetDamageRoll flat-bonus call sites do not match the mapped build");
+    return false;
+  }
+  Log("crit_dice_only: GetDamageRoll flat-bonus call sites verified at 0x%08X / 0x%08X",
+      nwmain::kFlatBonusLoopCall1, nwmain::kFlatBonusLoopCall2);
+  return true;
+}
+
 }  // namespace
 
 void InstallCritRules() {
+  if (g_config.crit_dice_only) g_flat_bonus_sites_verified = VerifyFlatBonusSites();
   InstallHook({"CNWSCreatureStats::GetCriticalHitRoll", nwmain::kGetCriticalHitRoll, nwmain::kGetCriticalHitRollPrologue,
                sizeof(nwmain::kGetCriticalHitRollPrologue), reinterpret_cast<void*>(&GetCriticalHitRoll),
                reinterpret_cast<void**>(&g_get_critical_hit_roll)});

@@ -108,6 +108,18 @@ TEST(CriticalMultiplierIsTwoExceptEmptyHand) {
   CHECK_EQ(ConvertCriticalMultiplier(0), 0);
 }
 
+// Decision 13. Breaks caught: flat bonuses (Strength) repeated on a critical
+// (the 3e x2), dice not rolled twice, a 3e x3 weapon rolling its dice three
+// times, or "no weapon" (x0) turned into an attack.
+TEST(CriticalsRollDiceTwiceAndAddFlatBonusesOnce) {
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kDice, 2), 2);
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kDice, 3), 2);
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kFlatBonus, 2), 1);
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kFlatBonus, 4), 1);
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kDice, 0), 0);
+  CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kFlatBonus, 0), 0);
+}
+
 // Breaks caught: garbage from a wrong memory offset (NaN, huge, negative)
 // accepted as a challenge rating; real CRs (0, fractions, 30+) rejected.
 TEST(PlausibleChallengeRatingsOnly) {

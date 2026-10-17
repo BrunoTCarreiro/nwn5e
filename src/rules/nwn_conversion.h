@@ -48,6 +48,12 @@ int ConvertArmorClass(bool is_player_character, int engine_armor_class, double c
 int ConvertCriticalThreatFloor(int engine_threat_floor);
 int ConvertCriticalMultiplier(int engine_multiplier);
 
+// Which part of a critical's damage the engine is multiplying. NWN repeats
+// both its dice rolls and its flat bonuses `multiplier` times on a critical;
+// 2024 rolls the damage dice twice and adds the flat bonuses once.
+enum class CritDamagePart { kDice, kFlatBonus };
+int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier);
+
 // Guards the challenge rating read from engine memory: a finite value in
 // [0, 60]. Anything else means a wrong read, and the hooks leave the engine's
 // numbers alone.

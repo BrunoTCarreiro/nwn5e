@@ -79,6 +79,22 @@ constexpr uint8_t kIterativePenaltyMonkBytes[] = {0x2b, 0xd9};
 constexpr uintptr_t kIterativePenalty = 0x00695A05;
 constexpr uint8_t kIterativePenaltyBytes[] = {0x2b, 0xda};
 
+// int CNWSCreatureStats::GetDamageRoll(CNWSObject* defender, int bOffHand,
+// int bCritical, int bSneakAttack, int bDeathAttack, int bForceMax) 0x69AEB0,
+// ret 0x18. On a critical it rolls the weapon dice `multiplier` times
+// (GetCriticalHitMultiplier calls inside its dice loops), then adds the flat
+// bonuses from 0x697D10 (Strength etc.; returned unmultiplied, kept in ebp)
+// in this loop:
+//   0x69BEA7  call GetCriticalHitMultiplier   ; returns to 0x69BEAC
+//   0x69BEB0  add  [esp+10h], ebp             ; flat bonuses, once per x
+//   0x69BEBC  call GetCriticalHitMultiplier   ; returns to 0x69BEC1
+// Answering 1 at these two call sites adds the flat bonuses once (2024).
+constexpr uintptr_t kFlatBonusLoopCall1 = 0x0069BEA7;
+constexpr uint8_t kFlatBonusLoopCall1Bytes[] = {0xe8, 0x54, 0x05, 0x00, 0x00};
+constexpr uintptr_t kFlatBonusLoopCall2 = 0x0069BEBC;
+constexpr uint8_t kFlatBonusLoopCall2Bytes[] = {0xe8, 0x3f, 0x05, 0x00, 0x00};
+constexpr uintptr_t kCallLength = 5;
+
 // Diagnostics ([debug] attack_trace).
 // void CNWSCombatRound::InitializeNumberOfAttacks(), no stack args (the
 // community plugin hooks it as (CNWSCombatRound*, void*) on 1.69).

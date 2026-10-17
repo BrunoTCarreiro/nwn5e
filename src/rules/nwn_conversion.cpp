@@ -77,6 +77,11 @@ int ConvertCriticalThreatFloor(int engine_threat_floor) { return engine_threat_f
 
 int ConvertCriticalMultiplier(int engine_multiplier) { return engine_multiplier == 0 ? 0 : 2; }
 
+int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier) {
+  if (engine_multiplier == 0) return 0;  // no weapon in this hand
+  return part == CritDamagePart::kDice ? 2 : 1;
+}
+
 bool IsPlausibleChallengeRating(float challenge_rating) {
   // Written so NaN fails both comparisons.
   return challenge_rating >= 0.0f && challenge_rating <= 60.0f;
