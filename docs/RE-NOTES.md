@@ -221,6 +221,17 @@ prestige classes.
   22:41 session — kill on attack 3 of 4, attack 4 went to the next goblin and
   killed it in the same round; 4 attacks total; every attack +6; with no enemy
   left: "no enemy in reach".
+- Ranged (hook on ResolvePostRangedDamage): 0.6.0 searched 40 m and picked the
+  caged Hook Horror across the arena. 0.6.1 (20 m), 23:17 session, shortbow,
+  3 goblins, 3 shots a round: round 1 shot 1 killed one goblin, shots 2–3 went
+  to the next and killed it; round 2 shot 2 killed the last one, "no enemy in
+  range", and the round stopped there. The Hook Horror was never targeted. A kill
+  on a round's last shot logs nothing (no attack left to move).
+- Open: the engine's per-shot ranged modifier varied in that session (3e +1,
+  −3, −1, −1, −1, so 5e +2, −2, +0, +0, +0, against a sheet +3); the goblins'
+  melee modifiers varied by 2 as well. Not the iterative penalty (patched;
+  it would be 0/−5/−10). The situational terms after BAB in
+  GetAttackModifierVersus aren't decompiled yet.
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 
