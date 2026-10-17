@@ -19,6 +19,12 @@ GetCritFn g_get_critical_hit_multiplier = nullptr;
 
 int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
   const int vanilla = g_get_critical_hit_roll(stats, edx, offhand);
+  if (g_config.debug_every_hit_crits) {
+    // Every d20 roll threatens; with the confirmation removed every hit crits.
+    static int logged = 0;
+    if (g_config.log_attacks && logged < 50) Log("debug every_hit_crits: threat %d-20 -> 1-20 (%d)", vanilla, ++logged);
+    return 1;
+  }
   if (!g_config.crit_nat20_only) return vanilla;
   if (g_config.log_attacks && vanilla != 20) Log("crit threat: 3e %d-20 -> 5e 20", vanilla);
   return 20;

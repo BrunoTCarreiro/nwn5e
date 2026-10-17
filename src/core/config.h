@@ -7,6 +7,9 @@ struct Config {
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon
   bool log_attacks = true;         // write each crit decision to nwn5e.log
+
+  // [debug] — test switches, not rules.
+  bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored
 };
 
 extern Config g_config;
