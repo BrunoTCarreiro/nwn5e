@@ -135,9 +135,40 @@ constexpr uintptr_t kGetAttack = 0x0073C0A0;
 constexpr uintptr_t kAttackDataTarget = 0x04;
 constexpr uintptr_t kRoundTarget = 0x2134;          // uint32 object id the round attacks
 constexpr uintptr_t kCreatureTargetSwitched = 0x4C4;  // set to 1 by the cleave branch
+// Attack data +0x40 = 1: this attack killed its target. Set by
+// ResolvePostMeleeDamage and by CNWSCreature::ResolvePostRangedDamage
+// (0x746980, (CNWSObject* target), ret 4) when the attack's total damage
+// (0x73A850) reaches the target's current hit points and the target is not
+// immortal/plot (+0xAF4 / +0xD0).
+constexpr uintptr_t kAttackDataKilledTarget = 0x40;
+constexpr uintptr_t kResolvePostRangedDamage = 0x00746980;
+constexpr uint8_t kResolvePostRangedDamagePrologue[] = {0x6a, 0xff, 0x68, 0xfc, 0xed, 0x89, 0x00, 0x64};
+// MaxAttackRange's third argument: with a ranged weapon 1 -> 20.0, 0 -> 40.0;
+// melee -> reach + 1.5 either way. The engine's cleave passes 1.
+constexpr int kMaxAttackRangeMelee = 1;
+constexpr int kMaxAttackRangeRanged = 0;
 // int CNWSCombatRound::GetTotalAttacks() 0x73E970, plain ret: main-hand +0x2138
 // + off-hand +0x213C + extra +0x2148 + cleave +0x214C, at least 1.
 constexpr uintptr_t kGetTotalAttacks = 0x0073E970;
+
+// Character sheet. CNWSCreatureStats::UpdateCombatInformation() 0x693890
+// (plain ret) rebuilds the 0x54-byte combat information block at stats +0x428
+// that CNWSMessage::WriteGameObjUpdate_CharacterSheet (0x62BD30, flag 0x40)
+// sends to the client: byte 0 main-hand attacks (its own BAB / 5 formula,
+// 3 bits), byte 1 main-hand attack bonus (GetMeleeAttackBonus(0,0,0) or, for
+// ranged weapons, GetRangedAttackBonus(0,0)), byte 3 off-hand attack bonus
+// (GetMeleeAttackBonus(1,0,0)), +0x13/+0x14 and +0x1C/+0x1D crit range and
+// multiplier. Both attack-bonus functions add GetBaseAttackBonus(0) directly
+// (no iterative penalty). The sheet's separate "base attack bonus" (flag 0x20,
+// call at 0x62C005) is left 3e: the client may use it for feat prerequisites.
+constexpr uintptr_t kUpdateCombatInformation = 0x00693890;
+constexpr uint8_t kUpdateCombatInformationPrologue[] = {0x6a, 0xff, 0x68, 0x64, 0x7b, 0x89, 0x00, 0x64};
+constexpr uintptr_t kGetMeleeAttackBonus = 0x00694520;  // (int bOffHand, int, int), ret 0xC
+constexpr uint8_t kGetMeleeAttackBonusPrologue[] = {0x51, 0x8b, 0x44, 0x24, 0x08, 0x53, 0x55, 0x56};
+constexpr uintptr_t kGetRangedAttackBonus = 0x00694B00;  // (int, int), ret 8
+constexpr uint8_t kGetRangedAttackBonusPrologue[] = {0x51, 0x55, 0x56, 0x8b, 0xf1, 0x8b, 0x46, 0x24};
+constexpr uintptr_t kStatsCombatInformation = 0x428;     // uint8_t* block
+constexpr uintptr_t kCombatInformationAttacks = 0x00;    // uint8 main-hand attacks shown
 
 // Diagnostics ([debug] attack_trace).
 // void CNWSCombatRound::InitializeNumberOfAttacks(), no stack args (the

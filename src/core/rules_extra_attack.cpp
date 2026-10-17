@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "config.h"
+#include "creature.h"
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
@@ -37,27 +38,6 @@ AttacksPerRoundFn g_get_attacks_per_round = nullptr;
 constexpr int kEngineMaxAttacks = 6;
 
 LogOnce g_attacks_logged(2000);
-
-template <typename T>
-T Field(const void* object, uintptr_t offset) {
-  return *reinterpret_cast<const T*>(static_cast<const uint8_t*>(object) + offset);
-}
-
-uint32_t ObjectIdOf(void* stats) {
-  const void* creature = Field<void*>(stats, nwmain::kStatsCreature);
-  return creature ? Field<uint32_t>(creature, nwmain::kCreatureObjectId) : 0;
-}
-
-std::vector<rules::NwnClassSlot> ReadClassSlots(void* stats) {
-  std::vector<rules::NwnClassSlot> slots;
-  const int count = std::min<int>(Field<uint8_t>(stats, nwmain::kStatsClassCount), 3);
-  for (int i = 0; i < count; ++i) {
-    const uintptr_t slot = i * nwmain::kStatsClassSlotStride;
-    slots.push_back({Field<uint8_t>(stats, slot + nwmain::kStatsClassSlotId),
-                     Field<uint8_t>(stats, slot + nwmain::kStatsClassSlotLevels)});
-  }
-  return slots;
-}
 
 int __fastcall GetAttacksPerRound(void* stats, void* edx) {
   const int engine_attacks = g_get_attacks_per_round(stats, edx);
