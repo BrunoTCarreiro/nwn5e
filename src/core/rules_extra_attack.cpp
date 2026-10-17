@@ -1,10 +1,11 @@
 // 2024 Extra Attack in place of NWN's iterative attacks:
 //
-// - Player characters make the attacks of the 2024 Attack action, from their
-//   class levels (rules::MainHandAttacksPerRound); prestige levels count as
-//   levels of their parent class (docs/PLAN.md, decision 10), racial levels
-//   do not count.
-// - Other creatures keep the engine's count, standing in for a Multiattack.
+// - Player characters and henchmen (decision 11) make the attacks of the 2024
+//   Attack action, from their class levels (rules::MainHandAttacksPerRound);
+//   prestige levels count as levels of their parent class (decision 10),
+//   racial levels do not count.
+// - Other creatures (monsters, summons, familiars, animal companions) keep
+//   the engine's count, standing in for a Multiattack.
 // - No main-hand attack takes the 3e iterative penalty (-5, or -3 with monk
 //   attack tables). Off-hand attacks keep theirs until two-weapon fighting is
 //   converted (Phase 1d).
@@ -60,11 +61,14 @@ std::vector<rules::NwnClassSlot> ReadClassSlots(void* stats) {
 int __fastcall GetAttacksPerRound(void* stats, void* edx) {
   const int engine_attacks = g_get_attacks_per_round(stats, edx);
   const bool is_player = Field<uint32_t>(stats, nwmain::kStatsIsPlayer) != 0;
-  if (!is_player) return engine_attacks;
+  const void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  const int associate_type = creature ? Field<uint16_t>(creature, nwmain::kCreatureAssociateType) : 0;
+  // Player characters and henchmen follow Extra Attack (decision 11).
+  if (!rules::UsesCharacterRules(is_player, associate_type)) return engine_attacks;
 
   int attacks = engine_attacks;
   const char* reason = nullptr;
-  if (g_config.debug_attacks_per_round > 0) {
+  if (is_player && g_config.debug_attacks_per_round > 0) {
     attacks = std::min(g_config.debug_attacks_per_round, kEngineMaxAttacks);
     reason = "debug attacks_per_round";
   } else if (g_config.extra_attack) {
@@ -73,8 +77,8 @@ int __fastcall GetAttacksPerRound(void* stats, void* edx) {
   }
   if (reason && g_config.log_attacks &&
       g_attacks_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_attacks, attacks))) {
-    Log("attacks per round: object 0x%08X PC: 3e %d -> 5e %d (%s)", ObjectIdOf(stats), engine_attacks, attacks,
-        reason);
+    Log("attacks per round: object 0x%08X %s: 3e %d -> 5e %d (%s)", ObjectIdOf(stats),
+        is_player ? "PC" : "henchman", engine_attacks, attacks, reason);
   }
   return attacks;
 }

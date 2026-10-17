@@ -1,14 +1,13 @@
 // 2024 attack numbers on top of the engine's 3e ones:
 //
 // - Attack rolls: the engine's attack modifier minus the 3e base attack bonus
-//   plus the proficiency bonus (by level for player characters, by challenge
-//   rating for every other creature). The ability modifier, weapon
-//   enhancement, effects and feats the engine adds are kept. The 3e iterative
-//   penalty (-5 per extra attack) is still applied until Extra Attack replaces
-//   the iterative attacks.
-// - Armor Class: creatures that are not player characters use the expected AC
-//   for their challenge rating. Henchmen and summons are not player
-//   characters to the engine, so they are converted too (for now).
+//   plus the proficiency bonus (by level for player characters and henchmen,
+//   by challenge rating for every other creature). The ability modifier,
+//   weapon enhancement, effects and feats the engine adds are kept. The 3e
+//   iterative penalty is removed by rules_extra_attack.cpp.
+// - Armor Class: player characters and henchmen keep the engine's (gear) AC;
+//   every other creature — monsters, summons, familiars, animal companions —
+//   uses the expected AC for its challenge rating (decision 11).
 //
 // If the challenge rating read from memory is not plausible, the engine's
 // numbers are returned unchanged and the read is logged.
@@ -52,17 +51,27 @@ uint32_t ObjectIdOf(void* stats) {
 
 struct CreatureFacts {
   bool is_player;
+  int associate_type;
+  bool character;  // player character or henchman: character rules (decision 11)
   int level;
   float challenge_rating;
   bool plausible;
 };
 
+const char* KindOf(const CreatureFacts& facts) {
+  if (facts.is_player) return "PC";
+  return facts.character ? "henchman" : "creature";
+}
+
 CreatureFacts ReadFacts(void* stats) {
   CreatureFacts facts;
   facts.is_player = Field<uint32_t>(stats, nwmain::kStatsIsPlayer) != 0;
+  const void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  facts.associate_type = creature ? Field<uint16_t>(creature, nwmain::kCreatureAssociateType) : 0;
+  facts.character = rules::UsesCharacterRules(facts.is_player, facts.associate_type);
   facts.level = g_get_level(stats, nullptr, 0) & 0xFF;
   facts.challenge_rating = Field<float>(stats, nwmain::kStatsChallengeRating);
-  facts.plausible = facts.is_player || rules::IsPlausibleChallengeRating(facts.challenge_rating);
+  facts.plausible = facts.character || rules::IsPlausibleChallengeRating(facts.challenge_rating);
   if (!facts.plausible && g_implausible_logged.First(LogOnce::Key(ObjectIdOf(stats), 0, 0))) {
     const uint32_t raw = Field<uint32_t>(stats, nwmain::kStatsChallengeRating);
     Log("implausible CR read for object 0x%08X (raw 0x%08X); engine numbers kept", ObjectIdOf(stats), raw);
@@ -76,12 +85,12 @@ int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
   const CreatureFacts facts = ReadFacts(stats);
   if (!facts.plausible) return engine_modifier;
   const int base_attack_bonus = g_get_base_attack_bonus(stats, nullptr, 0);
-  const int proficiency = rules::ProficiencyBonusForCreature(facts.is_player, facts.level, facts.challenge_rating);
+  const int proficiency = rules::ProficiencyBonusForCreature(facts.character, facts.level, facts.challenge_rating);
   const int converted = rules::ConvertAttackModifier(engine_modifier, base_attack_bonus, proficiency);
   if (g_config.log_attacks && g_attack_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_modifier, converted))) {
     Log("attack: object 0x%08X %s level %d CR %.2f: 3e %+d (BAB %d) -> 5e %+d (PB %d)", ObjectIdOf(stats),
-        facts.is_player ? "PC" : "creature", facts.level, facts.challenge_rating, engine_modifier,
-        base_attack_bonus, converted, proficiency);
+        KindOf(facts), facts.level, facts.challenge_rating, engine_modifier, base_attack_bonus, converted,
+        proficiency);
   }
   return converted;
 }
@@ -90,7 +99,7 @@ int __fastcall GetArmorClassVersus(void* stats, void* edx, void* attacker, int t
   const int engine_armor_class = g_get_armor_class_versus(stats, edx, attacker, touch);
   if (!g_config.creature_ac_by_cr && g_config.debug_creature_ac <= 0) return engine_armor_class;
   const CreatureFacts facts = ReadFacts(stats);
-  if (facts.is_player) return engine_armor_class;
+  if (facts.character) return engine_armor_class;  // players and henchmen keep their gear AC
   // ResolveAttackRoll reads the result as a 16-bit value.
   const int engine_value = static_cast<int16_t>(engine_armor_class & 0xFFFF);
   if (g_config.debug_creature_ac > 0) {

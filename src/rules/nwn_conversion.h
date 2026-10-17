@@ -28,6 +28,14 @@ struct NwnClassSlot {
 // for a 5e Multiattack.
 int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks);
 
+// Decision 11: player characters and henchmen use the character rules (gear
+// AC, proficiency by level, Extra Attack from their classes). Animal
+// companions, familiars, summons and dominated creatures keep the creature
+// rules — they have stat blocks, not gear. NWN associate types: 1 henchman,
+// 2 animal companion, 3 familiar, 4 summoned, 5 dominated (0 = none).
+constexpr int kAssociateTypeHenchman = 1;
+bool UsesCharacterRules(bool is_player_character, int associate_type);
+
 // Player characters use their total level; every other creature (monsters,
 // NPCs, henchmen) uses its challenge rating.
 int ProficiencyBonusForCreature(bool is_player_character, int total_level, double challenge_rating);

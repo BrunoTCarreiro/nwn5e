@@ -5,6 +5,19 @@
 
 using namespace rules;
 
+// Decision 11. Breaks caught: henchmen treated as monsters (their gear AC
+// replaced by the CR table), or summons/companions/familiars treated as
+// characters (keeping 3e AC and gaining Extra Attack).
+TEST(PlayersAndHenchmenUseCharacterRules) {
+  CHECK_EQ(UsesCharacterRules(true, 0), true);   // player character
+  CHECK_EQ(UsesCharacterRules(false, 1), true);  // henchman
+  CHECK_EQ(UsesCharacterRules(false, 0), false); // monster / NPC
+  CHECK_EQ(UsesCharacterRules(false, 2), false); // animal companion
+  CHECK_EQ(UsesCharacterRules(false, 3), false); // familiar
+  CHECK_EQ(UsesCharacterRules(false, 4), false); // summoned
+  CHECK_EQ(UsesCharacterRules(false, 5), false); // dominated
+}
+
 // Breaks caught: player characters using their CR (NWN gives PCs a CR too), or
 // creatures using their level.
 TEST(PlayerCharactersUseLevelCreaturesUseChallengeRating) {

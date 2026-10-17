@@ -135,5 +135,10 @@ constexpr uintptr_t kStatsClassCount = 0xA1;   // uint8 (GetLevel, GetBaseAttack
 // CNWSCreature fields.
 constexpr uintptr_t kCreatureObjectId = 0x04;  // uint32 object id (passed as id in ResolveAttack)
 constexpr uintptr_t kCreatureStats = 0xC64;    // CNWSCreatureStats* (ResolveAttackRoll, GetLevel)
+// uint16 associate type (0 none, 1 henchman, 2 animal companion, 3 familiar,
+// 4 summoned, 5 dominated). GetAssociateId(type, nTh) 0x68D970 walks the
+// associate list at +0xB34 and compares each associate's +0xB38 with `type`;
+// ResolveAttack reads it too. Master object id at +0xB30.
+constexpr uintptr_t kCreatureAssociateType = 0xB38;
 
 }  // namespace nwmain

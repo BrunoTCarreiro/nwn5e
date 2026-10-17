@@ -8,6 +8,10 @@
 
 namespace rules {
 
+bool UsesCharacterRules(bool is_player_character, int associate_type) {
+  return is_player_character || associate_type == kAssociateTypeHenchman;
+}
+
 int ProficiencyBonusForCreature(bool is_player_character, int total_level, double challenge_rating) {
   return is_player_character ? ProficiencyBonusForLevel(total_level)
                              : ProficiencyBonusForChallengeRating(challenge_rating);
