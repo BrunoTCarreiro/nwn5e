@@ -260,9 +260,14 @@ probably the game-difficulty check in ResolveAttackRoll's crit path (0x600100),
 not confirmed.
 
 ## Open
+
+- Character sheet shows the 3e attack bonus (+5) while attack rolls use the
+  converted +6 (owner, 2026-10-17): the sheet's numbers come from another
+  path — likely 0x693890 (combat information) — not GetAttackModifierVersus.
 - Name 0x693890 (likely the combat information update) to confirm the
-  empty-hand reading of threat 21 / x0, and name the multiplier's other
-  damage callers (0x65E7D0, 0x697D10; 0x69AEB0 is GetDamageRoll).
+  empty-hand reading of threat 21 / x0. Multiplier callers now named:
+  0x65E7D0 GetTotalEffectBonus, 0x697D10 flat damage bonuses, 0x69AEB0
+  GetDamageRoll.
 - Verify the predicted and ambiguous map entries with REA decompilation
   before using any of them.
 - The threat roll is still rolled and shown in the combat log.
