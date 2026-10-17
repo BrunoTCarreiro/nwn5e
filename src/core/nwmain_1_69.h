@@ -29,6 +29,23 @@ constexpr uint8_t kGetCriticalHitMultiplierPrologue[] = {0x83, 0x7c, 0x24, 0x04,
 constexpr uintptr_t kCritConfirmBranch = 0x00744725;
 constexpr uint8_t kCritConfirmBranchBytes[] = {0x0f, 0x8c, 0x4a, 0x01, 0x00, 0x00};
 
+// The combat log's "Threat Roll": CNWSMessage::SendServerToPlayerCCMessage
+// 0x62F850, attack-roll messages (cases 5 and 6), writes the attack data's
+// critical-threat flag (+0x48) as a bool and, when it is 1, the threat roll
+// (+0x0F, 5 bits); the client prints "Threat Roll" when the bool is set.
+// Each case: `mov edx, [edi+48h]` (the bool) -> `xor edx, edx; nop`, and
+// `jnz` over the threat-roll write -> `jmp`. Both together, or the client
+// would read bits that were not written. The crit itself is the attack
+// result (+0x50 = 3), sent separately.
+constexpr uintptr_t kCcThreatFlag1 = 0x0062FB87;
+constexpr uintptr_t kCcThreatRollSkip1 = 0x0062FB96;
+constexpr uintptr_t kCcThreatFlag2 = 0x0062FCA8;
+constexpr uintptr_t kCcThreatRollSkip2 = 0x0062FCB7;
+constexpr uint8_t kCcThreatFlagBytes[] = {0x8b, 0x57, 0x48};  // mov edx, [edi+48h]
+constexpr uint8_t kCcThreatFlagZero[] = {0x33, 0xd2, 0x90};   // xor edx, edx; nop
+constexpr uint8_t kCcThreatRollSkipBytes[] = {0x75, 0x0f};    // jnz +0x0F
+constexpr uint8_t kCcThreatRollSkipAlways[] = {0xeb, 0x0f};   // jmp +0x0F
+
 // Right after the confirmation, in the same function:
 //   0x74472B  test edi, edi         ; target is not a creature ...
 //   0x74472D  jz   0x74487B         ; ... -> critical without immunity checks

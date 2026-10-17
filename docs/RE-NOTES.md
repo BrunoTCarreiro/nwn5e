@@ -343,4 +343,15 @@ not confirmed.
   GetDamageRoll.
 - Verify the predicted and ambiguous map entries with REA decompilation
   before using any of them.
-- The threat roll is still rolled and shown in the combat log.
+- The threat roll is still rolled; 0.6.5 stops sending it. The combat log's
+  attack line comes from SendServerToPlayerCCMessage 0x62F850 cases 5/6
+  (modifier +0x10 8 bits, to-hit roll +0x0E 5 bits, result +0x50, …,
+  critical-threat bool +0x48, then the threat roll +0x0F 5 bits only when
+  that bool is 1); the client formats "%s %s %d = %d" (0x903564). Found by
+  scanning for 5-bit writes (`push 5` before the bit writer 0x4FBD80).
+  Patches applied in game at load; the log itself awaits a crit.
+- A natural 20 against the player came out as a plain hit (21:31 session):
+  in ResolveAttackRoll's crit path, `0x600100(0) == 1` with a
+  player-controlled target and the attacker not player-controlled sets
+  result 1 (hit) — likely a difficulty rule (no crits against players below
+  some difficulty). 2024 has no such rule; not changed yet (owner).

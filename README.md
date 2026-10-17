@@ -17,7 +17,7 @@ in `nwn5e.ini`:
 |---|---|---|
 | Critical threat only on a natural 20 | `crit_nat20_only` | verified in game |
 | x2 critical multiplier for every weapon | `crit_double_damage` | verified in game |
-| No critical confirmation roll | `crit_no_confirmation` | verified in game (debug switch) |
+| No critical confirmation roll | `crit_no_confirmation` | verified in game (debug switch); combat log no longer shows a "Threat Roll" (0.6.5: patches applied in game, awaiting a crit) |
 | Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | verified in game (log) |
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
