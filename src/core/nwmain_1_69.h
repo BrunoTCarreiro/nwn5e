@@ -59,6 +59,33 @@ constexpr uintptr_t kGetBaseAttackBonus = 0x00693720;
 // uint8 CNWSCreatureStats::GetLevel(int bCountNegativeLevels), ret 4 (result in AL).
 constexpr uintptr_t kGetLevel = 0x00692520;
 
+// int CNWSCreatureStats::GetAttacksPerRound() (unnamed in the community map),
+// plain ret. Main-hand attacks from the pre-epic BAB: (BAB + 4) / 5, or
+// (BAB + 2) / 3 with monk attack tables, clamped to 1..6. Its only caller is
+// CNWSCombatRound::InitializeNumberOfAttacks (0x73C5A0), which stores the count
+// at combat round +0x2138 — after the script override (stats +0x412), and not
+// for crossbows (base items 6/7) unless the creature has Rapid Reload (feat 411).
+// Flurry/Rapid Shot/Haste extra attacks are counted separately (+0x2148).
+constexpr uintptr_t kGetAttacksPerRound = 0x00693810;
+constexpr uint8_t kGetAttacksPerRoundPrologue[] = {0x56, 0x8b, 0xf1, 0x6a, 0x00, 0xe8, 0xf6, 0x18};
+
+// The 3e iterative penalty inside GetAttackModifierVersus (edi = the attack's
+// index in the round, the argument it passes to GetAttack 0x73C0A0):
+//   0x6959F1  lea ecx, [edi+edi*2] / 0x6959F4  sub ebx, ecx   ; monk tables: -3 x index
+//   0x695A02  lea edx, [edi+edi*4] / 0x695A05  sub ebx, edx   ; otherwise:   -5 x index
+// NOPing the subs removes the penalty. The off-hand penalty (0x695A3A) stays.
+constexpr uintptr_t kIterativePenaltyMonk = 0x006959F4;
+constexpr uint8_t kIterativePenaltyMonkBytes[] = {0x2b, 0xd9};
+constexpr uintptr_t kIterativePenalty = 0x00695A05;
+constexpr uint8_t kIterativePenaltyBytes[] = {0x2b, 0xda};
+
+// CNWSCreatureStats class slots: count at +0xA1; slot i at i * 0x118 holds the
+// class id (classes.2da row) at +0x1B2 and its levels at +0x1B3
+// (GetBaseAttackBonus, GetLevel).
+constexpr uintptr_t kStatsClassSlotStride = 0x118;
+constexpr uintptr_t kStatsClassSlotId = 0x1B2;
+constexpr uintptr_t kStatsClassSlotLevels = 0x1B3;
+
 // CNWSCreatureStats fields (offsets verified in code unless noted).
 constexpr uintptr_t kStatsCreature = 0x24;     // CNWSCreature* (GetLevel)
 constexpr uintptr_t kStatsExperience = 0x70;   // uint32 XP (AddExperience, CanLevelUp)

@@ -27,6 +27,46 @@ TEST(AttackModifierSwapsBaseAttackBonusForProficiency) {
   CHECK_EQ(ConvertAttackModifier(2, 0, 2), 4);
 }
 
+// Breaks caught: the classes.2da row order shifted by one (Fighter 4 / Monk 5 /
+// Wizard 10 mislabelled), or racial/prestige classes mapped to a base class.
+TEST(NwnClassIdsMapToBaseClassesOnly) {
+  CHECK_EQ(ClassFromNwnId(0).value_or(CharacterClass::kWarlock), CharacterClass::kBarbarian);
+  CHECK_EQ(ClassFromNwnId(4).value_or(CharacterClass::kWarlock), CharacterClass::kFighter);
+  CHECK_EQ(ClassFromNwnId(5).value_or(CharacterClass::kWarlock), CharacterClass::kMonk);
+  CHECK_EQ(ClassFromNwnId(7).value_or(CharacterClass::kWarlock), CharacterClass::kRanger);
+  CHECK_EQ(ClassFromNwnId(8).value_or(CharacterClass::kWarlock), CharacterClass::kRogue);
+  CHECK_EQ(ClassFromNwnId(10).value_or(CharacterClass::kWarlock), CharacterClass::kWizard);
+  CHECK_EQ(ClassFromNwnId(11).has_value(), false);   // Aberration
+  CHECK_EQ(ClassFromNwnId(24).has_value(), false);   // Outsider
+  CHECK_EQ(ClassFromNwnId(33).has_value(), false);   // Weapon Master
+  CHECK_EQ(ClassFromNwnId(255).has_value(), false);  // empty slot
+  CHECK_EQ(ClassFromNwnId(-1).has_value(), false);
+}
+
+// Breaks caught: player characters keeping NWN's iterative count (a level 6
+// fighter: 2 attacks in 3e and 5e, a level 6 rogue: 2 in 3e but 1 in 5e).
+TEST(PlayerCharactersAttackPerExtraAttack) {
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 6}}, 2), 2);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{8, 6}}, 2), 1);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 5}}, 1), 2);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 20}}, 4), 4);
+}
+
+// Breaks caught: prestige or racial levels counting toward Extra Attack, or a
+// multiclass adding levels across classes.
+TEST(OnlyBaseClassLevelsGrantExtraAttack) {
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 4}, {33, 6}}, 2), 1);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 4}, {0, 4}}, 2), 1);
+  CHECK_EQ(MainHandAttacksPerRound(true, {{4, 5}, {6, 5}}, 2), 2);
+}
+
+// Breaks caught: monsters losing their multiple attacks (NWN racial classes have
+// no Extra Attack), or creatures switched to the player rule.
+TEST(CreaturesKeepTheEngineAttackCount) {
+  CHECK_EQ(MainHandAttacksPerRound(false, {{24, 12}}, 3), 3);
+  CHECK_EQ(MainHandAttacksPerRound(false, {{8, 6}}, 2), 2);
+}
+
 // Breaks caught: 3e threat ranges (19-20, 18-20, Keen/Improved Critical 15-20)
 // surviving, or "no weapon in this hand" (21) turned into a usable threat.
 TEST(CriticalThreatOnlyOnTwentyExceptEmptyHand) {

@@ -3,7 +3,28 @@
 // Converts NWN's 3e engine values to 2024 values. The hooks read the engine's
 // numbers, call these, and hand the result back to the engine.
 
+#include <optional>
+#include <vector>
+
+#include "rules/combat.h"
+
 namespace rules {
+
+// NWN class id (classes.2da row) -> 2024 class. The base classes are rows 0-10
+// (Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue,
+// Sorcerer, Wizard); monster/racial classes (11-26, 38) and prestige classes
+// (27-37, 41) have no 2024 class yet.
+std::optional<CharacterClass> ClassFromNwnId(int nwn_class_id);
+
+struct NwnClassSlot {
+  int nwn_class_id;
+  int levels;
+};
+
+// Main-hand attacks per round. Player characters make the attacks of the
+// 2024 Attack action (Extra Attack from their base classes); other creatures
+// keep the engine's count, standing in for a 5e Multiattack.
+int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks);
 
 // Player characters use their total level; every other creature (monsters,
 // NPCs, henchmen) uses its challenge rating.

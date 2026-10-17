@@ -128,6 +128,11 @@ monster AC by CR.
 5. Prestige classes with no 2024 subclass equivalent: drop or adapt?
 6. Rituals and material components: model or ignore?
 7. Action economy design (Phase 6).
+10. Prestige classes and Extra Attack: prestige levels (Weapon Master,
+    Champion of Torm, Blackguard…) do not count toward Extra Attack yet, so a
+    Fighter 4 / Weapon Master 6 makes 1 attack. Recommendation: treat martial
+    prestige levels as levels of the character's martial base class for
+    Extra Attack (they become subclasses in Phase 3).
 
 ## Decided (owner, 2026-10-17)
 

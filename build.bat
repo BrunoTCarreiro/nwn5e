@@ -8,12 +8,13 @@ cd /d "%~dp0"
 if not exist build mkdir build
 if not exist build\obj mkdir build\obj
 
-set CFLAGS=/nologo /O2 /MT /W3 /EHsc /std:c++17 /DWIN32_LEAN_AND_MEAN /DUNICODE /D_UNICODE /Fobuild\obj\
+set CFLAGS=/nologo /O2 /MT /W3 /EHsc /std:c++17 /DWIN32_LEAN_AND_MEAN /DNOMINMAX /DUNICODE /D_UNICODE /Fobuild\obj\
 
 cl %CFLAGS% /LD /Ithird_party\minhook\include /Isrc ^
   src\core\dllmain.cpp src\core\log.cpp src\core\config.cpp src\core\hooks.cpp ^
   src\core\rules_crit.cpp src\core\rules_crit_confirm.cpp src\core\rules_attack.cpp ^
-  src\rules\core.cpp src\rules\monster.cpp src\rules\nwn_conversion.cpp ^
+  src\core\rules_extra_attack.cpp ^
+  src\rules\core.cpp src\rules\combat.cpp src\rules\monster.cpp src\rules\nwn_conversion.cpp ^
   third_party\minhook\src\buffer.c third_party\minhook\src\hook.c ^
   third_party\minhook\src\trampoline.c third_party\minhook\src\hde\hde32.c ^
   /Fe:build\nwn5e.dll /link /DLL user32.lib || exit /b 1

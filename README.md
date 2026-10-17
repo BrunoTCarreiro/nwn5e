@@ -15,15 +15,19 @@ in `nwn5e.ini`:
 
 | Rule | Setting | State |
 |---|---|---|
-| Critical threat only on a natural 20 | `crit_nat20_only` | built, awaiting in-game test |
-| x2 critical multiplier for every weapon | `crit_double_damage` | built, awaiting in-game test |
-| No critical confirmation roll | `crit_no_confirmation` | built, awaiting in-game test |
-| Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | built, awaiting in-game test |
-| Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | built, awaiting in-game test |
+| Critical threat only on a natural 20 | `crit_nat20_only` | verified in game |
+| x2 critical multiplier for every weapon | `crit_double_damage` | verified in game |
+| No critical confirmation roll | `crit_no_confirmation` | verified in game (debug switch) |
+| Attack rolls use the proficiency bonus instead of the 3e BAB | `attack_proficiency` | verified in game (log) |
+| Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
+| PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | built, awaiting in-game test |
 
-Known gaps of the attack/AC step: the 3e −5 per extra attack still applies
-(until Extra Attack replaces iterative attacks); henchmen and summons count as
-creatures; player AC is unchanged.
+Known gaps: off-hand attacks keep NWN's rules (two-weapon fighting is Phase
+1d); prestige levels do not count toward Extra Attack (decision 10);
+henchmen and summons count as creatures; player AC is unchanged.
+
+Test switch `[debug] attacks_per_round=N` (1–6) makes player characters take
+N main-hand attacks per round, to see Extra Attack before level 5.
 
 Pipeline verified in game (2026-10-17): with the test switch
 `[debug] every_hit_crits=1` every hit was a critical, and `nwn5e.log` showed

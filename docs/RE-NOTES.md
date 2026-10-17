@@ -171,6 +171,37 @@ AL: sums slot +0x1B3 levels (minus +0x1B4 negative levels when asked).
 `CNWSCreature` +0xC64 is its stats (ResolveAttackRoll, GetLevel); +0x04 is used
 as the object id (logging only).
 
+## Attacks per round (decompiled 2026-10-17)
+
+`CNWSCombatRound::InitializeNumberOfAttacks()` 0x73C5A0 (this = combat round,
+owner creature at +0x215C):
+
+- Right-hand item (`GetItemInSlot(0x10)`, 0x722510) a crossbow (base item 6/7):
+  1 attack, or `GetAttacksPerRound()` if that is above 1 and the creature has
+  Rapid Reload (feat 0x19B = 411).
+- Otherwise: creature +0x9D0 non-zero → 1 attack; else the stats override at
+  +0x412 if non-zero, else `GetAttacksPerRound()`.
+- The count goes to combat round **+0x2138** (main-hand attacks).
+- 0x73BF80 then runs (likely the off-hand count, +0x213C — unverified).
+- Combat mode (creature +0x4AB) 10 (Dirty Fighting): 1 attack, 0 off-hand.
+  Modes 5/6 (Flurry of Blows / Rapid Shot) with a valid weapon: +0x2148 = 1
+  extra attack, else the mode is cancelled (0x67B0D0). Hasted
+  (creature +0x9CC == 1): +0x2148 += 1. Resets +0x2140 / +0x2144.
+
+`GetAttacksPerRound()` 0x693810 (unnamed in the community map), plain `ret`,
+only caller 0x73C5A0: monk attack tables (0x695110) → (pre-epic BAB + 2) / 3,
+else (pre-epic BAB + 4) / 5, clamped to 1..6. Hooked for player characters.
+
+Iterative penalty in `GetAttackModifierVersus`: `edi` is loaded once
+(0x695917, a stack local) and passed to `GetAttack` (0x73C0A0) — the attack's
+index in the round. `sub ebx, ecx` at 0x6959F4 (2B D9, −3 × index, monk
+tables) and `sub ebx, edx` at 0x695A05 (2B DA, −5 × index) are NOPed.
+
+Class ids (game's `2dasource.zip` classes.2da): 0 Barbarian, 1 Bard,
+2 Cleric, 3 Druid, 4 Fighter, 5 Monk, 6 Paladin, 7 Ranger, 8 Rogue,
+9 Sorcerer, 10 Wizard; 11–26 and 38 monster/racial classes; 27–37 and 41
+prestige classes.
+
 ## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
 
 Prelude fight, `nwn5e.log`: the PC (object 0x7FFFFFFF — NWN numbers player
