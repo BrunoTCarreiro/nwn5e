@@ -95,6 +95,25 @@ constexpr uintptr_t kFlatBonusLoopCall2 = 0x0069BEBC;
 constexpr uint8_t kFlatBonusLoopCall2Bytes[] = {0xe8, 0x3f, 0x05, 0x00, 0x00};
 constexpr uintptr_t kCallLength = 5;
 
+// Cleave, in CNWSCreature::ResolvePostMeleeDamage 0x746070 (ret 4): when an
+// attack killed its target (attack data +0x40 == 1, not special attacks
+// 0x363/0x364) and the round has < 50 attacks (GetTotalAttacks), it asks
+//   0x746731  mov ecx, [edi+0C64h]   ; attacker's stats
+//   0x746737  push 187h              ; feat 391 Great Cleave
+//   0x74673C  call HasFeat           ; E8 EF CE F5 FF
+// and on yes takes MaxAttackRange (0x64B5D0) + GetNearestEnemy (0x658C00) and
+// AddCleaveAttack (0x73D4B0, target, bGreatCleave=1) — an attack against the
+// nearest enemy in reach. Plain Cleave (feat 6) does the same once per round
+// (combat round +0x212C). Redirecting this one call moves a round's next
+// attack to the nearest enemy when the attacker has attacks left (decision 14).
+constexpr uintptr_t kGreatCleaveCheckCall = 0x0074673C;
+constexpr uint8_t kGreatCleaveCheckCallBytes[] = {0xe8, 0xef, 0xce, 0xf5, 0xff};
+// int CNWSCreatureStats::HasFeat(uint16 feat), ret 4 (community: CNWSCreature__HasFeat).
+constexpr uintptr_t kHasFeat = 0x006A3630;
+// int CNWSCombatRound::GetTotalAttacks() 0x73E970, plain ret: main-hand +0x2138
+// + off-hand +0x213C + extra +0x2148 + cleave +0x214C, at least 1.
+constexpr uintptr_t kGetTotalAttacks = 0x0073E970;
+
 // Diagnostics ([debug] attack_trace).
 // void CNWSCombatRound::InitializeNumberOfAttacks(), no stack args (the
 // community plugin hooks it as (CNWSCombatRound*, void*) on 1.69).

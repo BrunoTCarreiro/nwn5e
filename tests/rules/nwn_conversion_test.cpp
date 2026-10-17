@@ -133,6 +133,19 @@ TEST(CriticalsRollDiceTwiceAndAddFlatBonusesOnce) {
   CHECK_EQ(CriticalMultiplierFor(CritDamagePart::kFlatBonus, 0), 0);
 }
 
+// Decision 14. Breaks caught: off-by-one (the killing attack counted as still
+// to come, so a single-attack creature would "cleave"), or a negative count
+// when the index runs past the total (extra attacks added mid-round).
+TEST(RemainingAttacksAfterTheCurrentOne) {
+  CHECK_EQ(RemainingAttacksInRound(1, 0), 0);
+  CHECK_EQ(RemainingAttacksInRound(2, 0), 1);
+  CHECK_EQ(RemainingAttacksInRound(2, 1), 0);
+  CHECK_EQ(RemainingAttacksInRound(3, 0), 2);
+  CHECK_EQ(RemainingAttacksInRound(3, 2), 0);
+  CHECK_EQ(RemainingAttacksInRound(2, 5), 0);
+  CHECK_EQ(RemainingAttacksInRound(0, 0), 0);
+}
+
 // Breaks caught: garbage from a wrong memory offset (NaN, huge, negative)
 // accepted as a challenge rating; real CRs (0, fractions, 30+) rejected.
 TEST(PlausibleChallengeRatingsOnly) {

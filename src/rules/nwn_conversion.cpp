@@ -86,6 +86,10 @@ int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier) {
   return part == CritDamagePart::kDice ? 2 : 1;
 }
 
+int RemainingAttacksInRound(int total_attacks, int current_attack_index) {
+  return std::max(0, total_attacks - 1 - current_attack_index);
+}
+
 bool IsPlausibleChallengeRating(float challenge_rating) {
   // Written so NaN fails both comparisons.
   return challenge_rating >= 0.0f && challenge_rating <= 60.0f;

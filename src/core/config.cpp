@@ -24,6 +24,9 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.attack_proficiency = ReadBool(ini, L"attack_proficiency", g_config.attack_proficiency);
   g_config.creature_ac_by_cr = ReadBool(ini, L"creature_ac_by_cr", g_config.creature_ac_by_cr);
   g_config.extra_attack = ReadBool(ini, L"extra_attack", g_config.extra_attack);
+  g_config.retarget_remaining_attacks =
+      ReadBool(ini, L"retarget_remaining_attacks", g_config.retarget_remaining_attacks);
+  Log("config: retarget_remaining_attacks=%d", g_config.retarget_remaining_attacks);
   g_config.log_attacks = ReadBool(ini, L"log_attacks", g_config.log_attacks);
   g_config.debug_every_hit_crits = ReadBool(ini, L"every_hit_crits", g_config.debug_every_hit_crits, L"debug");
   g_config.debug_attacks_per_round = GetPrivateProfileIntW(L"debug", L"attacks_per_round", 0, ini);

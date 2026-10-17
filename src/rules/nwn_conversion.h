@@ -62,6 +62,12 @@ int ConvertCriticalMultiplier(int engine_multiplier);
 enum class CritDamagePart { kDice, kFlatBonus };
 int CriticalMultiplierFor(CritDamagePart part, int engine_multiplier);
 
+// Decision 14: attacks of the round still to come after the one with index
+// `current_attack_index` (0-based) out of `total_attacks`. When an attack
+// kills its target and this is above 0, the next attack moves to the nearest
+// enemy in reach instead of being lost.
+int RemainingAttacksInRound(int total_attacks, int current_attack_index);
+
 // Guards the challenge rating read from engine memory: a finite value in
 // [0, 60]. Anything else means a wrong read, and the hooks leave the engine's
 // numbers alone.

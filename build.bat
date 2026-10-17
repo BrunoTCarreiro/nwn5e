@@ -13,7 +13,7 @@ set CFLAGS=/nologo /O2 /MT /W3 /EHsc /std:c++17 /DWIN32_LEAN_AND_MEAN /DNOMINMAX
 cl %CFLAGS% /LD /Ithird_party\minhook\include /Isrc ^
   src\core\dllmain.cpp src\core\log.cpp src\core\config.cpp src\core\hooks.cpp ^
   src\core\rules_crit.cpp src\core\rules_crit_confirm.cpp src\core\rules_attack.cpp ^
-  src\core\rules_extra_attack.cpp src\core\rules_attack_trace.cpp ^
+  src\core\rules_extra_attack.cpp src\core\rules_attack_trace.cpp src\core\rules_retarget.cpp ^
   src\rules\core.cpp src\rules\combat.cpp src\rules\monster.cpp src\rules\nwn_conversion.cpp ^
   third_party\minhook\src\buffer.c third_party\minhook\src\hook.c ^
   third_party\minhook\src\trampoline.c third_party\minhook\src\hde\hde32.c ^
