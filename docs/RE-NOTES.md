@@ -111,8 +111,22 @@ Callers (REA `procedure_callers`):
   (unverified: likely the combat information shown on the character sheet).
 - `GetCriticalHitMultiplier` 0x69C400 ← 0x65E7D0, 0x693890, 0x697D10, 0x69AEB0.
 
+## In-game observations (2026-10-17, debug every_hit_crits run)
+
+- Every hit was a critical: hooks at 0x69C290 / 0x69C400 and patches at
+  0x744725 / 0x74472B all applied on the first try.
+- 50 `GetCriticalHitRoll` calls landed within 0.2 s right after loading —
+  more than the attacks in that window, so most come from the other caller
+  (0x693890), consistent with it computing displayed combat information.
+- Vanilla `GetCriticalHitRoll` returned **21** once (no roll can threaten),
+  and vanilla `GetCriticalHitMultiplier` returned **x0** for some attackers.
+  Both look like "this attack cannot crit" (e.g. creature/natural weapons);
+  the hooks currently force 20 / x2. 2024 rules let any attack roll crit, but
+  confirm what 21 / x0 encode before relying on it.
+
 ## Open
 
+- What vanilla threat 21 and multiplier x0 mean (see above).
 - Name 0x693890 and the multiplier's damage callers.
 - Verify the 2 predicted and 3 ambiguous map entries with REA decompilation.
 - The threat roll is still rolled and shown in the combat log.

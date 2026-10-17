@@ -18,9 +18,10 @@ Phase 0 (foundation). Rules implemented so far, each switchable in `nwn5e.ini`:
 | x2 critical multiplier for every weapon | `crit_double_damage` | built, awaiting in-game test |
 | No critical confirmation roll | `crit_no_confirmation` | built, awaiting in-game test |
 
-Test switch: `[debug] every_hit_crits=1` makes every hit a critical (crit
-immunity ignored) — an unmistakable sign that the hooks are live. It is on in
-the shipped `nwn5e.ini`; set it to 0 after the check.
+Pipeline verified in game (2026-10-17): with the test switch
+`[debug] every_hit_crits=1` every hit was a critical, and `nwn5e.log` showed
+both hooks and both patches active on the mapped build. The switch is off by
+default.
 
 `build\inject_test.exe` checks the injection path without starting the game
 (starts SysWOW64\whoami.exe with the DLL; expects it to load and refuse the host).
