@@ -41,6 +41,20 @@ play the game).
 - Proof of concept: crits only on a natural 20, no confirmation roll.
 
 ### Phase 1 — Combat core
+
+Split into sub-plans that each ship on their own: **1a** attack math
+(proficiency bonus, Extra Attack, 2024 crit damage, creature numbers), **1b**
+advantage/disadvantage and conditions, **1c** saving throws, **1d** weapon
+mastery, two-weapon fighting, opportunity attacks. The rule math lives in
+`src/rules/` (no engine code, unit-tested by `test.bat`); the hooks only read
+engine state, call it, and write the result back.
+
+Built so far (`src/rules/`, 31 tests): ability modifier, proficiency bonus by
+level and by CR, save DC / spell attack, advantage/disadvantage d20 rolls,
+Exhaustion penalty, attack ability and bonus, hit/miss/critical resolution,
+damage with crit dice rolled twice, attacks per Attack action, expected
+monster AC by CR.
+
 - Attack roll: d20 + ability mod + proficiency bonus (+ magic) vs AC; no BAB.
 - Advantage / disadvantage as a first-class roll modifier (sources: conditions,
   flanking replaced, hidden/unseen, prone, ranged in melee, etc.).
@@ -114,3 +128,10 @@ play the game).
 5. Prestige classes with no 2024 subclass equivalent: drop or adapt?
 6. Rituals and material components: model or ignore?
 7. Action economy design (Phase 6).
+8. Expanded critical range (Champion's Improved Critical, 19–20): does a
+   natural 19 that misses the AC still hit as a critical? Implemented for now:
+   **no** — the expanded range only upgrades a hit; only a natural 20 always
+   hits (`rules::ResolveAttackRoll`).
+9. Creature AC conversion target: `rules::ExpectedMonsterArmorClass` uses the
+   2014 DMG "Monster Statistics by Challenge Rating" AC column (not SRD 5.2).
+   Keep as a personal-use guideline, or derive AC another way?

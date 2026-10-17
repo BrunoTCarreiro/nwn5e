@@ -26,6 +26,16 @@ default.
 `build\inject_test.exe` checks the injection path without starting the game
 (starts SysWOW64\whoami.exe with the DLL; expects it to load and refuse the host).
 
+## Tests
+
+```bat
+test.bat
+```
+
+Builds and runs `build\rules_test.exe`: unit tests for the 2024 rule math in
+`src/rules/` (no game needed). `build\inject_test.exe` (built by `build.bat`)
+checks the injection path.
+
 ## Build
 
 Requires Visual Studio 2019 Build Tools with the C++ x86 tools.
