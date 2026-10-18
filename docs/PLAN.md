@@ -213,6 +213,78 @@ line in nwn5e.ini picks the default for all of them — `mode=faithful`
 rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
 retargeting, Phase 1b) are the same in both modes unless noted.
 
+## Conditions — proposal for the owner (2026-10-19, not decided)
+
+The last open Phase 1 item. Phase 1b (B1) already turned NWN's attack terms
+for a blind, stunned or prone target, an invisible attacker and an unseen
+target into advantage/disadvantage. Everything else about conditions is still
+NWN's. "NWN today" is from NWN's own rules; where marked *(confirm)* the
+engine code is not decoded yet and is checked before building. Each item has
+a faithful and an NWN-mode version; recommendation first.
+
+**CN1. Restrained** (Entangle, Web, Evard's Black Tentacles). NWN today: held
+in place, plus 3e's −2 to its attacks and −4 Dex *(confirm)*. 2024: speed 0;
+attacks against it have advantage, its attacks disadvantage, disadvantage on
+Dex saves. Recommendation: faithful = the 2024 effects, NWN's flat penalties
+removed; NWN mode = NWN's. Consequences: faithful makes webs and tentacles
+much more dangerous — everyone hits restrained creatures easily (both ways:
+an entangled PC is easy prey) — NWN mode unchanged.
+
+**CN2. Paralyzed, asleep, held (helpless).** NWN today: can't act; attackers
+get a bonus *(confirm: +2 "stunned" term or more)*. 2024 (Paralyzed /
+Unconscious): incapacitated; auto-fail Str and Dex saves; attacks against it
+have advantage; a hit from within 5 ft is a critical hit. Recommendation:
+faithful = advantage (already, if the engine marks it as stunned), plus
+auto-fail Str/Dex saves and melee hits become crits; NWN mode = advantage
+only. Consequences: faithful makes Hold Person / Sleep on a fighter close to
+a death sentence (every melee hit doubles its dice) and the same for the
+party's paralyzed foes — the 2024 power level of hold spells.
+
+**CN3. Stunned.** NWN today: can't act, +2 for attackers (now advantage).
+2024 adds: auto-fail Str and Dex saves. Recommendation: both modes add the
+auto-fail (it is part of being stunned in either). Consequences: stunned
+targets can't dodge fireballs; small change.
+
+**CN4. Poisoned.** NWN today: poison is ability damage (poison.2da), with no
+ongoing penalty. 2024: Poisoned = disadvantage on attack rolls and ability
+checks (poisons also deal damage). Recommendation: faithful = while a poison
+effect is on a creature, disadvantage on its attack rolls (ability checks
+when Phase 2 adds them); NWN's ability damage stays until Phase 8 converts
+the poisons; NWN mode = NWN's. Consequences: poison bites (spiders, wyverns)
+matter during the fight, not only after; poisoned PCs miss more.
+
+**CN5. Frightened.** NWN today: the creature flees and can't act — a
+frightened PC loses control for the duration. 2024: disadvantage on attack
+rolls and ability checks while the source is in sight, and it can't move
+closer to the source; it still acts. Recommendation: faithful = no fleeing;
+disadvantage on attacks while it can see the source (moving closer is not
+enforced — NWN's AI and pathing can't easily express it); NWN mode = NWN's
+fleeing. Consequences: faithful keeps you in control under fear but fear
+spells (Scare, Fear, dragon fright) become weaker against monsters, which keep
+attacking at disadvantage instead of running.
+
+**CN6. Concealment and miss chances** (Invisibility, Blur, Displacement,
+Darkness, blindness). NWN today: a percentage miss chance (20–50%) after the
+attack hits. 2024 has no miss chance: an invisible or unseen target already
+gives disadvantage (B1); Blur and Displacement give disadvantage on attacks
+against you. Recommendation: faithful = no miss chance; concealment from
+effects becomes disadvantage on attacks against that creature (one source,
+not stacking with the unseen one); NWN mode = NWN's miss chance. Consequences:
+faithful removes the "hit… but missed (50%)" double roll; invisibility gets a
+little weaker (disadvantage ≈ −4 instead of halving the hits), Blur
+Displacement about the same.
+
+**CN7. Exhaustion.** NWN today: none. 2024: levels 1–6, −2 per level to every
+d20 test, −5 ft speed per level, death at 6; a long rest removes one.
+Recommendation: build it with the Phase 5 rest rework (2024 sources are
+mostly forced marches, no rest, a few spells); nothing in the campaign applies
+it yet. Both modes the same.
+
+**CN8. Keep as NWN** (no change, both modes): Charmed and Dominated (NWN's
+"becomes friendly / controlled" is close to 2024), Petrified, Dazed (= 2024
+Incapacitated), Confused, Deafened (its 20% spell failure is revisited with
+spellcasting in Phase 4), Grappled (no grapple in NWN; Phase 6).
+
 ## Phase 1c/1d and racial bonuses — decided by the owner, 2026-10-18
 
 Walked through one by one (issue, what NWN does, what 2024 does, what to
