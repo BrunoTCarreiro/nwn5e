@@ -375,6 +375,11 @@ action state 5/6.
   faithful patches (D2) are listed in nwmain_1_69.h
   (`kFaithfulOpportunityPatches`); all seven apply (0.8.3, potions as a
   call-site patch in 0.8.4).
+- Difficulty table options (0x600100(n) → byte [rules + 0xF8 + difficulty·7
+  + n]): 0 = no critical hits on PCs (B7), 1 = no AoO on players using
+  ranged weapons, 2 = no AoO on players using potions. dialog.tlk 67577–67581
+  (the difficulty descriptions) list all three for Very Easy, Easy and
+  Normal and none for D&D Hardcore and Very Difficult.
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 

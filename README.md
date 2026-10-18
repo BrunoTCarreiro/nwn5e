@@ -49,6 +49,13 @@ rolled); `attack_trace=1` logs round setup and every PC attack roll. With
 writes its chat window (combat log included, timestamped) to
 `logs\nwclientLog1.txt`.
 
+Test enemies: the game console (the key left of 1) takes `DebugMode 1`,
+then `dm_god` (cannot die) and `dm_spawncreature <resref>` (standard
+blueprints, e.g. `nw_goblinb` goblin archer CR 1/4, `nw_bandit002` bandit
+archer, `nw_kobold005` kobold shaman, `nw_gobwiza` goblin shaman);
+`DebugMode 0` turns it off. At D&D Hardcore difficulty NWN also makes the
+party provoke with ranged attacks and potions (not at Normal).
+
 Pipeline verified in game (2026-10-17): with the test switch
 `[debug] every_hit_crits=1` every hit was a critical, and `nwn5e.log` showed
 both hooks and both patches active on the mapped build. The switch is off by
