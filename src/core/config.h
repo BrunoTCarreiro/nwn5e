@@ -42,6 +42,7 @@ struct Config {
   bool debug_attack_trace = false;     // log round setup and every PC attack roll
   int debug_creature_ac = 0;           // >0: every non-player creature has this AC (forces misses)
   bool debug_combat_breakdown = false;  // the engine's own per-term attack breakdown in the combat log
+  int debug_creature_hp_multiplier = 0;  // >1: a creature's hit points x this when a character first attacks it
 };
 
 extern Config g_config;

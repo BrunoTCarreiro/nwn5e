@@ -578,6 +578,9 @@ constexpr uintptr_t kGetNwsMessage = 0x005FFBD0;
 // a creature's combat rounds (UpdateCombatRound 0x73B8F0); D4 counts them as
 // the 2024 turns Vex and Sap last for.
 constexpr uintptr_t kAttackDataResult = 0x50;
+// CNWSObject::GetCurrentHitPoints(bExcludeTemporary) 0x63AA50: current hit
+// points int16 at +0xB4, temporary hit points int32 at +0xBC.
+constexpr uintptr_t kObjectCurrentHitPoints = 0xB4;
 constexpr uintptr_t kEndCombatRound = 0x0073B7A0;
 constexpr uint8_t kEndCombatRoundPrologue[] = {0x53, 0x33, 0xdb, 0x56, 0x8b, 0xf1, 0x8b, 0x8e};
 

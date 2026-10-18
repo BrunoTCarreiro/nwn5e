@@ -72,6 +72,11 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.debug_combat_breakdown =
       ReadBool(ini, L"combat_breakdown", g_config.debug_combat_breakdown, L"debug");
   g_config.debug_creature_ac = GetPrivateProfileIntW(L"debug", L"creature_ac", 0, ini);
+  g_config.debug_creature_hp_multiplier = GetPrivateProfileIntW(L"debug", L"creature_hp_multiplier", 0, ini);
+  if (g_config.debug_creature_hp_multiplier > 1) {
+    Log("config: [debug] creature_hp_multiplier=%d - creatures get this many times their hit points when your "
+        "party first attacks them", g_config.debug_creature_hp_multiplier);
+  }
   if (g_config.debug_creature_ac > 0) {
     Log("config: [debug] creature_ac=%d — every non-player creature has this AC", g_config.debug_creature_ac);
   }

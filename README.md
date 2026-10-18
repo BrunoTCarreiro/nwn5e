@@ -49,7 +49,11 @@ prerequisites); player AC is unchanged.
 Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
 gives player characters N main-hand attacks per round; `creature_ac=N` gives
 every non-player creature AC N (40 forces misses, so a round's attacks are all
-rolled); `attack_trace=1` logs round setup and every PC attack roll. With
+rolled); `creature_hp_multiplier=N` gives a creature N times its hit points
+the first time your party attacks it (so weak monsters survive several hits;
+`dm_spawncreature` makes the creature your summon in single player, so it is
+no help for test enemies); `attack_trace=1` logs round setup and every PC
+attack roll. With
 `ClientEntireChatWindowLogging=1` in the game's `nwnplayer.ini`, the game
 writes its chat window (combat log included, timestamped) to
 `logs\nwclientLog1.txt`.

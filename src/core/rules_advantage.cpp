@@ -15,6 +15,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <unordered_set>
+
 #include <string>
 
 #include "config.h"
@@ -178,9 +180,33 @@ void ReadPendingAttack(void* creature, void* target_object) {
   g_pending.active = true;
 }
 
+// [debug] creature_hp_multiplier: the first time a character attacks a
+// creature that is not a character, its current hit points are multiplied
+// (once per creature per session), so weak monsters survive several hits
+// in mastery tests.
+void BoostTestTarget(void* attacker, void* target_object) {
+  const int multiplier = g_config.debug_creature_hp_multiplier;
+  if (multiplier <= 1 || !attacker || !target_object) return;
+  const uint32_t target_id = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
+  void* target = engine::GetCreature(target_id);
+  void* attacker_stats = Field<void*>(attacker, nwmain::kCreatureStats);
+  void* target_stats = target ? Field<void*>(target, nwmain::kCreatureStats) : nullptr;
+  if (!attacker_stats || !target_stats) return;
+  if (!ReadCreatureFacts(attacker_stats).character || ReadCreatureFacts(target_stats).character) return;
+  static std::unordered_set<uint32_t> boosted;
+  if (!boosted.insert(target_id).second) return;
+  const int hit_points = Field<int16_t>(target, nwmain::kObjectCurrentHitPoints);
+  if (hit_points <= 0) return;
+  const int new_hit_points = hit_points * multiplier > 30000 ? 30000 : hit_points * multiplier;
+  SetField<int16_t>(target, nwmain::kObjectCurrentHitPoints, static_cast<int16_t>(new_hit_points));
+  Log("debug: creature 0x%08X hit points %d -> %d (creature_hp_multiplier=%d)", target_id, hit_points,
+      new_hit_points, multiplier);
+}
+
 void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
   if (g_config.debug_attack_trace) TraceAttackRoll(creature);
   KeepCombatBreakdownOn();
+  BoostTestTarget(creature, target);
   NoteWeaponUsed(creature);
   const int weapon = MasteryAttackWeapon(creature);
   const PendingAttack outer = g_pending;
@@ -256,7 +282,8 @@ void InstallAdvantageRules() {
   if (g_config.advantage_disadvantage && !PatchAttackD20Call()) g_config.advantage_disadvantage = false;
   // Weapon mastery (D3) fills empty slots from this hook too.
   const bool mastery = g_config.weapon_mastery == rules::RuleVariant::kFaithful;
-  if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown && !mastery) {
+  if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown && !mastery &&
+      g_config.debug_creature_hp_multiplier <= 1) {
     return;
   }
   InstallHook({g_config.advantage_disadvantage ? "CNWSCreature::ResolveAttackRoll (advantage/disadvantage)"
