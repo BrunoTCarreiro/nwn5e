@@ -39,8 +39,10 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.mode = ReadVariant(ini, L"mode", g_config.mode);
   g_config.racial_combat_bonuses = ReadVariant(ini, L"racial_combat_bonuses", g_config.mode);
   g_config.saves = ReadVariant(ini, L"saves", g_config.mode);
-  Log("config: mode=%s racial_combat_bonuses=%s saves=%s", VariantName(g_config.mode),
-      VariantName(g_config.racial_combat_bonuses), VariantName(g_config.saves));
+  g_config.opportunity_attacks = ReadVariant(ini, L"opportunity_attacks", g_config.mode);
+  Log("config: mode=%s racial_combat_bonuses=%s saves=%s opportunity_attacks=%s", VariantName(g_config.mode),
+      VariantName(g_config.racial_combat_bonuses), VariantName(g_config.saves),
+      VariantName(g_config.opportunity_attacks));
   g_config.crit_nat20_only = ReadBool(ini, L"crit_nat20_only", g_config.crit_nat20_only);
   g_config.crit_no_confirmation = ReadBool(ini, L"crit_no_confirmation", g_config.crit_no_confirmation);
   g_config.crit_double_damage = ReadBool(ini, L"crit_double_damage", g_config.crit_double_damage);

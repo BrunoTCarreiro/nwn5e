@@ -336,8 +336,14 @@ action state 5/6.
   with feats (Ambidexterity 1, Two-Weapon Fighting 41). Off-hand damage adds
   half Strength ("Offhand Strength Bonus", 0x697D10).
 - Attacks of opportunity: combat round +0x2128 = AoOs left this round
-  ("NumAOOs" in the save, 0x73E9B0), reset to 1 when combat ends (0x73B7A0,
-  with the cleave allowance +0x212C). Broadcast 0x655E70 (`this` = the
+  ("NumAOOs" in the save, 0x73E9B0), reset to 1 at the end of **every
+  round**: 0x73B7A0 is EndCombatRound (clears the 50 attack slots, resets
+  the round state, sets +0x2128 and the cleave allowance +0x212C to 1), and
+  its one caller, UpdateCombatRound 0x73B8F0, runs it whenever the round
+  timer (+0x20F4) passes the round length (+0x20F8). So NWN already allows
+  one AoO per round per creature (corrected 2026-10-18; first read as "per
+  fight"). NWN 1.69 has no Combat Reflexes feat (not in feat.2da), and
+  nothing else writes +0x2128. Broadcast 0x655E70 (`this` = the
   provoker; target or invalid = everyone near): each creature that sees the
   provoker, is hostile, has an AoO left, is not busy/flat-footed/dead,
   wields no ranged weapon and is within its melee reach (+1.5 m) gets
@@ -345,8 +351,23 @@ action state 5/6.
   with the second argument 1 the provoker first makes a Tumble check
   (skill 21) — feedback 0xA87. Provoked by moving (0x6475B0, the move
   action; Spring Attack 392 skips it) and by casting (0x67B550 /
-  0x67C070; Epic Improved Combat Casting 696 skips it). Ranged attacks and
-  item use do not call it.
+  0x67C070; Epic Improved Combat Casting 696 skips it). The fifth caller,
+  0x64A364, is the creature event handler 0x64A220 (vtable 0x8B5F88) for
+  event 20, EVENT_BROADCAST_AOO (id at 0x8B6484; data = the AoO target, or
+  none = everyone). It is queued with AddEventDeltaTime 0x6BF770 by:
+  - 0x7426B0, which schedules a ranged round's events: once per shot,
+    `this` provokes everyone near. Skipped only when difficulty option 1
+    (0x600100(1) → byte [rules + 0xF8 + difficulty·7 + 1], the same table
+    as the crits-on-players option 0) is set and the shooter is
+    player-controlled (+0xAD8) or a possessed familiar (0x68E510). So
+    ranged attacks do provoke (earlier note "ranged attacks do not call
+    it" was wrong).
+  - 0x743F30, the melee counterpart: special attack 9 (Disarm) provokes
+    the defender; an attack with no weapon (GetCurrentAttackWeapon 0) by a
+    creature without Improved Unarmed Strike (21) provokes unless the
+    special attack is 65002.
+  Item use does not provoke. The faithful patches (D2) are listed in
+  nwmain_1_69.h (`kFaithfulOpportunityPatches`); all seven apply (0.8.3).
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 

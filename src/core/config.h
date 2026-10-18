@@ -12,6 +12,9 @@ struct Config {
   rules::RuleVariant racial_combat_bonuses = rules::RuleVariant::kFaithful;
   // C1–C3: the three NWN saves as 2024 Con/Dex/Wis saves (off = NWN's 3e saves).
   rules::RuleVariant saves = rules::RuleVariant::kFaithful;
+  // D2: faithful = only moving away provokes (no casting, ranged, unarmed or
+  // Disarm AoOs; Spring Attack no longer protects). nwn/off = NWN's AoOs.
+  rules::RuleVariant opportunity_attacks = rules::RuleVariant::kFaithful;
   bool crit_nat20_only = true;     // threat only on a natural 20
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon

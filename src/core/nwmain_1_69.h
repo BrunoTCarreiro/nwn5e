@@ -465,6 +465,46 @@ constexpr uintptr_t kSendServerToPlayerChatServerTell = 0x006220D0;
 constexpr uintptr_t kExoStringFromText = 0x005BA260;
 constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x006108B0;
 
+// Opportunity attacks (D2; RE-NOTES "Two-weapon fighting and attacks of
+// opportunity"). Broadcast 0x655E70, this = the provoker (target, or
+// 0x7F000000 = everyone near; tumble flag; ret 8). One AoO per round per
+// creature: CNWSCombatRound +0x2128 is set to 1 by the constructor and by
+// EndCombatRound 0x73B7A0 (UpdateCombatRound 0x73B8F0 runs it when the
+// round's time is up) and drops by 1 per AoO; NWN 1.69 has no Combat
+// Reflexes. Provokers and the faithful patches, each a 2-byte branch made
+// unconditional:
+//   moving    0x64799E in the move action 0x6475B0; Spring Attack (392)
+//             skips it: 0x647990 je provoke (74 08) → jmp
+//   casting   0x67B9E5 (0x67B550), 0x67CA8F / 0x67CBC0 (0x67C070), each
+//             behind an Epic Improved Combat Casting (696) test:
+//             0x67B9DA jne (75 0E), 0x67CA85 / 0x67CBB6 jne (75 0D) → jmp
+//   event 20  EVENT_BROADCAST_AOO (id at 0x8B6484), queued with
+//             AddEventDeltaTime 0x6BF770 and handled at 0x64A364 in the
+//             creature event handler 0x64A220:
+//     ranged  0x7426B0 (ranged attack events), once per shot; the party is
+//             exempt when difficulty option 1 (0x600100(1)) is set:
+//             0x7427C4 je queue (74 15) → jmp 0x7427F5 (EB 2F)
+//     disarm  0x743F30 (melee attack events), special attack 9:
+//             0x744031 jne (75 1A) → jmp
+//     unarmed 0x743F30, no weapon, no Improved Unarmed Strike (21), not
+//             special attack 65002: 0x74405C jne (75 5D) → jmp
+constexpr uintptr_t kAttackOfOpportunityBroadcast = 0x00655E70;
+struct BranchPatch {
+  const char* what;
+  uintptr_t address;
+  uint8_t original[2];
+  uint8_t patched[2];
+};
+constexpr BranchPatch kFaithfulOpportunityPatches[] = {
+    {"casting (0x67B550)", 0x0067B9DA, {0x75, 0x0e}, {0xeb, 0x0e}},
+    {"casting (0x67C070, first)", 0x0067CA85, {0x75, 0x0d}, {0xeb, 0x0d}},
+    {"casting (0x67C070, second)", 0x0067CBB6, {0x75, 0x0d}, {0xeb, 0x0d}},
+    {"Spring Attack no longer protects", 0x00647990, {0x74, 0x08}, {0xeb, 0x08}},
+    {"ranged attacks", 0x007427C4, {0x74, 0x15}, {0xeb, 0x2f}},
+    {"disarm", 0x00744031, {0x75, 0x1a}, {0xeb, 0x1a}},
+    {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, {0x75, 0x5d}, {0xeb, 0x5d}},
+};
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

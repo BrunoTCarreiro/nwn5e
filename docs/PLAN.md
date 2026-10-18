@@ -300,6 +300,15 @@ away still does, once per round per creature; Combat Reflexes gives no extra
 ones and Spring Attack no longer protects (feat rework); Tumble stays as the
 way out until Phase 6 adds Disengage. NWN mode: NWN's rules unchanged.
 
+*Built 0.8.3 (2026-10-18), with what the recon found:* NWN already refills
+each creature's one AoO at the end of every round, and 1.69 has no Combat
+Reflexes, so "once per round" and "no extra ones" hold in both modes without
+code. NWN also provokes on three things the decision didn't list — every
+ranged shot (the party is exempt at some difficulties), unarmed attacks
+without Improved Unarmed Strike, and Disarm. None provoke in 2024 (a ranged
+attack next to an enemy has disadvantage instead, B5), so faithful removes
+them too, in keeping with "only moving away provokes"; NWN mode keeps them.
+
 **D3. Weapon mastery — who.** Faithful: the 2024 counts (Fighter 3/4/5/6 at
 1/4/10/16, Barbarian 2/3/4 at 1/4/10, Paladin, Ranger, Rogue 2); chosen with
 chat commands (`!mastery`, `!mastery <weapon>`, swap one after a long rest);
