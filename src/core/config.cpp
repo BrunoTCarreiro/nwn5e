@@ -42,11 +42,12 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.opportunity_attacks = ReadVariant(ini, L"opportunity_attacks", g_config.mode);
   g_config.two_weapon_fighting = ReadVariant(ini, L"two_weapon_fighting", g_config.mode);
   g_config.weapon_mastery = ReadVariant(ini, L"weapon_mastery", g_config.mode);
+  g_config.two_handed_strength = ReadVariant(ini, L"two_handed_strength", g_config.mode);
   Log("config: mode=%s racial_combat_bonuses=%s saves=%s opportunity_attacks=%s two_weapon_fighting=%s "
-      "weapon_mastery=%s",
+      "weapon_mastery=%s two_handed_strength=%s",
       VariantName(g_config.mode), VariantName(g_config.racial_combat_bonuses), VariantName(g_config.saves),
       VariantName(g_config.opportunity_attacks), VariantName(g_config.two_weapon_fighting),
-      VariantName(g_config.weapon_mastery));
+      VariantName(g_config.weapon_mastery), VariantName(g_config.two_handed_strength));
   g_config.crit_nat20_only = ReadBool(ini, L"crit_nat20_only", g_config.crit_nat20_only);
   g_config.crit_no_confirmation = ReadBool(ini, L"crit_no_confirmation", g_config.crit_no_confirmation);
   g_config.crit_double_damage = ReadBool(ini, L"crit_double_damage", g_config.crit_double_damage);

@@ -369,19 +369,6 @@ uint32_t CleaveTarget(void* attacker, void* first, uint32_t attacker_id) {
   return best;
 }
 
-// Does the engine add 1.5 x Strength to this attack (two-handed melee)?
-bool TwoHandedStrength(void* creature, const void* attack) {
-  if (Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return false;
-  void* inventory = Field<void*>(creature, nwmain::kCreatureInventory);
-  void* item = inventory ? g_get_item_in_slot_mastery(inventory, nullptr, nwmain::kSlotRightHand) : nullptr;
-  if (!item) return false;
-  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
-  void* base_items = rules_object ? Field<void*>(rules_object, nwmain::kRulesBaseItems) : nullptr;
-  void* base_item = base_items ? g_get_base_item(base_items, nullptr, Field<int32_t>(item, nwmain::kItemBaseItem)) : nullptr;
-  if (!base_item || Field<uint8_t>(base_item, nwmain::kBaseItemWield) == nwmain::kBaseItemWieldDouble) return false;
-  return static_cast<int>(Field<uint8_t>(base_item, nwmain::kBaseItemSize)) -
-             static_cast<int>(Field<uint32_t>(creature, nwmain::kCreatureSize)) == 1;
-}
 constexpr DWORD kRoundMs = 6000;
 constexpr float kRoundSeconds = 6.0f;
 
@@ -592,7 +579,7 @@ int MasteryCleaveDamage(void* stats, int bonus) {
   }
   g_cleave_pending.erase(pending);
   const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
-  const int nwn_term = rules::NwnMainHandStrengthDamage(strength, TwoHandedStrength(creature, attack));
+  const int nwn_term = rules::NwnMainHandStrengthDamage(strength, engine::CurrentAttackGetsTwoHandedStrength(creature));
   const int term = rules::OffHandDamageAbilityModifier(strength, false);  // only when negative
   if (EffectLogSlot()) {
     Log("mastery: 0x%08X Cleave attack damage: Strength %+d -> %+d", id, nwn_term, term);

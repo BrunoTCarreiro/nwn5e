@@ -25,6 +25,11 @@ float MaxAttackRange(void* creature, uint32_t target, int ranged_arg);  // 0x64B
 int GetLocalInt(void* object, const char* name);
 void SetLocalInt(void* object, const char* name, int value);
 
+// Does the engine add 1.5 x Strength to the creature's current attack (a
+// melee attack with a right-hand weapon one size above the creature that is
+// not a double weapon; damage bonus 0x697D10)?
+bool CurrentAttackGetsTwoHandedStrength(void* creature);
+
 // Edge-to-edge distance, as GetNearestEnemy measures it.
 float EdgeDistance(const void* a, const void* b);
 // Centre-to-centre distance squared, as GetAttackModifierVersus compares it.

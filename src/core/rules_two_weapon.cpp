@@ -12,6 +12,7 @@
 #include "creature.h"
 #include "hooks.h"
 #include "log.h"
+#include "engine_queries.h"
 #include "log_once.h"
 #include "mastery.h"
 #include "nwmain_1_69.h"
@@ -33,6 +34,8 @@ const auto g_get_base_item = reinterpret_cast<GetBaseItemFn>(nwmain::kGetBaseIte
 
 LogOnce g_logged_attacks(512);
 LogOnce g_logged_damage(512);
+LogOnce g_logged_two_handed(512);
+
 
 bool HasFeat(void* stats, int feat) { return stats && g_has_feat(stats, nullptr, feat) != 0; }
 
@@ -54,6 +57,22 @@ bool IsDoubleWeapon(int row) {
 uint32_t ObjectIdOfStats(void* stats) {
   void* creature = Field<void*>(stats, nwmain::kStatsCreature);
   return creature ? Field<uint32_t>(creature, nwmain::kCreatureObjectId) : 0;
+}
+
+// E1: a two-handed melee attack adds Strength once (2024) instead of NWN's
+// 1.5 x (truncated).
+int TwoHandedStrength2024(void* stats, int bonus) {
+  if (g_config.two_handed_strength != rules::RuleVariant::kFaithful) return bonus;
+  void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  if (!engine::CurrentAttackGetsTwoHandedStrength(creature)) return bonus;
+  const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
+  const int nwn_term = rules::NwnMainHandStrengthDamage(strength, true);
+  if (nwn_term == strength) return bonus;
+  const uint32_t id = ObjectIdOfStats(stats);
+  if (g_config.log_attacks && g_logged_two_handed.First(LogOnce::Key(id, nwn_term, strength))) {
+    Log("two-handed: object 0x%08X Strength damage 3e %+d -> 5e %+d", id, nwn_term, strength);
+  }
+  return bonus - nwn_term + strength;
 }
 
 int __fastcall GetOffHandAttacks(void* round, void* edx) {
@@ -80,7 +99,10 @@ int __fastcall GetOffHandAttacks(void* round, void* edx) {
 
 int __fastcall GetDamageBonus(void* stats, void* edx, void* target, int off_hand) {
   const int bonus = g_get_damage_bonus(stats, edx, target, off_hand);
-  if (!off_hand) return MasteryCleaveDamage(stats, bonus);  // D4 Cleave's extra attack
+  if (!off_hand) {
+    const int cleave = MasteryCleaveDamage(stats, bonus);  // D4 Cleave's extra attack: no Strength at all
+    return cleave != bonus ? cleave : TwoHandedStrength2024(stats, bonus);
+  }
   if (g_config.two_weapon_fighting != rules::RuleVariant::kFaithful) return bonus;
   const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
   const int nwn_term = rules::NwnOffHandStrengthDamage(strength);
@@ -99,6 +121,7 @@ int __fastcall GetDamageBonus(void* stats, void* edx, void* target, int off_hand
 void InstallTwoWeaponRules() {
   const bool two_weapon = g_config.two_weapon_fighting == rules::RuleVariant::kFaithful;
   const bool mastery = g_config.weapon_mastery != rules::RuleVariant::kOff;  // D4 Cleave uses the damage hook
+  const bool two_handed = g_config.two_handed_strength == rules::RuleVariant::kFaithful;  // E1 too
   if (two_weapon) {
     InstallHook({"CNWSCombatRound off-hand attacks (two-weapon fighting)", nwmain::kGetOffHandAttacks,
                  nwmain::kGetOffHandAttacksPrologue, sizeof(nwmain::kGetOffHandAttacksPrologue),
@@ -107,8 +130,8 @@ void InstallTwoWeaponRules() {
       PatchBytes(patch.what, patch.address, patch.original, patch.patched, patch.size);
     }
   }
-  if (two_weapon || mastery) {
-    InstallHook({"CNWSCreatureStats damage bonus (off-hand Strength, Cleave)", nwmain::kGetDamageBonus,
+  if (two_weapon || mastery || two_handed) {
+    InstallHook({"CNWSCreatureStats damage bonus (off-hand / two-handed Strength, Cleave)", nwmain::kGetDamageBonus,
                  nwmain::kGetDamageBonusPrologue, sizeof(nwmain::kGetDamageBonusPrologue),
                  reinterpret_cast<void*>(&GetDamageBonus), reinterpret_cast<void**>(&g_get_damage_bonus)});
   }

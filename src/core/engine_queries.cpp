@@ -83,6 +83,13 @@ const auto g_var_set_int = reinterpret_cast<SetIntFn>(nwmain::kVarTableSetInt);
 
 void* VarTable(void* object) { return static_cast<uint8_t*>(object) + nwmain::kObjectVarTable; }
 
+using GetAttackFn = void*(__fastcall*)(void* round, void* edx, int index);
+using GetItemFn = void*(__fastcall*)(void* owner, void* edx, int which);
+using GetBaseItemFn = void*(__fastcall*)(void* base_items, void* edx, int row);
+const auto g_get_attack_q = reinterpret_cast<GetAttackFn>(nwmain::kGetAttack);
+const auto g_get_item_in_slot_q = reinterpret_cast<GetItemFn>(nwmain::kGetItemInSlot);
+const auto g_get_base_item_q = reinterpret_cast<GetBaseItemFn>(nwmain::kGetBaseItem);
+
 }  // namespace
 
 int GetLocalInt(void* object, const char* name) {
@@ -93,6 +100,24 @@ int GetLocalInt(void* object, const char* name) {
 void SetLocalInt(void* object, const char* name, int value) {
   VarName text = {name, static_cast<uint32_t>(strlen(name) + 1)};
   if (object) g_var_set_int(VarTable(object), nullptr, &text, value, 0);
+}
+
+bool CurrentAttackGetsTwoHandedStrength(void* creature) {
+  if (!creature) return false;
+  void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
+  const void* attack =
+      round ? g_get_attack_q(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
+  if (!attack || Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return false;
+  void* inventory = Field<void*>(creature, nwmain::kCreatureInventory);
+  void* item = inventory ? g_get_item_in_slot_q(inventory, nullptr, nwmain::kSlotRightHand) : nullptr;
+  if (!item) return false;
+  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+  void* base_items = rules_object ? Field<void*>(rules_object, nwmain::kRulesBaseItems) : nullptr;
+  void* base_item =
+      base_items ? g_get_base_item_q(base_items, nullptr, Field<int32_t>(item, nwmain::kItemBaseItem)) : nullptr;
+  if (!base_item || Field<uint8_t>(base_item, nwmain::kBaseItemWield) == nwmain::kBaseItemWieldDouble) return false;
+  return static_cast<int>(Field<uint8_t>(base_item, nwmain::kBaseItemSize)) -
+             static_cast<int>(Field<uint32_t>(creature, nwmain::kCreatureSize)) == 1;
 }
 
 }  // namespace engine
