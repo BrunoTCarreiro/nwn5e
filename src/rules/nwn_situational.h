@@ -1,7 +1,7 @@
 #pragma once
 
-// Phase 1b (proposed — PLAN.md "Phase 1b proposal", owner to decide): NWN's
-// situational attack modifiers become 2024 advantage/disadvantage. The engine
+// Phase 1b (PLAN.md, decided 2026-10-18): NWN's situational attack modifiers
+// become 2024 advantage/disadvantage. The engine
 // adds them as flat 3e bonuses inside GetAttackModifierVersus (RE-NOTES); the
 // hook works out which ones it applied, takes their total back out and rolls
 // the d20 with the matching roll mode instead.
@@ -26,11 +26,16 @@ struct NwnSituationalTerms {
 // The flat total those terms added to the engine's attack modifier.
 int NwnSituationalTotal(const NwnSituationalTerms& terms);
 
-// The 2024 roll mode for the same situation. Advantage: target blinded or
-// stunned, attacker unseen, prone target in melee. Disadvantage: target
-// unseen, prone target at range, ranged attack in close combat. Nothing for a
-// moving target (no 2024 rule) or flanking (an optional 2024 rule; proposed
-// off). Sources cancel as in ResolveRollMode.
-RollMode SituationalRollMode(const NwnSituationalTerms& terms);
+// B5/B3: a ranged attack is in close combat when at least one enemy within
+// its own melee reach of the attacker can see the attacker and is not
+// incapacitated — unless the attacker has Point Blank Shot.
+bool RangedCloseCombat(bool ranged, bool point_blank_shot, int threatening_enemies);
+
+// The 2024 roll mode. Advantage: target blinded or stunned, attacker unseen,
+// prone target in melee. Disadvantage: target unseen, prone target at range,
+// a ranged attack in close combat (`ranged_close_combat`, the 2024 check —
+// NWN's target-only term is not used). Nothing for a moving target (no 2024
+// rule) or flanking (B2: off). Sources cancel as in ResolveRollMode.
+RollMode SituationalRollMode(const NwnSituationalTerms& terms, bool ranged_close_combat);
 
 }  // namespace rules

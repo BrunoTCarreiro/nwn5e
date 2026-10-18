@@ -38,43 +38,59 @@ TEST(NwnSituationalTermsAddUpLikeTheEngine) {
   CHECK_EQ(NwnSituationalTotal(shot2), -6);
 }
 
-// Phase 1b proposed mapping (PLAN.md). Breaks caught: a 2024 source missing
-// (unseen target, prone at range, ranged in close combat -> Disadvantage;
-// blinded, invisible attacker, stunned, prone in melee -> Advantage); a 3e
-// term with no 2024 rule turned into one (moving target; flanking, an
-// optional rule, until the owner decides); sources not cancelling.
+// Phase 1b (decided 2026-10-18). Breaks caught: a 2024 source missing
+// (unseen target, prone at range -> Disadvantage; blinded, invisible attacker,
+// stunned, prone in melee -> Advantage); a 3e term with no 2024 rule turned
+// into one (moving target; flanking, B2 off); NWN's target-only "ranged in
+// melee" term deciding the mode instead of the 2024 close-combat check (B5);
+// sources not cancelling.
 TEST(NwnSituationsBecomeAdvantageOrDisadvantage) {
-  CHECK_EQ(SituationalRollMode({}), RollMode::kNormal);
-  NwnSituationalTerms close_shot;
-  close_shot.ranged = true;
-  close_shot.ranged_in_melee = true;
-  CHECK_EQ(SituationalRollMode(close_shot), RollMode::kDisadvantage);
+  CHECK_EQ(SituationalRollMode({}, false), RollMode::kNormal);
+  NwnSituationalTerms nwn_close_shot;
+  nwn_close_shot.ranged = true;
+  nwn_close_shot.ranged_in_melee = true;
+  CHECK_EQ(SituationalRollMode(nwn_close_shot, false), RollMode::kNormal);
+  CHECK_EQ(SituationalRollMode(nwn_close_shot, true), RollMode::kDisadvantage);
+  NwnSituationalTerms shot_at_range;
+  shot_at_range.ranged = true;
+  CHECK_EQ(SituationalRollMode(shot_at_range, true), RollMode::kDisadvantage);
   NwnSituationalTerms prone_melee;
   prone_melee.target_prone = true;
-  CHECK_EQ(SituationalRollMode(prone_melee), RollMode::kAdvantage);
+  CHECK_EQ(SituationalRollMode(prone_melee, false), RollMode::kAdvantage);
   NwnSituationalTerms prone_ranged = prone_melee;
   prone_ranged.ranged = true;
-  CHECK_EQ(SituationalRollMode(prone_ranged), RollMode::kDisadvantage);
+  CHECK_EQ(SituationalRollMode(prone_ranged, false), RollMode::kDisadvantage);
   NwnSituationalTerms stunned;
   stunned.target_stunned = true;
-  CHECK_EQ(SituationalRollMode(stunned), RollMode::kAdvantage);
+  CHECK_EQ(SituationalRollMode(stunned, false), RollMode::kAdvantage);
   NwnSituationalTerms blind;
   blind.target_blind = true;
-  CHECK_EQ(SituationalRollMode(blind), RollMode::kAdvantage);
+  CHECK_EQ(SituationalRollMode(blind, false), RollMode::kAdvantage);
   NwnSituationalTerms invisible;
   invisible.attacker_invisible = true;
-  CHECK_EQ(SituationalRollMode(invisible), RollMode::kAdvantage);
+  CHECK_EQ(SituationalRollMode(invisible, false), RollMode::kAdvantage);
   NwnSituationalTerms unseen;
   unseen.cant_see_target = true;
-  CHECK_EQ(SituationalRollMode(unseen), RollMode::kDisadvantage);
+  CHECK_EQ(SituationalRollMode(unseen, false), RollMode::kDisadvantage);
   NwnSituationalTerms moving;
   moving.ranged = true;
   moving.target_moving = true;
-  CHECK_EQ(SituationalRollMode(moving), RollMode::kNormal);
+  CHECK_EQ(SituationalRollMode(moving, false), RollMode::kNormal);
   NwnSituationalTerms flanked;
   flanked.target_flanked = true;
-  CHECK_EQ(SituationalRollMode(flanked), RollMode::kNormal);
-  NwnSituationalTerms invisible_archer_in_melee = close_shot;
-  invisible_archer_in_melee.attacker_invisible = true;
-  CHECK_EQ(SituationalRollMode(invisible_archer_in_melee), RollMode::kNormal);
+  CHECK_EQ(SituationalRollMode(flanked, false), RollMode::kNormal);
+  NwnSituationalTerms invisible_archer = shot_at_range;
+  invisible_archer.attacker_invisible = true;
+  CHECK_EQ(SituationalRollMode(invisible_archer, true), RollMode::kNormal);
+}
+
+// B5 + B3. Breaks caught: a melee attack given the ranged close-combat
+// Disadvantage; Point Blank Shot not cancelling it; no enemy nearby still
+// counted.
+TEST(RangedAttacksInCloseCombat) {
+  CHECK_EQ(RangedCloseCombat(true, false, 1), true);
+  CHECK_EQ(RangedCloseCombat(true, false, 3), true);
+  CHECK_EQ(RangedCloseCombat(true, true, 1), false);
+  CHECK_EQ(RangedCloseCombat(false, false, 2), false);
+  CHECK_EQ(RangedCloseCombat(true, false, 0), false);
 }

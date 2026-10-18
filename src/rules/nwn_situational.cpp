@@ -15,14 +15,18 @@ int NwnSituationalTotal(const NwnSituationalTerms& terms) {
   return total;
 }
 
-RollMode SituationalRollMode(const NwnSituationalTerms& terms) {
+bool RangedCloseCombat(bool ranged, bool point_blank_shot, int threatening_enemies) {
+  return ranged && !point_blank_shot && threatening_enemies > 0;
+}
+
+RollMode SituationalRollMode(const NwnSituationalTerms& terms, bool ranged_close_combat) {
   int advantage = 0;
   int disadvantage = 0;
   if (terms.target_blind) ++advantage;
   if (terms.attacker_invisible) ++advantage;
   if (terms.target_stunned) ++advantage;
   if (terms.cant_see_target) ++disadvantage;
-  if (terms.ranged_in_melee) ++disadvantage;
+  if (ranged_close_combat) ++disadvantage;
   if (terms.target_prone) ++(terms.ranged ? disadvantage : advantage);
   return ResolveRollMode(advantage, disadvantage);
 }
