@@ -167,3 +167,22 @@ TEST(VexSapTiming) {
   for (int hit : {1, 3, 7, 10}) CHECK_EQ(MasteryAttackHit(hit), true);
   for (int miss : {0, 2, 4, 8, 9}) CHECK_EQ(MasteryAttackHit(miss), false);
 }
+
+// D4 Graze / Topple numbers. Breaks caught: Graze on a hit or not on a parry;
+// Graze dealing a negative or zero modifier; Topple DC missing a term; finesse
+// used without the feat or when Dex is lower; ranged attacks using Str.
+TEST(GrazeToppleNumbers) {
+  for (int miss : {2, 4, 8, 9}) CHECK_EQ(MasteryAttackMiss(miss), true);
+  for (int hit : {1, 3, 7, 10, 0}) CHECK_EQ(MasteryAttackMiss(hit), false);
+  CHECK_EQ(GrazeDamage(3), 3);
+  CHECK_EQ(GrazeDamage(0), 0);
+  CHECK_EQ(GrazeDamage(-1), 0);
+  CHECK_EQ(ToppleDc(3, 2), 13);
+  CHECK_EQ(AttackAbilityModifier(true, false, false, 3, 1), 1);
+  CHECK_EQ(AttackAbilityModifier(false, false, true, 1, 4), 1);
+  CHECK_EQ(AttackAbilityModifier(false, true, true, 1, 4), 4);
+  CHECK_EQ(AttackAbilityModifier(false, true, true, 4, 1), 4);
+  CHECK_EQ(AttackAbilityModifier(false, true, false, 1, 4), 1);
+  CHECK_EQ(IsFinesseNwnBaseItem(51), true);
+  CHECK_EQ(IsFinesseNwnBaseItem(13), false);
+}

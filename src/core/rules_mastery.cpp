@@ -21,15 +21,19 @@
 
 #include "config.h"
 #include "creature.h"
+#include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
+#include "engine_effects.h"
 #include "mastery.h"
 #include "nwmain_1_69.h"
+#include "rules/core.h"
 #include "rules/nwn_conversion.h"
 #include "rules/weapons.h"
 
 void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
+void RememberSaveDc2024(uint32_t caster, int dc);              // rules_save_roll.cpp
 
 namespace {
 
@@ -337,6 +341,32 @@ struct SapMark {
 std::unordered_map<uint32_t, uint32_t> g_rounds_ended;  // by creature id
 std::unordered_map<uint32_t, VexMark> g_vex;            // by attacker id
 std::unordered_map<uint32_t, SapMark> g_sap;            // by sapped creature id
+std::unordered_map<uint32_t, DWORD> g_slowed;           // D4 Slow / Topple: last applied, by target id
+std::unordered_map<uint32_t, DWORD> g_toppled;
+constexpr DWORD kRoundMs = 6000;
+constexpr float kRoundSeconds = 6.0f;
+
+using SaveRollFn = uint32_t(__fastcall*)(void* creature, void* edx, uint32_t save, uint32_t dc, uint32_t type,
+                                         uint32_t versus, uint32_t feedback, uint32_t feat, uint32_t from_combat);
+using DexModFn = int(__fastcall*)(void* stats, void* edx, int armor_dex_cap);
+const auto g_saving_throw_roll = reinterpret_cast<SaveRollFn>(nwmain::kSavingThrowRoll);  // the hooked one
+const auto g_get_dex_mod = reinterpret_cast<DexModFn>(nwmain::kGetDexMod);
+
+// The attack's ability modifier (D4 Graze, Topple).
+int AttackAbility(void* stats, const void* attack, int base_item) {
+  const bool ranged = Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0;
+  const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
+  const int dexterity = static_cast<int8_t>(g_get_dex_mod(stats, nullptr, 0) & 0xFF);
+  return rules::AttackAbilityModifier(ranged, HasFeat(stats, nwmain::kFeatWeaponFinesse),
+                                      rules::IsFinesseNwnBaseItem(base_item), strength, dexterity);
+}
+
+bool RecentlyApplied(std::unordered_map<uint32_t, DWORD>* applied, uint32_t target_id, DWORD now) {
+  const auto it = applied->find(target_id);
+  if (it != applied->end() && now - it->second < kRoundMs) return true;
+  (*applied)[target_id] = now;
+  return false;
+}
 // Rounds only end in combat; a mark from an old fight also lapses after this.
 constexpr DWORD kMarkMaxAgeMs = 30000;
 int g_effect_log_lines = 0;
@@ -393,23 +423,67 @@ MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id) {
 void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) {
   if (!MasteryOn() || !attacker || !target_object || base_item < 0) return;
   const rules::Mastery mastery = rules::MasteryForNwnBaseItem(base_item);
-  if (mastery != rules::Mastery::kVex && mastery != rules::Mastery::kSap) return;
+  if (mastery != rules::Mastery::kVex && mastery != rules::Mastery::kSap && mastery != rules::Mastery::kGraze &&
+      mastery != rules::Mastery::kSlow && mastery != rules::Mastery::kTopple) {
+    return;
+  }
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
   const void* attack = round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
-  if (!attack || !rules::MasteryAttackHit(Field<uint8_t>(attack, nwmain::kAttackDataResult))) return;
-  if (!HasWeaponMasteryWith(attacker, base_item)) return;
-  const uint32_t attacker_id = IdOf(attacker);
+  if (!attack) return;
+  const int result = Field<uint8_t>(attack, nwmain::kAttackDataResult);
+  const bool hit = rules::MasteryAttackHit(result);
+  if (mastery == rules::Mastery::kGraze ? !rules::MasteryAttackMiss(result) : !hit) return;
   const uint32_t target_id = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
+  void* target = engine::GetCreature(target_id);  // creatures only (not doors / placeables)
+  if (!target || !HasWeaponMasteryWith(attacker, base_item)) return;
+  void* stats = Field<void*>(attacker, nwmain::kCreatureStats);
+  const uint32_t attacker_id = IdOf(attacker);
   const uint32_t rounds = RoundsEnded(attacker_id);
-  if (mastery == rules::Mastery::kVex) {
-    g_vex[attacker_id] = VexMark{target_id, rounds, GetTickCount()};
-  } else {
-    g_sap[target_id] = SapMark{attacker_id, rounds, GetTickCount()};
+  const DWORD now = GetTickCount();
+  // Effects land when the swing does, like the engine schedules a hit.
+  const uint32_t delay = Field<uint16_t>(attack, nwmain::kAttackDataAnimationLength) >> 1;
+  std::string what;
+  switch (mastery) {
+    case rules::Mastery::kVex:
+      g_vex[attacker_id] = VexMark{target_id, rounds, now};
+      what = "Vex (advantage on its next attack at that target)";
+      break;
+    case rules::Mastery::kSap:
+      g_sap[target_id] = SapMark{attacker_id, rounds, now};
+      what = "Sap (target's next attack has disadvantage)";
+      break;
+    case rules::Mastery::kGraze: {
+      const int damage = rules::GrazeDamage(AttackAbility(stats, attack, base_item));
+      if (damage <= 0) return;
+      engine::ApplyDamage(target, attacker_id, damage, nwmain::kDamageTypeSlashing, delay);
+      what = "Graze: " + std::to_string(damage) + " slashing damage on a miss";
+      break;
+    }
+    case rules::Mastery::kSlow:
+      if (RecentlyApplied(&g_slowed, target_id, now)) return;  // 2024: no more than 10 ft
+      engine::ApplyMovementSpeedDecrease(target, attacker_id, 33, kRoundSeconds, delay);
+      what = "Slow: speed -33% for a round";
+      break;
+    case rules::Mastery::kTopple: {
+      if (RecentlyApplied(&g_toppled, target_id, now)) return;
+      const CreatureFacts facts = ReadCreatureFacts(stats);
+      const int dc = rules::ToppleDc(AttackAbility(stats, attack, base_item),
+                                     rules::ProficiencyBonusForCreature(facts.character, facts.level,
+                                                                        facts.challenge_rating));
+      RememberSaveDc2024(attacker_id, dc);
+      const uint32_t save = g_saving_throw_roll(target, nullptr, nwmain::kSaveFortitude, static_cast<uint32_t>(dc), 0,
+                                                attacker_id, 1, 0, 1) & 0xFF;
+      if (save == 0) engine::ApplyKnockdown(target, attacker_id, kRoundSeconds, delay);
+      what = "Topple: Constitution save DC " + std::to_string(dc) +
+             (save == 0 ? " failed, knocked down for a round" : save == 2 ? " - immune" : " made");
+      break;
+    }
+    default:
+      return;
   }
   if (EffectLogSlot()) {
-    Log("mastery: 0x%08X hit 0x%08X with %s: %s", attacker_id, target_id, Label(base_item).c_str(),
-        mastery == rules::Mastery::kVex ? "Vex (advantage on its next attack at that target)"
-                                        : "Sap (target's next attack has disadvantage)");
+    Log("mastery: 0x%08X %s 0x%08X with %s: %s", attacker_id, hit ? "hit" : "missed", target_id,
+        Label(base_item).c_str(), what.c_str());
   }
 }
 

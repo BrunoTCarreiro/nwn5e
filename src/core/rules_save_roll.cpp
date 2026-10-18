@@ -213,6 +213,10 @@ bool PatchCallSite(const char* name, uintptr_t site, uintptr_t expected_target, 
 
 }  // namespace
 
+// A DC that is already on the 2024 scale (D4 Topple), so the save roll does not
+// convert it: remembered like a spell DC for `caster`.
+void RememberSaveDc2024(uint32_t caster, int dc) { RememberSpellDc(caster, dc); }
+
 void InstallSaveRollRules() {
   if (g_config.saves == rules::RuleVariant::kOff) return;
   InstallHook({"CNWSCreature::CalculateSpellSaveDC (2024 spell DC)", nwmain::kCalculateSpellSaveDc,

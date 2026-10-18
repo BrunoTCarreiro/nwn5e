@@ -255,6 +255,36 @@ bool MasteryAttackHit(int nwn_attack_result) {
   return nwn_attack_result == 1 || nwn_attack_result == 3 || nwn_attack_result == 7 || nwn_attack_result == 10;
 }
 
+bool MasteryAttackMiss(int nwn_attack_result) {
+  return nwn_attack_result == 2 || nwn_attack_result == 4 || nwn_attack_result == 8 || nwn_attack_result == 9;
+}
+
+bool IsFinesseNwnBaseItem(int base_item) {
+  switch (base_item) {
+    case 0:    // shortsword
+    case 22:   // dagger
+    case 31:   // dart
+    case 40:   // kama
+    case 42:   // kukri
+    case 51:   // rapier
+    case 53:   // scimitar
+    case 111:  // whip
+      return true;
+    default:
+      return false;
+  }
+}
+
+int AttackAbilityModifier(bool ranged, bool weapon_finesse, bool finesse_weapon, int strength, int dexterity) {
+  if (ranged) return dexterity;
+  if (weapon_finesse && finesse_weapon && dexterity > strength) return dexterity;
+  return strength;
+}
+
+int ToppleDc(int ability_modifier, int proficiency_bonus) { return 8 + ability_modifier + proficiency_bonus; }
+
+int GrazeDamage(int ability_modifier) { return ability_modifier > 0 ? ability_modifier : 0; }
+
 bool VexActive(uint32_t attacker_rounds_now, uint32_t attacker_rounds_at_hit) {
   return attacker_rounds_now <= attacker_rounds_at_hit + 1;
 }

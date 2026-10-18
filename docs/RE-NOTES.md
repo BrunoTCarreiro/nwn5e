@@ -535,3 +535,20 @@ not confirmed.
 - GetWeaponFocus 0x6A5C20 maps an item's base item to its Weapon Focus feat
   (no item or gloves 36/78 → 100 unarmed; creature weapons 69–72 → 291) and
   returns HasFeat; the table is in src/rules/weapons.cpp.
+
+## Engine effects (decompiled 2026-10-18, D4)
+
+- The NWScript command table is filled at runtime by CNWVirtualMachineCommands
+  (writes `mov [reg + index*4], handler`, e.g. ApplyEffectToObject = command
+  220 at +0x370 -> 0x6F50A0). EffectDamage (79) 0x6EC4B0, EffectMovement
+  SpeedDecrease (451) 0x6F1C50; EffectKnockdown (134), EffectEntangle (130)
+  and EffectDeath (133) share 0x6F0610 (switch on the command). Ghidra did not
+  define these as functions (no static callers); read them with llvm-objdump.
+- Recipes, the CGameEffect layout and the apply path (CNWSObject::ApplyEffect
+  0x63D4A0, or EVENT_APPLY_EFFECT 5 via AddEventDeltaTime as the engine does
+  for a hit) are in nwmain_1_69.h "Engine effects"; src/core/engine_effects.cpp
+  builds damage, knockdown and movement-speed-decrease effects that way.
+- A melee hit's damage effect (0x7440DA in the melee event scheduler 0x743F30):
+  type 38, 20 integers, 0-12 copied from attack data +0x16 (int16 per damage
+  type), 13 = 1, 14 = attack data +2 / 2, 17 = 1, applied as EVENT_APPLY_EFFECT
+  at the hit time.

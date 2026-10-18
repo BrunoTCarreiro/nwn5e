@@ -581,6 +581,50 @@ constexpr uintptr_t kAttackDataResult = 0x50;
 constexpr uintptr_t kEndCombatRound = 0x0073B7A0;
 constexpr uint8_t kEndCombatRoundPrologue[] = {0x53, 0x33, 0xdb, 0x56, 0x8b, 0xf1, 0x8b, 0x8e};
 
+// Engine effects (D4 Graze / Slow / Topple), as NWScript builds them:
+// EffectDamage 0x6EC4B0, EffectKnockdown (command 134, shared handler
+// 0x6F0610), EffectMovementSpeedDecrease 0x6F1C50; the script command table
+// is filled at runtime (command index x 4: ApplyEffectToObject 220 at +0x370).
+// A CGameEffect is 0x90 bytes from the engine's operator new 0x84AC1C
+// (cdecl), constructed with 0x666680(1). +0x08 word true type (38 damage,
+// 20 knockdown, 29 movement speed decrease); +0x0A word: bits 0-2 duration
+// type (0 instant, 1 temporary, 2 permanent), bits 3-4 subtype (8 magical,
+// 0x18 extraordinary); +0x0C float duration; +0x18 creator. SetNumIntegers
+// 0x6669C0, SetInteger(index, value) 0x666A90, SetCreator 0x667550.
+// Damage: 20 integers, 0-12 the amount per damage type (bit index of the
+// DAMAGE_TYPE flag; -1 unused), 14 = 1000, 15 = the type flag, 16 = damage
+// power. Slow: integer 0 = percent. Applied with CNWSObject::ApplyEffect
+// (effect, 0, 1) 0x63D4A0, as ApplyEffectToObject does.
+constexpr uintptr_t kEngineOperatorNew = 0x0084AC1C;
+constexpr uintptr_t kGameEffectCtor = 0x00666680;
+constexpr uintptr_t kGameEffectSetNumIntegers = 0x006669C0;
+constexpr uintptr_t kGameEffectSetInteger = 0x00666A90;
+constexpr uintptr_t kGameEffectSetCreator = 0x00667550;
+constexpr uintptr_t kObjectApplyEffect = 0x0063D4A0;
+// The engine applies a hit's damage effect later, as EVENT_APPLY_EFFECT (id 5,
+// [0x8B6448]) queued with CServerAIMaster::AddEventDeltaTime(days, ms, caller,
+// target, event, data) 0x6BF770 (ret 0x18; AI master = CServerExoApp::
+// GetServerAIMaster 0x5FFBA0 = [[app+4]+0x10064]) at half the attack's
+// animation length (attack data +0x02, word); the target's event handler
+// 0x64A220 then calls ApplyEffect. D4 does the same.
+constexpr uintptr_t kAddEventDeltaTime = 0x006BF770;
+constexpr uintptr_t kGetServerAIMaster = 0x005FFBA0;
+constexpr uint32_t kEventApplyEffect = 5;
+constexpr uintptr_t kAttackDataAnimationLength = 0x02;
+constexpr size_t kGameEffectSize = 0x90;
+constexpr uintptr_t kEffectType = 0x08;
+constexpr uintptr_t kEffectFlags = 0x0A;
+constexpr uintptr_t kEffectDuration = 0x0C;
+constexpr uint16_t kEffectTypeDamage = 38;
+constexpr uint16_t kEffectTypeKnockdown = 20;
+constexpr uint16_t kEffectTypeMovementSpeedDecrease = 29;
+constexpr uint16_t kEffectDurationInstant = 0;
+constexpr uint16_t kEffectDurationTemporary = 1;
+constexpr uint16_t kEffectSubtypeExtraordinary = 0x18;
+constexpr int kDamageTypeSlashing = 4;
+constexpr int kFeatWeaponFinesse = 42;
+constexpr int kSaveFortitude = 1;
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

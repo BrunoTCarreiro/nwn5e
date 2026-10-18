@@ -89,4 +89,18 @@ bool VexActive(uint32_t attacker_rounds_now, uint32_t attacker_rounds_at_hit);
 // Sap: disadvantage until the start of the sapping creature's next round.
 bool SapActive(uint32_t source_rounds_now, uint32_t source_rounds_at_hit);
 
+// D4 Graze: results that are a miss of the attack roll (2 parried, 4 miss,
+// 8/9 concealment).
+bool MasteryAttackMiss(int nwn_attack_result);
+// 2024 Finesse weapons among NWN base items (dagger, dart, rapier, scimitar,
+// shortsword, whip; kukri and kama like the dagger and sickle's cousins).
+bool IsFinesseNwnBaseItem(int base_item);
+// The ability modifier an attack roll uses: Dex for ranged, Str for melee —
+// or Dex with Weapon Finesse and a finesse weapon when it is higher.
+int AttackAbilityModifier(bool ranged, bool weapon_finesse, bool finesse_weapon, int strength, int dexterity);
+// D4 Topple: DC 8 + the attack's ability modifier + proficiency bonus.
+int ToppleDc(int ability_modifier, int proficiency_bonus);
+// D4 Graze: the attack's ability modifier as damage, nothing when not positive.
+int GrazeDamage(int ability_modifier);
+
 }  // namespace rules
