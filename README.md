@@ -28,6 +28,8 @@ in `nwn5e.ini`:
 | Character sheet shows the 2024 attack bonus and attacks per round | with `attack_proficiency` / `extra_attack` | attack bonus verified in game (+6 with a sword) |
 | Advantage/disadvantage replace NWN's situational bonuses (Phase 1b, PLAN.md B1–B6) | `advantage_disadvantage` | verified in game (log, 2026-10-18): moving target and flanking removed, disadvantage when shooting with goblins adjacent, kept die in the combat log |
 | Creatures can crit your party at every difficulty (B7) | `crits_against_players` | verified in game (2026-10-18: a goblin's natural 20 was a critical hit) |
+| Faithful / NWN mode for the rules decided since 2026-10-18 (PLAN.md "Modes") | `mode` (faithful, nwn) | built (0.7.2) |
+| No racial bonuses vs specific enemies: Battle Training, Good Aim, sling, +4 AC vs giants (R1) | `racial_combat_bonuses` | built (0.7.2); faithful removes, nwn keeps |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).

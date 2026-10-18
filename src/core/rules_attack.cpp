@@ -26,6 +26,8 @@
 #include "rules/nwn_conversion.h"
 
 int PendingSituationalTotal(const void* stats, const void* target);  // rules_advantage.cpp
+int RacialAttackBonusToRemove(void* stats, void* target);            // rules_racial.cpp
+int RacialArmorBonusToRemove(void* defender_stats, void* attacker);  // rules_racial.cpp
 
 namespace {
 
@@ -41,8 +43,8 @@ LogOnce g_attack_logged(2000);
 LogOnce g_armor_logged(2000);
 
 int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
-  const int engine_modifier =
-      g_get_attack_modifier_versus(stats, edx, target) - PendingSituationalTotal(stats, target);
+  const int engine_modifier = g_get_attack_modifier_versus(stats, edx, target) -
+                              PendingSituationalTotal(stats, target) - RacialAttackBonusToRemove(stats, target);
   if (!g_config.attack_proficiency) return engine_modifier;
   const CreatureFacts facts = ReadCreatureFacts(stats);
   if (!facts.plausible) return engine_modifier;
@@ -58,7 +60,8 @@ int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
 }
 
 int __fastcall GetArmorClassVersus(void* stats, void* edx, void* attacker, int touch) {
-  const int engine_armor_class = g_get_armor_class_versus(stats, edx, attacker, touch);
+  const int engine_armor_class =
+      g_get_armor_class_versus(stats, edx, attacker, touch) - RacialArmorBonusToRemove(stats, attacker);
   if (!g_config.creature_ac_by_cr && g_config.debug_creature_ac <= 0) return engine_armor_class;
   const CreatureFacts facts = ReadCreatureFacts(stats);
   if (facts.character) return engine_armor_class;  // players and henchmen keep their gear AC

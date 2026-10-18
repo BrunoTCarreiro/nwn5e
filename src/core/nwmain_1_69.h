@@ -308,6 +308,59 @@ constexpr uintptr_t kAttackDataRanged = 0x34;     // int32 bool
 constexpr int kFeatBlindFight = 0x198;
 constexpr int kFeatPointBlankShot = 0x1B;
 
+// Racial combat bonuses (decision R1), as the engine adds them (decompiled
+// 2026-10-18; race ids read from 0x8ACF30..0x8ACF4C):
+//   Battle Training, +1 to hit once (GetAttackModifierVersus 0x696B05):
+//     feat 232 vs target race 12 (goblinoid), 231 vs 14 (orc), 242 vs 15
+//     (reptilian); target race = target stats +0x3EC
+//   Good Aim, +1 (0x6965E8): ranged, feat 250, and the current attack weapon
+//     (0x73E3F0, round, push attack data +0x30, ret 4) is thrown (base item
+//     +8 WeaponWield == 11)
+//   Halfling sling, +1 (0x696701): ranged, attacker race 3, right-hand item
+//     (0x722510 on creature +0xB6C, push 0x10, ret 4) base item 61
+//   Defensive Training, +4 AC (GetArmorClassVersus 0x692E35): defender feat
+//     233, attacker race 18 (giant)
+// The sheet's ranged bonus (0x694B00) adds Good Aim and the sling bonus too,
+// from the right-hand item.
+constexpr uintptr_t kStatsRace = 0x3EC;           // uint16 racial type
+constexpr uintptr_t kCreatureInventory = 0xB6C;   // inventory (GetItemInSlot's this)
+constexpr uintptr_t kGetItemInSlot = 0x00722510;  // slot 0x10 right hand, 0x20 left
+constexpr uintptr_t kItemBaseItem = 0x0C;         // uint32 baseitems.2da row
+constexpr uintptr_t kGetCurrentAttackWeapon = 0x0073E3F0;
+constexpr uintptr_t kRulesObject = 0x0092DC64;    // [ ] = rules object (RollDice's this)
+constexpr uintptr_t kRulesBaseItems = 0x18;       // base item array in it
+constexpr uintptr_t kGetBaseItem = 0x004BC890;    // ecx = base item array, push row, ret 4
+constexpr uintptr_t kBaseItemWield = 0x08;        // uint8 WeaponWield: 7 shield, 8 double, 11 thrown
+constexpr uintptr_t kAttackDataType = 0x30;       // uint8 weapon attack type
+constexpr int kSlotRightHand = 0x10;
+constexpr int kFeatBattleTrainingOrcs = 231;
+constexpr int kFeatBattleTrainingGoblins = 232;
+constexpr int kFeatBattleTrainingReptilians = 242;
+constexpr int kFeatDefensiveTrainingGiants = 233;
+constexpr int kFeatGoodAim = 250;
+constexpr int kRaceHalfling = 3;
+constexpr int kRaceGoblinoid = 12;
+constexpr int kRaceOrc = 14;
+constexpr int kRaceReptilian = 15;
+constexpr int kRaceGiant = 18;
+constexpr int kBaseItemSling = 61;
+constexpr uint8_t kWieldThrown = 11;
+
+// Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
+// GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
+// write a "[%d] <label>" line per term into the attack data (+0x68), and the
+// attack-roll message (0x62F850) sends it to the client. A client → server
+// message (0x6C45D0, subtype 9) stores both flags from the client:
+//   0x6C5238  mov [0x93233C], edi   ; 89 3D 3C 23 93 00
+//   0x6C523E  mov [0x932340], edi   ; 89 3D 40 23 93 00
+// The switch blanks those stores and sets both flags to 1.
+constexpr uintptr_t kCombatDebugFlag = 0x0093233C;
+constexpr uintptr_t kCombatDebugFlag2 = 0x00932340;
+constexpr uintptr_t kCombatDebugStore1 = 0x006C5238;
+constexpr uintptr_t kCombatDebugStore2 = 0x006C523E;
+constexpr uint8_t kCombatDebugStore1Bytes[] = {0x89, 0x3d, 0x3c, 0x23, 0x93, 0x00};
+constexpr uint8_t kCombatDebugStore2Bytes[] = {0x89, 0x3d, 0x40, 0x23, 0x93, 0x00};
+
 // CNWSCombatRound fields (InitializeNumberOfAttacks, ResolveMeleeAttack,
 // GetAttackModifierVersus).
 constexpr uintptr_t kRoundCurrentAttack = 0x2114;    // uint8, index of the attack being resolved

@@ -375,18 +375,21 @@ bDeathAttack, bForceMax)` 0x69AEB0, `ret 0x18`:
   visible list lacked the PC for a moment) → disadvantage.
 - A goblin's natural 20 on the PC: "*critical hit* : (20 + 0 = 20)", 3
   damage, no Threat Roll in the line; "crit damage: flat bonuses x2 -> x1".
-- The PC's normal ranged attack is +4 while the sheet shows +3. Explained
-  (2026-10-18): the sheet (GetRangedAttackBonus 0x694B00: effect attack
-  bonus with no target + BAB + Dex/Zen Archery Wis + epic ladder + Weapon
-  Focus + Epic Weapon Focus + Good Aim (thrown) + halfling sling) has no
-  target, while GetAttackModifierVersus adds target-dependent terms — here
-  "Offensive Training": +1 when the attacker has Battle Training vs Orcs
-  (feat 231, race 14), vs Goblins (232, race 12) or vs Reptilians (242, race
-  15) against that race (0x696B05..0x696B77; races from 0x8ACF40). Every
-  test target was a goblin. Melee reads Str (stats +0x3F9) or, with Weapon
-  Finesse (0x6A5B50), Dex; ranged reads Dex (0x6A1430(0)) or, with Zen
-  Archery (0x19C), Wis (+0x401) — same as the sheet. Size (creature +0x4D4:
-  1/2/4/5 → +2/+1/−1/−2) is not on the sheet either.
+- The PC's normal ranged attack is +4 while the sheet shows +3 — still
+  unexplained. The sheet (GetRangedAttackBonus 0x694B00: effect attack bonus
+  with no target + BAB + Dex/Zen Archery Wis + epic ladder + Weapon Focus +
+  Epic Weapon Focus + Good Aim (thrown) + halfling sling) has no target,
+  while GetAttackModifierVersus adds target-dependent and other terms, e.g.
+  "Offensive Training" (+1 when the attacker has Battle Training vs Orcs
+  231 / Goblins 232 / Reptilians 242 against race 14 / 12 / 15,
+  0x696B05..0x696B77) and size (creature +0x4D4: 1/2/4/5 → +2/+1/−1/−2).
+  First blamed on Battle Training — withdrawn: Unen Amakiir is an elf (race
+  1 in player.bic), and the 11:00 session shows melee at +6 against the
+  sheet's +5 against a human mage too, so the extra +1 applies to every
+  attack. Melee reads Str (stats +0x3F9) or, with Weapon Finesse (0x6A5B50),
+  Dex; ranged reads Dex (0x6A1430(0)) or, with Zen Archery (0x19C), Wis
+  (+0x401) — the same getter and argument as the sheet. Next step: one fight
+  with [debug] combat_breakdown=1 (the engine's own per-term labels).
 
 ## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
 

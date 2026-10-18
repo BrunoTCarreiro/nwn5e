@@ -37,7 +37,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.7.1 loaded");
+  Log("nwn5e 0.7.2 loaded");
   if (!HostIsMappedBuild()) {
     Log("host is not the mapped nwmain.exe 1.69 build; no hooks installed");
     return;

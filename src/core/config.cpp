@@ -11,11 +11,35 @@ namespace {
 bool ReadBool(const wchar_t* ini, const wchar_t* key, bool fallback, const wchar_t* section = L"rules") {
   return GetPrivateProfileIntW(section, key, fallback ? 1 : 0, ini) != 0;
 }
+
+// A faithful / nwn / off key (PLAN.md "Modes"); empty or missing -> fallback.
+rules::RuleVariant ReadVariant(const wchar_t* ini, const wchar_t* key, rules::RuleVariant fallback) {
+  wchar_t wide[32] = {};
+  GetPrivateProfileStringW(L"rules", key, L"", wide, 32, ini);
+  char text[32] = {};
+  for (int i = 0; i < 31 && wide[i]; ++i) text[i] = wide[i] < 128 ? static_cast<char>(wide[i]) : '?';
+  return rules::ParseRuleVariant(text, fallback);
+}
+
+const char* VariantName(rules::RuleVariant variant) {
+  switch (variant) {
+    case rules::RuleVariant::kFaithful:
+      return "faithful";
+    case rules::RuleVariant::kNwn:
+      return "nwn";
+    default:
+      return "off";
+  }
+}
 }  // namespace
 
 void ConfigLoad(const wchar_t* directory) {
   wchar_t ini[MAX_PATH];
   swprintf_s(ini, L"%s\\nwn5e.ini", directory);
+  g_config.mode = ReadVariant(ini, L"mode", g_config.mode);
+  g_config.racial_combat_bonuses = ReadVariant(ini, L"racial_combat_bonuses", g_config.mode);
+  Log("config: mode=%s racial_combat_bonuses=%s", VariantName(g_config.mode),
+      VariantName(g_config.racial_combat_bonuses));
   g_config.crit_nat20_only = ReadBool(ini, L"crit_nat20_only", g_config.crit_nat20_only);
   g_config.crit_no_confirmation = ReadBool(ini, L"crit_no_confirmation", g_config.crit_no_confirmation);
   g_config.crit_double_damage = ReadBool(ini, L"crit_double_damage", g_config.crit_double_damage);
@@ -38,6 +62,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.debug_attacks_per_round = GetPrivateProfileIntW(L"debug", L"attacks_per_round", 0, ini);
   g_config.debug_attack_trace = ReadBool(ini, L"attack_trace", g_config.debug_attack_trace, L"debug");
   if (g_config.debug_attack_trace) Log("config: [debug] attack_trace=1 — logging round setup and PC attack rolls");
+  g_config.debug_combat_breakdown =
+      ReadBool(ini, L"combat_breakdown", g_config.debug_combat_breakdown, L"debug");
   g_config.debug_creature_ac = GetPrivateProfileIntW(L"debug", L"creature_ac", 0, ini);
   if (g_config.debug_creature_ac > 0) {
     Log("config: [debug] creature_ac=%d — every non-player creature has this AC", g_config.debug_creature_ac);

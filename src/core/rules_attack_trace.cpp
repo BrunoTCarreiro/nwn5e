@@ -54,7 +54,25 @@ void TraceAttackRoll(const void* creature) {
       Field<int32_t>(round, nwmain::kRoundExtraAttacks));
 }
 
+// [debug] combat_breakdown: the engine's own per-term attack breakdown in the
+// combat log (nwmain_1_69.h). Called at each attack roll, after the client's
+// flag message can no longer reset it.
+void KeepCombatBreakdownOn() {
+  if (!g_config.debug_combat_breakdown) return;
+  *reinterpret_cast<volatile uint32_t*>(nwmain::kCombatDebugFlag) = 1;
+  *reinterpret_cast<volatile uint32_t*>(nwmain::kCombatDebugFlag2) = 1;
+}
+
 void InstallAttackTrace() {
+  if (g_config.debug_combat_breakdown) {
+    static const uint8_t kNops[6] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
+    const bool kept = PatchBytes("combat breakdown: client flag message ignored (1/2)", nwmain::kCombatDebugStore1,
+                                 nwmain::kCombatDebugStore1Bytes, kNops, sizeof(kNops)) &&
+                      PatchBytes("combat breakdown: client flag message ignored (2/2)", nwmain::kCombatDebugStore2,
+                                 nwmain::kCombatDebugStore2Bytes, kNops, sizeof(kNops));
+    if (!kept) g_config.debug_combat_breakdown = false;
+    if (kept) Log("config: [debug] combat_breakdown=1 — the engine's attack breakdown goes to the combat log");
+  }
   if (!g_config.debug_attack_trace) return;
   InstallHook({"CNWSCombatRound::InitializeNumberOfAttacks (trace)", nwmain::kInitializeNumberOfAttacks,
                nwmain::kInitializeNumberOfAttacksPrologue, sizeof(nwmain::kInitializeNumberOfAttacksPrologue),

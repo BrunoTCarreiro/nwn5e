@@ -20,6 +20,8 @@
 #include "log_once.h"
 #include "nwmain_1_69.h"
 
+int RacialSheetRangedBonusToRemove(void* stats);  // rules_racial.cpp
+
 namespace {
 
 using MeleeAttackBonusFn = int(__fastcall*)(void* stats, void* edx, int offhand, int a, int b);
@@ -53,7 +55,9 @@ int __fastcall GetMeleeAttackBonus(void* stats, void* edx, int offhand, int a, i
 }
 
 int __fastcall GetRangedAttackBonus(void* stats, void* edx, int a, int b) {
-  const int engine_value = g_get_ranged_attack_bonus(stats, edx, a, b);
+  // With b set the engine returns early (Dex only), before Good Aim / sling.
+  const int engine_value =
+      g_get_ranged_attack_bonus(stats, edx, a, b) - (b ? 0 : RacialSheetRangedBonusToRemove(stats));
   return ConvertSheetAttackBonus(stats, engine_value, "ranged");
 }
 
