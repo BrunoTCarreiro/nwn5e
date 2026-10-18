@@ -292,7 +292,7 @@ action state 5/6.
   when DC ≤ d20 + bonus + value. Mind-spell failures may reroll once
   (feat, marker 0x103).
 - GetFortSavingThrow(bBaseOnly) 0x6AD4F0: effects (type 3, save 1) unless
-  base-only + Luck of Heroes (feat 0x17E, +1) + Divine Grace (feat 0x1D9,
+  base-only + Luck of Heroes (feat 0x17E = 382, +1) + Dark Blessing (feat 0x1D9 = 473, Blackguard,
   Cha mod) + Con mod (stats +0x3FD) + stats +0x4C4 (creature blueprint
   bonus) + GetBaseFortSavingThrow 0x6A26D0 (class tables). Reflex 0x6AD630
   and Will 0x6AD590 mirror it (Dex / Wis).
@@ -307,6 +307,32 @@ action state 5/6.
   +0x19C (−1 none: item +0x1AC or innate level with modifier 3; −2 innate,
   Cha); level from the class column (0x4F8350) or innate (row +0x47);
   creature +0xA70 set → innate level, modifier 3.
+
+## Two-weapon fighting and attacks of opportunity (decompiled 2026-10-18)
+
+- Off-hand attacks: CNWSCombatRound 0x73BF80 → round +0x213C. 1 when the
+  right hand holds a non-ranged weapon no bigger than the creature (base
+  item +0x19 ≤ creature size +0x4D4) and the left hand (slot 0x20) a weapon
+  that is not a shield (base item +9 set, +8 ≠ 7), or the right hand a
+  double weapon (+8 == 8); 2 with Improved Two-Weapon Fighting (feat 20).
+- Penalty (GetAttackModifierVersus "Offhand Attack Penalty", attack type 1
+  main / 2 off-hand, only when dual-wielding): main hand −6 (−4 when the
+  off-hand weapon is light — GetRelativeWeaponSize 0x65A390 < 0 — or a
+  double weapon), +2 with a feat; off-hand −10 (−8 light/double), +4 and +2
+  with feats (Ambidexterity 1, Two-Weapon Fighting 41). Off-hand damage adds
+  half Strength ("Offhand Strength Bonus", 0x697D10).
+- Attacks of opportunity: combat round +0x2128 = AoOs left this round
+  ("NumAOOs" in the save, 0x73E9B0), reset to 1 when combat ends (0x73B7A0,
+  with the cleave allowance +0x212C). Broadcast 0x655E70 (`this` = the
+  provoker; target or invalid = everyone near): each creature that sees the
+  provoker, is hostile, has an AoO left, is not busy/flat-footed/dead,
+  wields no ranged weapon and is within its melee reach (+1.5 m) gets
+  AddAttackActions(provoker) + 0x73DD30 (the AoO attack) and +0x2128 − 1;
+  with the second argument 1 the provoker first makes a Tumble check
+  (skill 21) — feedback 0xA87. Provoked by moving (0x6475B0, the move
+  action; Spring Attack 392 skips it) and by casting (0x67B550 /
+  0x67C070; Epic Improved Combat Casting 696 skips it). Ranged attacks and
+  item use do not call it.
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 

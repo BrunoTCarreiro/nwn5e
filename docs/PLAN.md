@@ -210,7 +210,7 @@ saves with a DC and a save type (fear, poison, fire…). The engine's save roll
 0x6AD630 / 0x6AD590), effect and feat bonuses against that save type (capped
 at +20) and a d20; a natural 20 always succeeds, a natural 1 fails only under
 a server option. The save value is: class base save (table) + ability
-modifier (Con / Dex / Wis) + Luck of Heroes (+1) + Divine Grace (Cha) + a
+modifier (Con / Dex / Wis) + Luck of Heroes (+1) + Dark Blessing (Cha) + a
 creature blueprint bonus + magic effects. Spell DCs (0x6659D0) are 10 +
 spell level + casting ability modifier + Spell Focus (+2 / +4 / +6). The
 character sheet reads the same three save functions.
@@ -229,7 +229,7 @@ class (2024; multiclassing adds none) — proposed. Creatures: proficient where
 their NWN base save is a "good" save (the 3e good progression) — proposed;
 alternatives: never proficient, or keep NWN's numbers for creatures.
 
-**C3. 3e save bonuses** (Luck of Heroes, Divine Grace, Great Fortitude /
+**C3. 3e save bonuses** (Luck of Heroes, Dark Blessing, Divine Grace, Great Fortitude /
 Lightning Reflexes / Iron Will, racial +1/+2s, the blueprint bonus).
 Proposed: dropped, except magic effects and items; 2024 equivalents
 (Paladin Aura of Protection, dwarf/halfling/gnome advantages) come with the
@@ -254,6 +254,50 @@ ones move to advantage with Phase 3.
 **C8. Character sheet.** It shows the three NWN saves; with C1 it would show
 the Con / Dex / Wis saves under the Fortitude / Reflex / Will labels.
 Proposed: fine until the interface phase (Phase 7) relabels them.
+
+## Phase 1d proposal — two-weapon fighting, opportunity attacks, weapon mastery (2026-10-18, awaiting owner)
+
+Engine facts: RE-NOTES "Two-weapon fighting and attacks of opportunity".
+Ordered by how much each needs: D1–D2 are small engine changes, D3–D4 need
+the Phase 1c saves (Topple) and new effects (Slow, Push).
+
+**D1. Two-weapon fighting.** NWN: an off-hand weapon gives one off-hand
+attack each round (two with Improved Two-Weapon Fighting), with −6/−10 on
+the main and off hand (−4/−8 if the off-hand weapon is light; feats reduce
+it); the off-hand adds half Strength to damage. 2024: one extra attack with
+the other Light weapon (a Bonus Action), no attack penalty, and no ability
+modifier on its damage unless negative (the Two-Weapon Fighting style adds
+it). Proposed: no penalties on either hand; one off-hand attack (Improved
+Two-Weapon Fighting's second one dropped); off-hand damage without the
+Strength bonus unless negative — NWN's Two-Weapon Fighting feat stands in
+for the fighting style and keeps it. Light weapons: 2024 requires both to
+be Light; proposed: require a light off-hand weapon (NWN's "light" = smaller
+than the wielder) or a double weapon — alternative: any one-handed weapon.
+
+**D2. Opportunity attacks.** NWN: moving away and casting a spell provoke
+(Spring Attack and Epic Improved Combat Casting avoid them; a Tumble check
+can avoid the movement one); each creature has one per round. 2024: only
+leaving a creature's reach provokes, one per round (the Reaction).
+Proposed: casting no longer provokes; moving keeps provoking, one per round
+as now; the Tumble check stays as NWN's stand-in for Disengage until the
+action-economy phase (Phase 6).
+
+**D3. Weapon mastery — who.** 2024: Barbarian, Fighter, Paladin, Ranger and
+Rogue master a few chosen weapons (2–3 at level 1, Fighters more later).
+NWN has no screen for choosing. Proposed: those classes have mastery with
+every weapon they are proficient with (simple, generous); alternative: a
+"mastery" feat per weapon picked at level-up (like decision 12).
+
+**D4. Weapon mastery — what.** Each NWN weapon gets its 2024 property
+(dagger Nick, longsword Sap, greatsword Graze, greataxe Cleave, rapier Vex,
+shortbow Vex, longbow Slow, warhammer Push, maul Topple…); NWN-only weapons
+take the closest (bastard sword Sap, katana Sap, kukri Nick, kama Nick,
+scythe Graze, dire mace / double axe / two-bladed sword Cleave, dwarven
+waraxe Topple, throwing axe Vex, shuriken Vex, heavy flail Topple…).
+Proposed build order: Vex, Sap (the advantage system already exists), Graze
+and Cleave (Cleave reuses NWN's cleave attack), Nick (with D1), Topple
+(after 1c), then Slow and Push (need new effects). Per-property approval
+with each step.
 
 ## Decided (owner, 2026-10-17)
 
