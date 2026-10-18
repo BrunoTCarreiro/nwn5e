@@ -22,7 +22,7 @@ in `nwn5e.ini`:
 | Non-player creatures use the expected AC for their CR | `creature_ac_by_cr` | verified in game (log) |
 | PCs attack per 2024 Extra Attack; no 3e −5 on extra attacks | `extra_attack` | verified in game (debug switches) |
 | Crits roll the damage dice twice, flat bonuses once | `crit_dice_only` | verified in game (log); flat effect damage bonuses once too (0.6.4: call sites verified in game, the damage itself awaits a crit with such an effect) |
-| Henchmen use the player-character rules (decision 11) | — (always) | built; needs a henchman to check |
+| Henchmen use the player-character rules (decision 11) | — (always) | verified in game (2026-10-18, Pavel: "henchman", PB by level 1, attack +4, gear AC kept, sheet converted) |
 | After a kill, the round's remaining attacks go to the nearest enemy (decision 14); ranged: only to enemies already in the fight, within `ranged_retarget_range` (40 m) | `retarget_remaining_attacks` | verified in game: melee (debug switches); ranged 40 m with the "in the fight" filter (2026-10-18: the caged Hook Horror at 30.9 m skipped, "none in the fight") |
 | No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
 | Character sheet shows the 2024 attack bonus and attacks per round | with `attack_proficiency` / `extra_attack` | attack bonus verified in game (+6 with a sword) |
