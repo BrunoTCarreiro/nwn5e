@@ -101,7 +101,7 @@ did, and each is reversible from `backup\` (not in git):
 |---|---|---|
 | `nwnplayer.ini` `[Game Options] ClientEntireChatWindowLogging=1` | timestamped combat log in `logs\nwclientLog1.txt` for tests | set it back to `0` (original: `backup\nwnplayer.ini.before-chatlog`) |
 | `movies\AtariLogo.bik`, `BiowareLogo.bik`, `WOTCLogo.bik`, `fge_logo_black.bik`, `NWNintro.bik` moved out | skip the loud startup logos and intro | copy them back from `backup\movies\` |
-| `nwn.ini` `[Display Options] FullScreen=0` (2026-10-18) | the game runs in a window (2560×1080, unchanged), so it can be started for quick checks | set it back to `1` (original: `backup\nwn.ini.before-windowed`) |
+| `nwn.ini` `[Display Options] FullScreen=0`, `Width=1600`, `Height=900` (2026-10-18) | the game runs in a window, so it can be started for quick checks (at 2560×1080 the window filled the screen and looked fullscreen) | `FullScreen=1`, `Width=2560`, `Height=1080` (original: `backup\nwn.ini.before-windowed`) |
 
 ## Reverse-engineering toolchain
 
