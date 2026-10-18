@@ -259,6 +259,42 @@ constexpr uint8_t kInitializeNumberOfAttacksPrologue[] = {0x53, 0x56, 0x8b, 0xf1
 constexpr uintptr_t kResolveAttackRoll = 0x00744390;
 constexpr uint8_t kResolveAttackRollPrologue[] = {0x6a, 0xff, 0x68, 0xbb, 0xec, 0x89, 0x00, 0x64};
 
+// Advantage/disadvantage (Phase 1b). ResolveAttackRoll rolls its d20 at
+// 0x744401 (E8 rel32 -> RollDice) before it asks GetAttackModifierVersus for
+// the modifier; the parry roll (0x74465E) and threat roll (0x744707) use the
+// same RollDice. RollDice(int count, int sides) 0x47E120: this = the rules
+// object [0x92DC64], two stack args (ret 8), result in AX.
+constexpr uintptr_t kRollDice = 0x0047E120;
+constexpr uintptr_t kAttackD20Call = 0x00744401;
+// GetAttackModifierVersus(target creature) situational terms, as decompiled
+// 2026-10-18 (asm 0x697165..0x697a13; RE-NOTES table). Target = the argument
+// (null for a non-creature: the whole block is skipped); attacker = stats
+// +0x24; "ranged" = the current attack data's +0x34.
+//   blind      GetBlind(target) 0x6621D0 (ecx, plain ret, EAX), +2 if ranged
+//              or the target lacks Blind-Fight (HasFeat(target stats, 0x198))
+//   invisible  attacker->GetInvisible(attacker->vtable[0x10](), 0) 0x6621F0
+//              (ecx = attacker, ret 8, EAX tested), same Blind-Fight rule
+//   unseen     -4 unless the attacker's visible list has the target, bit 0
+//   animation  target +0xAC: ranged 4/0x56/0x57 -2 (moving); 5/7/0x20/0x21/
+//              0x24 prone: melee +4, ranged -4
+//   stunned    target +0x9DD == 6: +2
+//   flanked    0x749E50(ecx = attacker, push target) == 1: +2; ranged only
+//              when centre distance^2 <= 100
+//   in reach   ranged, no Point Blank Shot (HasFeat(attacker stats, 0x1B)),
+//              centre distance^2 <= MaxAttackRange(target, attacker id, 0,
+//              0)^2, and the target does not wield a ranged weapon
+//              (0x6499A0, ecx = target: right-hand base item +0x18): -4
+constexpr uintptr_t kGetBlind = 0x006621D0;
+constexpr uintptr_t kGetInvisible = 0x006621F0;
+constexpr uintptr_t kVtableAsObject = 0x10;
+constexpr uintptr_t kIsFlankedBy = 0x00749E50;
+constexpr uintptr_t kWieldsRangedWeapon = 0x006499A0;
+constexpr uintptr_t kCreatureAnimation = 0xAC;    // int32
+constexpr uintptr_t kCreatureActionState = 0x9DD;  // uint8: 6 stunned; 5 AddAttackActions refuses to act
+constexpr uintptr_t kAttackDataRanged = 0x34;     // int32 bool
+constexpr int kFeatBlindFight = 0x198;
+constexpr int kFeatPointBlankShot = 0x1B;
+
 // CNWSCombatRound fields (InitializeNumberOfAttacks, ResolveMeleeAttack,
 // GetAttackModifierVersus).
 constexpr uintptr_t kRoundCurrentAttack = 0x2114;    // uint8, index of the attack being resolved

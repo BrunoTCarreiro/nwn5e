@@ -8,6 +8,9 @@
 // - Armor Class: player characters and henchmen keep the engine's (gear) AC;
 //   every other creature — monsters, summons, familiars, animal companions —
 //   uses the expected AC for its challenge rating (decision 11).
+// - Situational modifiers (prone, blind, flanked…) are taken out of the
+//   attack modifier when rules_advantage.cpp turns them into advantage or
+//   disadvantage for the attack being resolved.
 //
 // If the challenge rating read from memory is not plausible, the engine's
 // numbers are returned unchanged and the read is logged.
@@ -21,6 +24,8 @@
 #include "log_once.h"
 #include "nwmain_1_69.h"
 #include "rules/nwn_conversion.h"
+
+int PendingSituationalTotal(const void* stats, const void* target);  // rules_advantage.cpp
 
 namespace {
 
@@ -36,7 +41,8 @@ LogOnce g_attack_logged(2000);
 LogOnce g_armor_logged(2000);
 
 int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
-  const int engine_modifier = g_get_attack_modifier_versus(stats, edx, target);
+  const int engine_modifier =
+      g_get_attack_modifier_versus(stats, edx, target) - PendingSituationalTotal(stats, target);
   if (!g_config.attack_proficiency) return engine_modifier;
   const CreatureFacts facts = ReadCreatureFacts(stats);
   if (!facts.plausible) return engine_modifier;

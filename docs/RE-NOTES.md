@@ -256,19 +256,28 @@ then the situational ones:
 
 | Label | Value | When |
 |---|---|---|
-| Target Blind / Attacker Invisible | (not read yet) | |
+| Target Blind | +2 | GetBlind(target) 0x6621D0 (target +0x9DC bits: none of 0x24, and 0x10, or 0x08 without 0x02), unless melee and the target has Blind-Fight (0x198) |
+| Attacker Invisible | +2 | attacker->GetInvisible(attacker->vtable[0x10](), 0) 0x6621F0 (ret 8), same Blind-Fight exception |
 | Can't see my target | −4 | target not in the attacker's visible list with bit 0 (0x687BF0) |
 | Moving Target | −2 | ranged only; target +0xAC (animation) 4, 0x56 or 0x57 |
 | Target Prone | melee +4 / ranged −4 | target +0xAC 0x05, 0x07, 0x20, 0x21, 0x24 |
 | Target Stunned | +2 | target +0x9DD == 6 |
-| Target Flanked | +2 | 0x749E50(target) == 1; ranged only within 10 m |
-| Ranged Attack Within Melee Distance | −4 | ranged, no Point Blank Shot (feat 27), distance ≤ MaxAttackRange from the target's side, and 0x6499A0 == 0 |
+| Target Flanked | +2 | 0x749E50(ecx attacker, target) == 1 — the target's attack-target fields (+0x4E0/+0x4E4/+0x4F8/+0x4FC) point at someone else; ranged only when centre distance² ≤ 100 |
+| Ranged Attack Within Melee Distance | −4 | ranged, no Point Blank Shot (feat 27), centre distance² ≤ MaxAttackRange(target, attacker id, 0, 0)², and the target does not wield a ranged weapon (0x6499A0: right-hand base item +0x18) |
 | Point Blank Shot Attack Bonus | +1 | ranged, has feat 27, within 5 m |
 | Enemy Attack Bonus | target stats +0x413 (int8) | always |
 
-2024 equivalents (Phase 1b): ranged in close combat, unseen target and prone
-at range → Disadvantage; prone within 5 ft, stunned and (optional) flanking →
-Advantage; moving target has none.
+"Ranged" is the current attack data's +0x34 (the function's `[esp+14h]`,
+loaded at 0x695938); target = the argument (null for doors/placeables: the
+whole block is skipped); attacker = stats +0x24. Creature +0x9DD == 5 makes
+AddAttackActions refuse to act (feedback 7).
+
+0.7.0 (Phase 1b, PLAN.md B1–B7): the ResolveAttackRoll hook evaluates these
+checks before the d20 (rolled at 0x744401, before the modifier), the d20 call
+is redirected to roll two dice and keep one, and the GetAttackModifierVersus
+hook removes their 3e total. Close combat (B5) is the 2024 rule: an enemy
+within 5 ft edge to edge that sees the attacker and is not dead, dying or in
+action state 5/6.
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 

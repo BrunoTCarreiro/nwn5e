@@ -26,6 +26,7 @@ in `nwn5e.ini`:
 | After a kill, the round's remaining attacks go to the nearest enemy (decision 14); ranged: only to enemies already in the fight, within `ranged_retarget_range` (40 m) | `retarget_remaining_attacks` | melee verified in game; ranged 20 m verified in game (0.6.1); "in the fight" filter + 40 m built (0.6.3), awaiting test |
 | No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
 | Character sheet shows the 2024 attack bonus and attacks per round | with `attack_proficiency` / `extra_attack` | attack bonus verified in game (+6 with a sword) |
+| Advantage/disadvantage replace NWN's situational bonuses (Phase 1b, PLAN.md B1–B6) | `advantage_disadvantage` | built (0.7.0): patch and hook installed in game; rolls await a fight |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).

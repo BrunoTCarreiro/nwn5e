@@ -12,6 +12,7 @@ struct Config {
   bool extra_attack = true;        // PCs attack per 2024 Extra Attack; no 3e -5 per extra attack
   bool retarget_remaining_attacks = true;  // after a kill, the next attack goes to the nearest enemy
   int ranged_retarget_range = 40;  // metres a ranged retarget looks (capped at the weapon's range)
+  bool advantage_disadvantage = true;  // situational modifiers become 2024 advantage/disadvantage
   bool log_attacks = true;         // write each rule decision to nwn5e.log
 
   // [debug] — test switches, not rules.
