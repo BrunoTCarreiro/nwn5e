@@ -1,6 +1,7 @@
 #include "engine_queries.h"
 
 #include <math.h>
+#include <string.h>
 
 namespace engine {
 namespace {
@@ -67,6 +68,31 @@ float CentreDistanceSquared(const void* a, const void* b) {
 
 float EdgeDistance(const void* a, const void* b) {
   return sqrtf(CentreDistanceSquared(a, b)) - PersonalSpace(a) - PersonalSpace(b);
+}
+
+namespace {
+
+struct VarName {
+  const char* text;
+  uint32_t length;  // including the null
+};
+using GetIntFn = int(__fastcall*)(void* table, void* edx, VarName* name);
+using SetIntFn = void(__fastcall*)(void* table, void* edx, VarName* name, int value, int flag);
+const auto g_var_get_int = reinterpret_cast<GetIntFn>(nwmain::kVarTableGetInt);
+const auto g_var_set_int = reinterpret_cast<SetIntFn>(nwmain::kVarTableSetInt);
+
+void* VarTable(void* object) { return static_cast<uint8_t*>(object) + nwmain::kObjectVarTable; }
+
+}  // namespace
+
+int GetLocalInt(void* object, const char* name) {
+  VarName text = {name, static_cast<uint32_t>(strlen(name) + 1)};
+  return object ? g_var_get_int(VarTable(object), nullptr, &text) : 0;
+}
+
+void SetLocalInt(void* object, const char* name, int value) {
+  VarName text = {name, static_cast<uint32_t>(strlen(name) + 1)};
+  if (object) g_var_set_int(VarTable(object), nullptr, &text, value, 0);
 }
 
 }  // namespace engine

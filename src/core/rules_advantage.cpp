@@ -15,8 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <unordered_set>
-
 #include <string>
 
 #include "config.h"
@@ -182,8 +180,9 @@ void ReadPendingAttack(void* creature, void* target_object) {
 
 // [debug] creature_hp_multiplier / creature_min_hp: the first time a character
 // attacks a creature that is not a character, its current hit points are
-// multiplied and raised to the minimum (once per creature per session), so
-// weak monsters survive several hits in mastery tests.
+// multiplied and raised to the minimum, once per creature (marked with a local
+// variable, so a reloaded creature is boosted again), so weak monsters survive
+// several hits in mastery tests.
 void BoostTestTarget(void* attacker, void* target_object) {
   const int multiplier = g_config.debug_creature_hp_multiplier > 1 ? g_config.debug_creature_hp_multiplier : 1;
   const int minimum = g_config.debug_creature_min_hp;
@@ -194,8 +193,8 @@ void BoostTestTarget(void* attacker, void* target_object) {
   void* target_stats = target ? Field<void*>(target, nwmain::kCreatureStats) : nullptr;
   if (!attacker_stats || !target_stats) return;
   if (!ReadCreatureFacts(attacker_stats).character || ReadCreatureFacts(target_stats).character) return;
-  static std::unordered_set<uint32_t> boosted;
-  if (!boosted.insert(target_id).second) return;
+  if (engine::GetLocalInt(target, "nwn5e_test_boosted")) return;
+  engine::SetLocalInt(target, "nwn5e_test_boosted", 1);
   const int hit_points = Field<int16_t>(target, nwmain::kObjectCurrentHitPoints);
   if (hit_points <= 0) return;
   int new_hit_points = hit_points * multiplier;

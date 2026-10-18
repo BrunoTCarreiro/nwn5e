@@ -20,6 +20,11 @@ bool Sees(void* creature, uint32_t other_id);    // visible list 0x687BF0, bit 0
 int FactionOf(const void* creature);             // stats +0x90, -1 if unknown
 float MaxAttackRange(void* creature, uint32_t target, int ranged_arg);  // 0x64B5D0
 
+// Script local variables on an object (saved with the game): CNWSScriptVar
+// Table::GetInt 0x74E7B0 / SetInt 0x74E970 on object +0xD8. 0 when unset.
+int GetLocalInt(void* object, const char* name);
+void SetLocalInt(void* object, const char* name, int value);
+
 // Edge-to-edge distance, as GetNearestEnemy measures it.
 float EdgeDistance(const void* a, const void* b);
 // Centre-to-centre distance squared, as GetAttackModifierVersus compares it.

@@ -37,20 +37,11 @@ void RememberSaveDc2024(uint32_t caster, int dc);              // rules_save_rol
 
 namespace {
 
-struct ExoString {
-  const char* text;
-  uint32_t length;  // including the null
-};
-
-using GetIntFn = int(__fastcall*)(void* table, void* edx, ExoString* name);
-using SetIntFn = void(__fastcall*)(void* table, void* edx, ExoString* name, int value, int flag);
 using ResetFeatUsesFn = void(__fastcall*)(void* stats, void* edx);
 using HasFeatFn = int(__fastcall*)(void* stats, void* edx, int feat);
 using GetAttackFn = void*(__fastcall*)(void* round, void* edx, int index);
 using GetItemFn = void*(__fastcall*)(void* owner, void* edx, int which);
 
-const auto g_get_int = reinterpret_cast<GetIntFn>(nwmain::kVarTableGetInt);
-const auto g_set_int = reinterpret_cast<SetIntFn>(nwmain::kVarTableSetInt);
 const auto g_has_feat = reinterpret_cast<HasFeatFn>(nwmain::kHasFeat);
 const auto g_get_attack = reinterpret_cast<GetAttackFn>(nwmain::kGetAttack);
 const auto g_get_current_attack_weapon = reinterpret_cast<GetItemFn>(nwmain::kGetCurrentAttackWeapon);
@@ -65,17 +56,9 @@ const char kSwapVar[] = "nwn5e_mastery_swap";
 
 bool Faithful() { return g_config.weapon_mastery == rules::RuleVariant::kFaithful; }
 
-void* VarTable(void* creature) { return static_cast<uint8_t*>(creature) + nwmain::kObjectVarTable; }
+int GetVar(void* creature, const char* name) { return engine::GetLocalInt(creature, name); }
 
-int GetVar(void* creature, const char* name) {
-  ExoString text = {name, static_cast<uint32_t>(strlen(name) + 1)};
-  return g_get_int(VarTable(creature), nullptr, &text);
-}
-
-void SetVar(void* creature, const char* name, int value) {
-  ExoString text = {name, static_cast<uint32_t>(strlen(name) + 1)};
-  g_set_int(VarTable(creature), nullptr, &text, value, 0);
-}
+void SetVar(void* creature, const char* name, int value) { engine::SetLocalInt(creature, name, value); }
 
 bool HasFeat(void* stats, int feat) { return stats && feat >= 0 && g_has_feat(stats, nullptr, feat) != 0; }
 
