@@ -186,3 +186,14 @@ TEST(GrazeToppleNumbers) {
   CHECK_EQ(IsFinesseNwnBaseItem(51), true);
   CHECK_EQ(IsFinesseNwnBaseItem(13), false);
 }
+
+// The main-hand Strength term the D4 Cleave attack takes back out. Breaks
+// caught: rounding 1.5 x Str up (Str +3 two-handed is 4, not 5); the
+// two-handed bonus applied to a negative modifier or a one-handed weapon.
+TEST(NwnMainHandStrength) {
+  CHECK_EQ(NwnMainHandStrengthDamage(3, true), 4);
+  CHECK_EQ(NwnMainHandStrengthDamage(4, true), 6);
+  CHECK_EQ(NwnMainHandStrengthDamage(3, false), 3);
+  CHECK_EQ(NwnMainHandStrengthDamage(-1, true), -1);
+  CHECK_EQ(NwnMainHandStrengthDamage(0, true), 0);
+}

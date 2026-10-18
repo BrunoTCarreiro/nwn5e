@@ -42,6 +42,10 @@ int OffHandAttacks(int nwn_attacks, bool double_weapon, bool dual_wielder, bool 
 // positive, all of it when not (0x697D10).
 int NwnOffHandStrengthDamage(int strength_modifier);
 
+// NWN's main-hand Strength damage (0x697D10): Str x 1.5 (truncated) with a
+// two-handed weapon when positive, the modifier itself otherwise.
+int NwnMainHandStrengthDamage(int strength_modifier, bool two_handed);
+
 // D3: weapon mastery slots (2024): Fighter 3/4/5/6 at levels 1/4/10/16,
 // Barbarian 2/3/4 at 1/4/10, Paladin, Ranger and Rogue 2; 0 for the rest.
 int WeaponMasterySlots(CharacterClass character_class, int levels);

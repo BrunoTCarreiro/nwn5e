@@ -11,6 +11,7 @@
 
 #include <ctype.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <windows.h>
@@ -45,6 +46,7 @@ using GetItemFn = void*(__fastcall*)(void* owner, void* edx, int which);
 const auto g_has_feat = reinterpret_cast<HasFeatFn>(nwmain::kHasFeat);
 const auto g_get_attack = reinterpret_cast<GetAttackFn>(nwmain::kGetAttack);
 const auto g_get_current_attack_weapon = reinterpret_cast<GetItemFn>(nwmain::kGetCurrentAttackWeapon);
+const auto g_get_item_in_slot_mastery = reinterpret_cast<GetItemFn>(nwmain::kGetItemInSlot);
 ResetFeatUsesFn g_reset_feat_uses = nullptr;
 
 LogOnce g_logged_slots(256);
@@ -326,6 +328,48 @@ std::unordered_map<uint32_t, VexMark> g_vex;            // by attacker id
 std::unordered_map<uint32_t, SapMark> g_sap;            // by sapped creature id
 std::unordered_map<uint32_t, DWORD> g_slowed;           // D4 Slow / Topple: last applied, by target id
 std::unordered_map<uint32_t, DWORD> g_toppled;
+struct CleavePending {
+  uint32_t target;
+  uint32_t attacker_rounds;
+  DWORD tick;
+};
+std::unordered_map<uint32_t, uint32_t> g_cleave_used;         // attacker -> its ended rounds + 1 when it cleaved
+std::unordered_map<uint32_t, CleavePending> g_cleave_pending;  // attacker -> the extra attack not resolved yet
+
+using AddCleaveAttackFn = void(__fastcall*)(void* round, void* edx, uint32_t target, int great_cleave);
+using GetBaseItemFn = void*(__fastcall*)(void* base_items, void* edx, int row);
+const auto g_add_cleave_attack = reinterpret_cast<AddCleaveAttackFn>(nwmain::kAddCleaveAttack);
+const auto g_get_base_item = reinterpret_cast<GetBaseItemFn>(nwmain::kGetBaseItem);
+
+// The nearest other enemy within 5 ft of the first target and in reach (D4 Cleave).
+uint32_t CleaveTarget(void* attacker, void* first, uint32_t attacker_id) {
+  const float reach = engine::MaxAttackRange(attacker, nwmain::kObjectInvalid, nwmain::kMaxAttackRangeRetarget);
+  uint32_t best = nwmain::kObjectInvalid;
+  float best_distance = 1.0e9f;
+  engine::ForEachOtherCreatureInArea(first, [&](uint32_t id, void* creature) {
+    if (id == attacker_id || !engine::IsEnemy(attacker, id) || engine::IsDeadOrDying(creature)) return;
+    if (engine::EdgeDistance(first, creature) > nwmain::kCleaveSplashMetres) return;
+    const float distance = engine::EdgeDistance(attacker, creature);
+    if (!(distance < reach) || distance >= best_distance) return;
+    best = id;
+    best_distance = distance;
+  });
+  return best;
+}
+
+// Does the engine add 1.5 x Strength to this attack (two-handed melee)?
+bool TwoHandedStrength(void* creature, const void* attack) {
+  if (Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return false;
+  void* inventory = Field<void*>(creature, nwmain::kCreatureInventory);
+  void* item = inventory ? g_get_item_in_slot_mastery(inventory, nullptr, nwmain::kSlotRightHand) : nullptr;
+  if (!item) return false;
+  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+  void* base_items = rules_object ? Field<void*>(rules_object, nwmain::kRulesBaseItems) : nullptr;
+  void* base_item = base_items ? g_get_base_item(base_items, nullptr, Field<int32_t>(item, nwmain::kItemBaseItem)) : nullptr;
+  if (!base_item || Field<uint8_t>(base_item, nwmain::kBaseItemWield) == nwmain::kBaseItemWieldDouble) return false;
+  return static_cast<int>(Field<uint8_t>(base_item, nwmain::kBaseItemSize)) -
+             static_cast<int>(Field<uint32_t>(creature, nwmain::kCreatureSize)) == 1;
+}
 constexpr DWORD kRoundMs = 6000;
 constexpr float kRoundSeconds = 6.0f;
 
@@ -407,7 +451,7 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
   if (!MasteryOn() || !attacker || !target_object || base_item < 0) return;
   const rules::Mastery mastery = rules::MasteryForNwnBaseItem(base_item);
   if (mastery != rules::Mastery::kVex && mastery != rules::Mastery::kSap && mastery != rules::Mastery::kGraze &&
-      mastery != rules::Mastery::kSlow && mastery != rules::Mastery::kTopple) {
+      mastery != rules::Mastery::kSlow && mastery != rules::Mastery::kTopple && mastery != rules::Mastery::kCleave) {
     return;
   }
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
@@ -461,6 +505,20 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
              (save == 0 ? " failed, knocked down for a round" : save == 2 ? " - immune" : " made");
       break;
     }
+    case rules::Mastery::kCleave: {
+      if (Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return;  // melee attack rolls only
+      const auto used = g_cleave_used.find(attacker_id);
+      if (used != g_cleave_used.end() && used->second == rounds + 1) return;  // once per round
+      const uint32_t second = CleaveTarget(attacker, target, attacker_id);
+      if (second == nwmain::kObjectInvalid) return;
+      g_add_cleave_attack(round, nullptr, second, 0);
+      g_cleave_used[attacker_id] = rounds + 1;
+      g_cleave_pending[attacker_id] = CleavePending{second, rounds, now};
+      char text[96];
+      sprintf_s(text, "Cleave: extra attack at 0x%08X (its damage without Strength)", second);
+      what = text;
+      break;
+    }
     default:
       return;
   }
@@ -468,6 +526,31 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
     Log("mastery: 0x%08X %s 0x%08X with %s: %s", attacker_id, hit ? "hit" : "missed", target_id,
         Label(base_item).c_str(), what.c_str());
   }
+}
+
+int MasteryCleaveDamage(void* stats, int bonus) {
+  if (!MasteryOn() || g_cleave_pending.empty() || !stats) return bonus;
+  void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  if (!creature) return bonus;
+  const uint32_t id = IdOf(creature);
+  const auto pending = g_cleave_pending.find(id);
+  if (pending == g_cleave_pending.end()) return bonus;
+  if (GetTickCount() - pending->second.tick > kMarkMaxAgeMs ||
+      RoundsEnded(id) > pending->second.attacker_rounds + 1) {
+    g_cleave_pending.erase(pending);
+    return bonus;
+  }
+  void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
+  const void* attack = round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
+  if (!attack || Field<uint32_t>(attack, nwmain::kAttackDataTarget) != pending->second.target) return bonus;
+  g_cleave_pending.erase(pending);
+  const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
+  const int nwn_term = rules::NwnMainHandStrengthDamage(strength, TwoHandedStrength(creature, attack));
+  const int term = rules::OffHandDamageAbilityModifier(strength, false);  // only when negative
+  if (EffectLogSlot()) {
+    Log("mastery: 0x%08X Cleave attack damage: Strength %+d -> %+d", id, nwn_term, term);
+  }
+  return bonus - nwn_term + term;
 }
 
 namespace {

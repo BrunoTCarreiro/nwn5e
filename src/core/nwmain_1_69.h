@@ -614,6 +614,20 @@ constexpr uintptr_t kAddEventDeltaTime = 0x006BF770;
 constexpr uintptr_t kGetServerAIMaster = 0x005FFBA0;
 constexpr uint32_t kEventApplyEffect = 5;
 constexpr uintptr_t kAttackDataAnimationLength = 0x02;
+// D4 Cleave: CNWSCombatRound::AddCleaveAttack(target, bGreatCleave) 0x73D4B0
+// (ret 8) queues a round action (type 9) at the target, counts it as an extra
+// attack (+0x2148) and puts special attack 6 (Cleave; 391 for Great Cleave)
+// first in the special-attack list. ResolveMeleeSpecialAttack 0x742BC0 clears
+// a special attack the attacker has no uses of (GetFeatRemainingUses 0x6A3850
+// == 0), so without the feat it is an ordinary attack at the second target.
+// Main-hand Strength in the damage bonus 0x697D10: Str x 1.5 (float
+// 0x8ADA34, truncated) when the right-hand weapon is one size above the
+// creature (base item +0x19, creature size +0x4D4), the attack is melee and
+// the weapon is not double; Str otherwise.
+constexpr uintptr_t kAddCleaveAttack = 0x0073D4B0;
+constexpr uintptr_t kBaseItemSize = 0x19;
+constexpr uintptr_t kCreatureSize = 0x4D4;
+constexpr float kCleaveSplashMetres = 1.524f;  // 5 ft
 constexpr size_t kGameEffectSize = 0x90;
 constexpr uintptr_t kEffectType = 0x08;
 constexpr uintptr_t kEffectFlags = 0x0A;

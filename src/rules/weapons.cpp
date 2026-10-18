@@ -104,6 +104,10 @@ int OffHandAttacks(int nwn_attacks, bool double_weapon, bool dual_wielder, bool 
   return main_hand_light && off_hand_light ? 1 : 0;
 }
 
+int NwnMainHandStrengthDamage(int strength_modifier, bool two_handed) {
+  return two_handed && strength_modifier > 0 ? strength_modifier * 3 / 2 : strength_modifier;
+}
+
 int NwnOffHandStrengthDamage(int strength_modifier) {
   return strength_modifier > 0 ? strength_modifier / 2 : strength_modifier;
 }

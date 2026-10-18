@@ -13,6 +13,7 @@
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
+#include "mastery.h"
 #include "nwmain_1_69.h"
 #include "rules/weapons.h"
 
@@ -79,7 +80,8 @@ int __fastcall GetOffHandAttacks(void* round, void* edx) {
 
 int __fastcall GetDamageBonus(void* stats, void* edx, void* target, int off_hand) {
   const int bonus = g_get_damage_bonus(stats, edx, target, off_hand);
-  if (!off_hand) return bonus;
+  if (!off_hand) return MasteryCleaveDamage(stats, bonus);  // D4 Cleave's extra attack
+  if (g_config.two_weapon_fighting != rules::RuleVariant::kFaithful) return bonus;
   const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
   const int nwn_term = rules::NwnOffHandStrengthDamage(strength);
   const bool style = HasFeat(stats, nwmain::kFeatTwoWeaponFighting);
@@ -95,14 +97,19 @@ int __fastcall GetDamageBonus(void* stats, void* edx, void* target, int off_hand
 }  // namespace
 
 void InstallTwoWeaponRules() {
-  if (g_config.two_weapon_fighting != rules::RuleVariant::kFaithful) return;
-  InstallHook({"CNWSCombatRound off-hand attacks (two-weapon fighting)", nwmain::kGetOffHandAttacks,
-               nwmain::kGetOffHandAttacksPrologue, sizeof(nwmain::kGetOffHandAttacksPrologue),
-               reinterpret_cast<void*>(&GetOffHandAttacks), reinterpret_cast<void**>(&g_get_off_hand_attacks)});
-  InstallHook({"CNWSCreatureStats damage bonus (off-hand Strength)", nwmain::kGetDamageBonus,
-               nwmain::kGetDamageBonusPrologue, sizeof(nwmain::kGetDamageBonusPrologue),
-               reinterpret_cast<void*>(&GetDamageBonus), reinterpret_cast<void**>(&g_get_damage_bonus)});
-  for (const nwmain::SmallPatch& patch : nwmain::kFaithfulTwoWeaponPatches) {
-    PatchBytes(patch.what, patch.address, patch.original, patch.patched, patch.size);
+  const bool two_weapon = g_config.two_weapon_fighting == rules::RuleVariant::kFaithful;
+  const bool mastery = g_config.weapon_mastery != rules::RuleVariant::kOff;  // D4 Cleave uses the damage hook
+  if (two_weapon) {
+    InstallHook({"CNWSCombatRound off-hand attacks (two-weapon fighting)", nwmain::kGetOffHandAttacks,
+                 nwmain::kGetOffHandAttacksPrologue, sizeof(nwmain::kGetOffHandAttacksPrologue),
+                 reinterpret_cast<void*>(&GetOffHandAttacks), reinterpret_cast<void**>(&g_get_off_hand_attacks)});
+    for (const nwmain::SmallPatch& patch : nwmain::kFaithfulTwoWeaponPatches) {
+      PatchBytes(patch.what, patch.address, patch.original, patch.patched, patch.size);
+    }
+  }
+  if (two_weapon || mastery) {
+    InstallHook({"CNWSCreatureStats damage bonus (off-hand Strength, Cleave)", nwmain::kGetDamageBonus,
+                 nwmain::kGetDamageBonusPrologue, sizeof(nwmain::kGetDamageBonusPrologue),
+                 reinterpret_cast<void*>(&GetDamageBonus), reinterpret_cast<void**>(&g_get_damage_bonus)});
   }
 }
