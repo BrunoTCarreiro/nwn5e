@@ -202,6 +202,59 @@ Later sources, as each NWN effect is converted: conditions (Restrained,
 Paralyzed, Poisoned, Frightened…), hidden attackers, Reckless Attack, Help,
 spells (Faerie Fire, Bless's d4 is not adv/disadv).
 
+## Phase 1c proposal — six saving throws (2026-10-18, awaiting owner)
+
+**How NWN does it** (RE-NOTES "Saving throws"). Scripts ask for one of three
+saves with a DC and a save type (fear, poison, fire…). The engine's save roll
+(0x749230) adds the save value (GetFort/Ref/WillSavingThrow 0x6AD4F0 /
+0x6AD630 / 0x6AD590), effect and feat bonuses against that save type (capped
+at +20) and a d20; a natural 20 always succeeds, a natural 1 fails only under
+a server option. The save value is: class base save (table) + ability
+modifier (Con / Dex / Wis) + Luck of Heroes (+1) + Divine Grace (Cha) + a
+creature blueprint bonus + magic effects. Spell DCs (0x6659D0) are 10 +
+spell level + casting ability modifier + Spell Focus (+2 / +4 / +6). The
+character sheet reads the same three save functions.
+
+**Plan.** Hook the three save functions to return the 2024 save: ability
+modifier + proficiency bonus when proficient + magic effects; hook the spell
+DC to 8 + proficiency bonus + casting ability modifier. The sheet follows.
+Rules built and tested (`src/rules/saves.cpp`).
+
+**C1. Which 2024 save each NWN save is.** Proposed: Fortitude →
+Constitution, Reflex → Dexterity, Will → Wisdom. Strength, Intelligence and
+Charisma saves only appear when spells are converted (Phase 4).
+
+**C2. Proficiency.** Characters (and henchmen): the two saves of their first
+class (2024; multiclassing adds none) — proposed. Creatures: proficient where
+their NWN base save is a "good" save (the 3e good progression) — proposed;
+alternatives: never proficient, or keep NWN's numbers for creatures.
+
+**C3. 3e save bonuses** (Luck of Heroes, Divine Grace, Great Fortitude /
+Lightning Reflexes / Iron Will, racial +1/+2s, the blueprint bonus).
+Proposed: dropped, except magic effects and items; 2024 equivalents
+(Paladin Aura of Protection, dwarf/halfling/gnome advantages) come with the
+class and species rework (Phase 3). Alternative: keep them for now.
+
+**C4. Natural 1 / 20 on saves.** 2024: no automatic success or failure on
+saves. Proposed: follow 2024 (a 20 can fail a DC 25).
+
+**C5. Spell DC.** Proposed: 8 + proficiency bonus + casting ability modifier
+— spell level no longer raises the DC (2024). Spell Focus feats: proposed
+dropped (no 2024 equivalent) — alternative: keep +1/+2/+3.
+
+**C6. Other DCs** (scrolls/wands/potions, monster abilities with the fixed
+"3" modifier, traps, poisons from 2DAs). Proposed: monster abilities use 8 +
+their CR proficiency bonus + 3 now; items, traps and poisons stay NWN's until
+Phase 8 (creatures and campaign balance).
+
+**C7. Effect and feat bonuses inside the save roll** (vs fear, poison,
+mind…). Proposed: kept for now (they are mostly items and spells); racial
+ones move to advantage with Phase 3.
+
+**C8. Character sheet.** It shows the three NWN saves; with C1 it would show
+the Con / Dex / Wis saves under the Fortitude / Reflex / Will labels.
+Proposed: fine until the interface phase (Phase 7) relabels them.
+
 ## Decided (owner, 2026-10-17)
 
 8. Expanded critical range (Champion's Improved Critical, 19–20): the expanded

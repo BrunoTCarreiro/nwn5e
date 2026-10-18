@@ -279,6 +279,35 @@ hook removes their 3e total. Close combat (B5) is the 2024 rule: an enemy
 within 5 ft edge to edge that sees the attacker and is not dead, dying or in
 action state 5/6.
 
+## Saving throws (decompiled 2026-10-18)
+
+- Save roll 0x749230 (CNWSCreature, `this` = the saving creature):
+  (save 1 Fort / 2 Reflex / 3 Will, DC, save type, versus object, …).
+  Value = GetFort/Ref/WillSavingThrow(0); bonus = GetTotalEffectBonus(3, …,
+  save, type) + versus-specific effects + feat bonuses (+2s by spell school
+  and save type, +1s), capped at +20; d20 = RollDice(1, 20). Types 1/2 can
+  return 2 (immune, 0x6B0090 / feats). Feedback CC message: DC, bonus, roll,
+  save, type. Natural 1 fails only when a server option ([[0x92DC50]+4]
+  vtable +0x54 → +0x108) is set; natural 20 always succeeds; else success
+  when DC ≤ d20 + bonus + value. Mind-spell failures may reroll once
+  (feat, marker 0x103).
+- GetFortSavingThrow(bBaseOnly) 0x6AD4F0: effects (type 3, save 1) unless
+  base-only + Luck of Heroes (feat 0x17E, +1) + Divine Grace (feat 0x1D9,
+  Cha mod) + Con mod (stats +0x3FD) + stats +0x4C4 (creature blueprint
+  bonus) + GetBaseFortSavingThrow 0x6A26D0 (class tables). Reflex 0x6AD630
+  and Will 0x6AD590 mirror it (Dex / Wis).
+- Ability modifiers are bytes at stats +0x3F9 Str, +0x3FB Dex, +0x3FD Con,
+  +0x3FF Int, +0x401 Wis, +0x403 Cha (Str, Wis and Cha confirmed in code;
+  the rest by the 2-byte stride).
+- Callers of GetFortSavingThrow: 0x612430 (script getter, likely), 0x62BD30
+  (character sheet), 0x749230.
+- Spell DC 0x6659D0 (CNWSCreature, spell id): 10 + level + ability mod +
+  Spell Focus (school = spells row +0x20; feats 0x23/0xA6.. +2, 0x189.. +4,
+  0x262.. +6) − a class term (0x6995B0). Casting class slot = creature
+  +0x19C (−1 none: item +0x1AC or innate level with modifier 3; −2 innate,
+  Cha); level from the class column (0x4F8350) or innate (row +0x47);
+  creature +0xA70 set → innate level, modifier 3.
+
 ## Damage roll and critical damage (decompiled 2026-10-17)
 
 `CNWSCreatureStats::GetDamageRoll(defender, bOffHand, bCritical, bSneakAttack,
