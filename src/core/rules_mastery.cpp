@@ -334,7 +334,17 @@ struct CleavePending {
   DWORD tick;
   bool rolled = false;  // the extra attack's roll has happened
   int attack_index = -1;  // its slot in the round, for the damage adjustment
+  uint32_t first_target = 0;  // the round's target to go back to after it
 };
+
+// The round's target goes back to the first target after the extra attack
+// (if that one still stands), so the round's other attacks stay on it.
+void RestoreRoundTarget(void* attacker, void* round, uint32_t first_target) {
+  void* first = engine::GetCreature(first_target);
+  if (!first || engine::IsDeadOrDying(first)) return;
+  SetField<uint32_t>(round, nwmain::kRoundTarget, first_target);
+  SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
+}
 std::unordered_map<uint32_t, uint32_t> g_cleave_used;         // attacker -> its ended rounds + 1 when it cleaved
 std::unordered_map<uint32_t, CleavePending> g_cleave_pending;  // attacker -> the extra attack not resolved yet
 
@@ -461,19 +471,26 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
   if (!attack) return;
   const int result = Field<uint8_t>(attack, nwmain::kAttackDataResult);
   const bool hit = rules::MasteryAttackHit(result);
-  // The first roll at a pending Cleave target is the extra attack Cleave added.
+  // The first roll at a pending Cleave target, in the same round, is the
+  // extra attack Cleave added; a round that ended without it lost it (e.g. a
+  // potion was drunk).
   {
     const uint32_t rolled_at = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
     const auto pending = g_cleave_pending.find(IdOf(attacker));
-    if (pending != g_cleave_pending.end() && !pending->second.rolled && pending->second.target == rolled_at) {
-      pending->second.rolled = true;
-      pending->second.attack_index = Field<uint8_t>(round, nwmain::kRoundCurrentAttack);
-      if (EffectLogSlot()) {
-        Log("mastery: 0x%08X Cleave extra attack at 0x%08X: %s (result %d)", IdOf(attacker), rolled_at,
-            hit ? "hit" : "miss", result);
+    if (pending != g_cleave_pending.end() && !pending->second.rolled) {
+      if (RoundsEnded(IdOf(attacker)) != pending->second.attacker_rounds) {
+        g_cleave_pending.erase(pending);
+      } else if (pending->second.target == rolled_at) {
+        pending->second.rolled = true;
+        pending->second.attack_index = Field<uint8_t>(round, nwmain::kRoundCurrentAttack);
+        RestoreRoundTarget(attacker, round, pending->second.first_target);
+        if (EffectLogSlot()) {
+          Log("mastery: 0x%08X Cleave extra attack at 0x%08X: %s (result %d)", IdOf(attacker), rolled_at,
+              hit ? "hit" : "miss", result);
+        }
+        if (!hit) g_cleave_pending.erase(pending);
+        return;  // the extra attack itself does not cleave again
       }
-      if (!hit) g_cleave_pending.erase(pending);
-      return;  // the extra attack itself does not cleave again
     }
   }
   if (mastery == rules::Mastery::kGraze ? !rules::MasteryAttackMiss(result) : !hit) return;
@@ -528,9 +545,18 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
       if (used != g_cleave_used.end() && used->second == rounds + 1) return;  // once per round
       const uint32_t second = CleaveTarget(attacker, target, attacker_id);
       if (second == nwmain::kObjectInvalid) return;
+      // As the engine's Great Cleave does: the round's target becomes the
+      // second creature, then the cleave attack is queued next.
+      SetField<uint32_t>(round, nwmain::kRoundTarget, second);
+      SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
       g_add_cleave_attack(round, nullptr, second, 0);
       g_cleave_used[attacker_id] = rounds + 1;
-      g_cleave_pending[attacker_id] = CleavePending{second, rounds, now};
+      CleavePending pending;
+      pending.target = second;
+      pending.attacker_rounds = rounds;
+      pending.tick = now;
+      pending.first_target = target_id;
+      g_cleave_pending[attacker_id] = pending;
       char text[96];
       sprintf_s(text, "Cleave: extra attack at 0x%08X (its damage without Strength)", second);
       what = text;

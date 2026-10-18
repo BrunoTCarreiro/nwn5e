@@ -619,7 +619,10 @@ constexpr uintptr_t kAttackDataAnimationLength = 0x02;
 // attack (+0x2148) and puts special attack 6 (Cleave; 391 for Great Cleave)
 // first in the special-attack list. ResolveMeleeSpecialAttack 0x742BC0 clears
 // a special attack the attacker has no uses of (GetFeatRemainingUses 0x6A3850
-// == 0), so without the feat it is an ordinary attack at the second target.
+// == 0), so without the feat it is an ordinary attack. The attack goes at the
+// round's target (+0x2134), not the action's, which is why the Great Cleave
+// branch sets it first (seen in game 0.9.6: without it the extra attack went
+// at the first creature).
 // Main-hand Strength in the damage bonus 0x697D10: Str x 1.5 (float
 // 0x8ADA34, truncated) when the right-hand weapon is one size above the
 // creature (base item +0x19, creature size +0x4D4), the attack is melee and
