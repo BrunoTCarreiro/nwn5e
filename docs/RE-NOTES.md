@@ -305,6 +305,23 @@ bDeathAttack, bForceMax)` 0x69AEB0, `ret 0x18`:
   0.6.4 answers 1 at those 12 sites when the entry's dice count is 0, read
   from the caller's stack (nwmain_1_69.h); sites verified in game at load.
 
+## In-game observations (2026-10-18, 0.7.1, bow vs 3 goblins, then melee)
+
+- Ranged retargeting at 40 m: a kill on shot 1 of 3 moved the round to the
+  goblin 0.4 m away ("in the fight", attack order on the PC, faction 20 =
+  ours); object 0xEB at 30.9 m (the caged Hook Horror) had no attack order
+  and was skipped. After the last kill: "1 seen enemies within range, none in
+  the fight". Round order: goblins charge at range, then three adjacent.
+- Advantage/disadvantage: a charging goblin's −2 (moving) removed → normal
+  roll at +4; with goblins adjacent every shot had disadvantage
+  ("close-combat enemies 1–3"), the combat log showing the kept die (dice
+  10 / 5 → "(5 + 4 = 9)", 1 / 10 → a natural 1). Goblins' flanking +2
+  removed. One goblin swing had "target unseen" (the engine's own −4: its
+  visible list lacked the PC for a moment) → disadvantage.
+- A goblin's natural 20 on the PC: "*critical hit* : (20 + 0 = 20)", 3
+  damage, no Threat Roll in the line; "crit damage: flat bonuses x2 -> x1".
+- Still: the PC's normal ranged attack is +4 while the sheet shows +3.
+
 ## In-game observations (2026-10-17, attack/AC hooks, 0.2.0)
 
 Prelude fight, `nwn5e.log`: the PC (object 0x7FFFFFFF — NWN numbers player
