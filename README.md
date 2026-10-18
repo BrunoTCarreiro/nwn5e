@@ -31,7 +31,7 @@ in `nwn5e.ini`:
 | Faithful / NWN mode for the rules decided since 2026-10-18 (PLAN.md "Modes") | `mode` (faithful, nwn) | built (0.7.2) |
 | No racial bonuses vs specific enemies: Battle Training, Good Aim, sling, +4 AC vs giants (R1) | `racial_combat_bonuses` | built (0.7.2); faithful removes, nwn keeps |
 | 2024 saves: Con/Dex/Wis values, class proficiency, Aura of Protection, spell DC 8 + PB + mod, fixed DCs converted, no automatic 1/20, species advantages, Halfling Luck (C1–C6) | `saves` | built (0.8.0); racial "+2 vs X" inside the save roll dropped in faithful (C7, 0.8.1); labels / `!saves` (C8) still to come |
-| Opportunity attacks: only moving away provokes — no AoO for casting, ranged shots, unarmed attacks or Disarm; Spring Attack no longer protects; one per round and Tumble as before (D2) | `opportunity_attacks` | built (0.8.3; all 7 patches verified on load); faithful only, nwn keeps NWN's |
+| Opportunity attacks: only moving away provokes — no AoO for casting, drinking potions, ranged shots, unarmed attacks or Disarm; Spring Attack no longer protects; one per round and Tumble as before (D2) | `opportunity_attacks` | built (0.8.3; potions 0.8.4; all 7 patches verified on load); faithful only, nwn keeps NWN's |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).

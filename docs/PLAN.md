@@ -303,10 +303,11 @@ way out until Phase 6 adds Disengage. NWN mode: NWN's rules unchanged.
 *Built 0.8.3 (2026-10-18), with what the recon found:* NWN already refills
 each creature's one AoO at the end of every round, and 1.69 has no Combat
 Reflexes, so "once per round" and "no extra ones" hold in both modes without
-code. NWN also provokes on three things the decision didn't list — every
-ranged shot (the party is exempt at some difficulties), unarmed attacks
-without Improved Unarmed Strike, and Disarm. None provoke in 2024 (a ranged
-attack next to an enemy has disadvantage instead, B5), so faithful removes
+code. NWN also provokes on four things the decision didn't list — drinking
+a potion and every ranged shot (the party is exempt from both at the easier
+difficulties), unarmed attacks without Improved Unarmed Strike, and Disarm.
+None provoke in 2024 (a potion is a Bonus Action; a ranged attack next to an
+enemy has disadvantage instead, B5), so faithful removes
 them too, in keeping with "only moving away provokes"; NWN mode keeps them.
 
 **D3. Weapon mastery — who.** Faithful: the 2024 counts (Fighter 3/4/5/6 at

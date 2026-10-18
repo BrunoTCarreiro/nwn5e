@@ -471,13 +471,20 @@ constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x006108B0;
 // creature: CNWSCombatRound +0x2128 is set to 1 by the constructor and by
 // EndCombatRound 0x73B7A0 (UpdateCombatRound 0x73B8F0 runs it when the
 // round's time is up) and drops by 1 per AoO; NWN 1.69 has no Combat
-// Reflexes. Provokers and the faithful patches, each a 2-byte branch made
-// unconditional:
+// Reflexes. Provokers and the faithful patches (a scan found no other jump
+// into any patched sequence, except the potion one noted below):
 //   moving    0x64799E in the move action 0x6475B0; Spring Attack (392)
 //             skips it: 0x647990 je provoke (74 08) → jmp
-//   casting   0x67B9E5 (0x67B550), 0x67CA8F / 0x67CBC0 (0x67C070), each
-//             behind an Epic Improved Combat Casting (696) test:
-//             0x67B9DA jne (75 0E), 0x67CA85 / 0x67CBB6 jne (75 0D) → jmp
+//   potions   0x67B9E5 in the item-use action 0x67B550, for base items 49
+//             (potions), 54 (deleted row) and 104 (crafted potion). The
+//             party is exempt when difficulty option 2 (0x600100(2)) is set
+//             (dialog.tlk: "No attacks of opportunity on players using
+//             potions"); everyone else jumps straight to the call
+//             (0x67B9B0 / 0x67B9C6 → 0x67B9DC), so the call itself becomes
+//             add esp, 8 (the callee's ret 8)
+//   casting   0x67CA8F / 0x67CBC0 in the cast action 0x67C070, each behind
+//             an Epic Improved Combat Casting (696) test: 0x67CA85 /
+//             0x67CBB6 jne (75 0D) → jmp
 //   event 20  EVENT_BROADCAST_AOO (id at 0x8B6484), queued with
 //             AddEventDeltaTime 0x6BF770 and handled at 0x64A364 in the
 //             creature event handler 0x64A220:
@@ -489,20 +496,21 @@ constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x006108B0;
 //     unarmed 0x743F30, no weapon, no Improved Unarmed Strike (21), not
 //             special attack 65002: 0x74405C jne (75 5D) → jmp
 constexpr uintptr_t kAttackOfOpportunityBroadcast = 0x00655E70;
-struct BranchPatch {
+struct SmallPatch {
   const char* what;
   uintptr_t address;
-  uint8_t original[2];
-  uint8_t patched[2];
+  uint8_t size;
+  uint8_t original[5];
+  uint8_t patched[5];
 };
-constexpr BranchPatch kFaithfulOpportunityPatches[] = {
-    {"casting (0x67B550)", 0x0067B9DA, {0x75, 0x0e}, {0xeb, 0x0e}},
-    {"casting (0x67C070, first)", 0x0067CA85, {0x75, 0x0d}, {0xeb, 0x0d}},
-    {"casting (0x67C070, second)", 0x0067CBB6, {0x75, 0x0d}, {0xeb, 0x0d}},
-    {"Spring Attack no longer protects", 0x00647990, {0x74, 0x08}, {0xeb, 0x08}},
-    {"ranged attacks", 0x007427C4, {0x74, 0x15}, {0xeb, 0x2f}},
-    {"disarm", 0x00744031, {0x75, 0x1a}, {0xeb, 0x1a}},
-    {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, {0x75, 0x5d}, {0xeb, 0x5d}},
+constexpr SmallPatch kFaithfulOpportunityPatches[] = {
+    {"drinking potions", 0x0067B9E5, 5, {0xe8, 0x86, 0xa4, 0xfd, 0xff}, {0x83, 0xc4, 0x08, 0x90, 0x90}},
+    {"casting (first)", 0x0067CA85, 2, {0x75, 0x0d}, {0xeb, 0x0d}},
+    {"casting (second)", 0x0067CBB6, 2, {0x75, 0x0d}, {0xeb, 0x0d}},
+    {"Spring Attack no longer protects", 0x00647990, 2, {0x74, 0x08}, {0xeb, 0x08}},
+    {"ranged attacks", 0x007427C4, 2, {0x74, 0x15}, {0xeb, 0x2f}},
+    {"disarm", 0x00744031, 2, {0x75, 0x1a}, {0xeb, 0x1a}},
+    {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, 2, {0x75, 0x5d}, {0xeb, 0x5d}},
 };
 
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,

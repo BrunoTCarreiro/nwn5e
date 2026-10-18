@@ -350,8 +350,9 @@ action state 5/6.
   AddAttackActions(provoker) + 0x73DD30 (the AoO attack) and +0x2128 − 1;
   with the second argument 1 the provoker first makes a Tumble check
   (skill 21) — feedback 0xA87. Provoked by moving (0x6475B0, the move
-  action; Spring Attack 392 skips it) and by casting (0x67B550 /
-  0x67C070; Epic Improved Combat Casting 696 skips it). The fifth caller,
+  action; Spring Attack 392 skips it) by drinking a potion (0x67B550, see
+  below) and by casting (0x67C070; Epic Improved Combat Casting 696 skips
+  it). The fifth caller,
   0x64A364, is the creature event handler 0x64A220 (vtable 0x8B5F88) for
   event 20, EVENT_BROADCAST_AOO (id at 0x8B6484; data = the AoO target, or
   none = everyone). It is queued with AddEventDeltaTime 0x6BF770 by:
@@ -366,8 +367,14 @@ action state 5/6.
     the defender; an attack with no weapon (GetCurrentAttackWeapon 0) by a
     creature without Improved Unarmed Strike (21) provokes unless the
     special attack is 65002.
-  Item use does not provoke. The faithful patches (D2) are listed in
-  nwmain_1_69.h (`kFaithfulOpportunityPatches`); all seven apply (0.8.3).
+  The second broadcast caller, 0x67B550, is the item-use action, not a cast:
+  it provokes for potions (base items 49 and 104; 54 is a deleted row).
+  Everyone provokes except the party when difficulty option 2 is set
+  (dialog.tlk: "No attacks of opportunity on players using potions"); the
+  others jump straight to the call (0x67B9B0 / 0x67B9C6 → 0x67B9DC). The
+  faithful patches (D2) are listed in nwmain_1_69.h
+  (`kFaithfulOpportunityPatches`); all seven apply (0.8.3, potions as a
+  call-site patch in 0.8.4).
 
 ## Damage roll and critical damage (decompiled 2026-10-17)
 
