@@ -306,7 +306,20 @@ action state 5/6.
   0x262.. +6) − a class term (0x6995B0). Casting class slot = creature
   +0x19C (−1 none: item +0x1AC or innate level with modifier 3; −2 innate,
   Cha); level from the class column (0x4F8350) or innate (row +0x47);
-  creature +0xA70 set → innate level, modifier 3.
+  creature +0xA70 set → innate level, modifier 3 (items: NWN's 13 + level).
+- Base saves: class tables + epic + Divine Grace (217) + Great Fortitude 14
+  / Lightning Reflexes 24 / Iron Will 22 (+2) + Lucky 248 (+1) + per-save
+  feats (Fort 388 +1, 583 +4; Reflex 386 +1, 585 +4; Will 380 +1, 388 +1,
+  695 +4). The getters add the ability (Con byte / GetDexMod(0) / Wis
+  byte), Luck of Heroes 382, Dark Blessing 473 and the blueprint byte.
+- 0.8.0 (`saves`): the three getters return rules::SaveValue (effects =
+  getter(0) − getter(1)); CalculateSpellSaveDC returns the 2024 DC and
+  remembers (caster, DC); the save roll converts any DC not remembered for
+  its versus object (C6), its d20 (0x7499C9) rolls species advantage and
+  Halfling Luck, and in faithful mode the natural-1 / natural-20 branches
+  are patched (0x749CE1 jnz→jmp, 0x749D00 jz NOPed). Quick launch: all
+  installed. Not yet removed: the save roll's own racial/feat "+2 vs X"
+  bonuses (C7).
 
 ## Two-weapon fighting and attacks of opportunity (decompiled 2026-10-18)
 

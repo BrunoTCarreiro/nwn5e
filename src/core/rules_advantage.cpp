@@ -188,9 +188,19 @@ void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
 }
 
 // Replaces ResolveAttackRoll's RollDice(1, 20) call for the attack roll.
+// C3 Halfling Luck (2024): a natural 1 on a d20 test is rerolled once.
+int HalflingLuck(void* rules_object, void* edx, int count, int sides, int kept) {
+  if (kept != 1 || g_config.saves == rules::RuleVariant::kOff || !g_pending.attacker_stats) return kept;
+  if (Field<uint16_t>(g_pending.attacker_stats, nwmain::kStatsRace) != nwmain::kRaceHalfling) return kept;
+  const int reroll = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;
+  if (LogSlotLeft()) Log("advantage: 0x%08X Halfling Luck: natural 1 rerolled -> %d", g_pending.attacker_id, reroll);
+  return reroll;
+}
+
 int __fastcall RollAttackD20(void* rules_object, void* edx, int count, int sides) {
-  if (!g_pending.active || g_pending.mode == rules::RollMode::kNormal) {
-    return g_roll_dice(rules_object, edx, count, sides);
+  if (!g_pending.active) return g_roll_dice(rules_object, edx, count, sides);
+  if (g_pending.mode == rules::RollMode::kNormal) {
+    return HalflingLuck(rules_object, edx, count, sides, g_roll_dice(rules_object, edx, count, sides) & 0xFFFF);
   }
   const int first = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;
   const int second = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;
@@ -203,7 +213,7 @@ int __fastcall RollAttackD20(void* rules_object, void* edx, int count, int sides
         ModeName(g_pending.mode), g_pending.nwn_total, TermNames(g_pending.terms).c_str(), g_pending.threats,
         g_pending.point_blank_shot ? " (Point Blank Shot)" : "", first, second, kept);
   }
-  return kept;
+  return HalflingLuck(rules_object, edx, count, sides, kept);
 }
 
 bool PatchAttackD20Call() {

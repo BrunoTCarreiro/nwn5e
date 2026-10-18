@@ -67,6 +67,17 @@ int SpellScrollDc(int spell_level) {
 
 int NwnModeSpellFocusDcBonus(int nwn_focus_bonus) { return nwn_focus_bonus / 2; }
 
+int SaveValue(const SaveFacts& facts, RuleVariant variant) {
+  const bool class_proficient =
+      facts.character && facts.first_class && HasSaveProficiency(*facts.first_class, AbilityForNwnSave(facts.save));
+  if (variant == RuleVariant::kNwn) {
+    const bool proficient = facts.character ? class_proficient : facts.good_nwn_table;
+    return facts.ability_modifier + (proficient ? facts.proficiency_bonus : 0) + facts.effects + facts.nwn_extras;
+  }
+  const bool proficient = class_proficient || (facts.character && facts.save_feat);
+  return facts.ability_modifier + (proficient ? facts.proficiency_bonus : 0) + facts.effects + facts.aura;
+}
+
 bool SaveSucceeds(int d20, int bonus, int dc, bool natural_20_succeeds, bool natural_1_fails) {
   if (d20 == 20 && natural_20_succeeds) return true;
   if (d20 == 1 && natural_1_fails) return false;

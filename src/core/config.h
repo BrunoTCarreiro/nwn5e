@@ -10,6 +10,8 @@ struct Config {
   rules::RuleVariant mode = rules::RuleVariant::kFaithful;
   // R1: faithful removes NWN's racial attack/AC bonuses vs specific enemies.
   rules::RuleVariant racial_combat_bonuses = rules::RuleVariant::kFaithful;
+  // C1–C3: the three NWN saves as 2024 Con/Dex/Wis saves (off = NWN's 3e saves).
+  rules::RuleVariant saves = rules::RuleVariant::kFaithful;
   bool crit_nat20_only = true;     // threat only on a natural 20
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon

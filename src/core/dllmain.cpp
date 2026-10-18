@@ -15,6 +15,8 @@ void InstallAttackRules();
 void InstallExtraAttackRules();
 void InstallAttackTrace();
 void InstallAdvantageRules();
+void InstallSaveRules();
+void InstallSaveRollRules();
 void InstallRetargetRules();
 void InstallSheetRules();
 
@@ -37,7 +39,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.7.2 loaded");
+  Log("nwn5e 0.8.0 loaded");
   if (!HostIsMappedBuild()) {
     Log("host is not the mapped nwmain.exe 1.69 build; no hooks installed");
     return;
@@ -50,6 +52,8 @@ void Start(HMODULE self) {
   InstallExtraAttackRules();
   InstallAttackTrace();
   InstallAdvantageRules();
+  InstallSaveRules();
+  InstallSaveRollRules();
   InstallRetargetRules();
   InstallSheetRules();
   Log(HooksCommit() ? "hooks active" : "hooks NOT active");

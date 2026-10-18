@@ -5,7 +5,10 @@
 // saves of its first class (multiclassing grants no save proficiencies).
 // Phase 1c — the NWN mapping below is the proposal in PLAN.md.
 
+#include <optional>
+
 #include "rules/combat.h"
+#include "rules/modes.h"
 
 namespace rules {
 
@@ -43,6 +46,26 @@ int SpellScrollDc(int spell_level);
 
 // C5 NWN mode: NWN's Spell Focus DC bonus (+2 / +4 / +6) as +1 / +2 / +3.
 int NwnModeSpellFocusDcBonus(int nwn_focus_bonus);
+
+// What a 2024 save value is built from (C1–C3).
+struct SaveFacts {
+  NwnSave save = NwnSave::kFortitude;
+  int ability_modifier = 0;   // of AbilityForNwnSave(save)
+  int proficiency_bonus = 2;
+  bool character = false;     // PC, henchman, or an NPC with a real first class
+  std::optional<CharacterClass> first_class;
+  bool save_feat = false;     // Great Fortitude / Lightning Reflexes / Iron Will
+  bool good_nwn_table = false;  // creature with a "good" NWN table for this save
+  int effects = 0;            // magic effects (items, spells)
+  int aura = 0;               // Aura of Protection
+  int nwn_extras = 0;         // NWN's flat feat/racial/blueprint bonuses
+};
+
+// Faithful: ability modifier + proficiency bonus when proficient (characters:
+// first class, or the save feat) + effects + aura. NWN mode: proficiency for
+// characters from the first class, for creatures from a good NWN table; the
+// save feats give NWN's flat bonus instead (in nwn_extras); no aura.
+int SaveValue(const SaveFacts& facts, RuleVariant variant);
 
 // C4: whether a save succeeds. A natural 20 succeeds automatically only with
 // `natural_20_succeeds`, a natural 1 fails automatically only with

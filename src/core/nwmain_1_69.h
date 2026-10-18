@@ -346,6 +346,88 @@ constexpr int kRaceGiant = 18;
 constexpr int kBaseItemSling = 61;
 constexpr uint8_t kWieldThrown = 11;
 
+// Save values (Phase 1c, RE-NOTES "Saving throws"). int CNWSCreatureStats::
+// GetFort/Reflex/WillSavingThrow(int bBaseOnly), ret 4: effects (type 3)
+// unless base-only + Luck of Heroes (382, +1) + Dark Blessing (473, +Cha) +
+// ability (Con byte +0x3FD / GetDexMod(0) 0x6A1430 / Wis byte +0x401) +
+// blueprint bonus (int8 +0x4C4 / +0x4C6 / +0x4C5) + the base save
+// (0x6A26D0 / 0x6A2960 / 0x6A2810): class tables (CNWClass at [rules +0xE4]
+// + id * 0x268, GetFort/Ref/WillSaveBonus(level) 0x53B700 / 0x53B720 /
+// 0x53B740, ret 4, char) + epic bonus + Divine Grace (217, +Cha if > 0) +
+// Great Fortitude 14 / Lightning Reflexes 24 / Iron Will 22 (+2) + Lucky
+// (248, +1) + Fort: 388 (+1), 583 (+4); Reflex: 386 (+1), 585 (+4); Will:
+// 380 (+1), 388 (+1), 695 (+4). The sheet (0x62BD30) and the save roll
+// (0x749230) read these three.
+constexpr uintptr_t kGetFortSavingThrow = 0x006AD4F0;
+constexpr uintptr_t kGetReflexSavingThrow = 0x006AD630;
+constexpr uintptr_t kGetWillSavingThrow = 0x006AD590;
+constexpr uint8_t kGetFortSavingThrowPrologue[] = {0x51, 0x8b, 0x44, 0x24, 0x08, 0x53, 0x56, 0x57};
+constexpr uint8_t kGetReflexSavingThrowPrologue[] = {0x51, 0x8b, 0x44, 0x24, 0x08, 0x53, 0x56, 0x57};
+constexpr uint8_t kGetWillSavingThrowPrologue[] = {0x51, 0x8b, 0x44, 0x24, 0x08, 0x53, 0x56, 0x57};
+constexpr uintptr_t kGetDexMod = 0x006A1430;  // char (ecx = stats, push bArmorDexCap 0), ret 4
+constexpr uintptr_t kStatsConModifier = 0x3FD;   // int8
+constexpr uintptr_t kStatsWisModifier = 0x401;   // int8
+constexpr uintptr_t kStatsChaModifier = 0x403;   // int8
+constexpr uintptr_t kStatsFortBlueprintBonus = 0x4C4;  // int8
+constexpr uintptr_t kStatsWillBlueprintBonus = 0x4C5;  // int8
+constexpr uintptr_t kStatsReflexBlueprintBonus = 0x4C6;  // int8
+constexpr uintptr_t kRulesClasses = 0xE4;      // CNWClass array in the rules object
+constexpr uintptr_t kClassStride = 0x268;
+constexpr uintptr_t kGetFortSaveBonus = 0x0053B700;
+constexpr uintptr_t kGetReflexSaveBonus = 0x0053B720;
+constexpr uintptr_t kGetWillSaveBonus = 0x0053B740;
+constexpr int kFeatGreatFortitude = 14;
+constexpr int kFeatLightningReflexes = 24;
+constexpr int kFeatIronWill = 22;
+constexpr int kFeatDivineGrace = 217;
+constexpr int kFeatLucky = 248;
+constexpr int kFeatLuckOfHeroes = 382;
+constexpr int kFeatDarkBlessing = 473;
+
+// The save roll, CNWSCreature 0x749230 (this = the saving creature; save 1/2/3,
+// DC (uint16), save type, versus object id, …; 7 stack args, ret 0x1C;
+// returns 0 fail / 1 success / 2 immune). Its d20: call RollDice at 0x7499C9.
+// Natural rolls (0x749CDE..): a 1 jumps to the fail path when the game option
+// "Saving Throw Automatic Failure On 1" is set, a 20 succeeds:
+//   0x749CE1  jnz 0x749CFD   ; 75 1A — not a 1: skip the option check
+//   0x749D00  jz  0x749D47   ; 74 45 — a 20: success
+// Faithful (C4): jnz -> jmp and the jz NOPed, so the total always decides.
+constexpr uintptr_t kSavingThrowRoll = 0x00749230;
+constexpr uint8_t kSavingThrowRollPrologue[] = {0x64, 0xa1, 0x00, 0x00, 0x00, 0x00, 0x6a, 0xff};
+constexpr uintptr_t kSaveD20Call = 0x007499C9;
+constexpr uintptr_t kSaveNatural1Check = 0x00749CE1;
+constexpr uint8_t kSaveNatural1CheckBytes[] = {0x75, 0x1a};
+constexpr uint8_t kSaveNatural1CheckSkip[] = {0xeb, 0x1a};
+constexpr uintptr_t kSaveNatural20Check = 0x00749D00;
+constexpr uint8_t kSaveNatural20CheckBytes[] = {0x74, 0x45};
+// NWN save types (nwscript SAVING_THROW_TYPE_*) used by the species traits.
+constexpr int kSaveTypeMindSpells = 1;
+constexpr int kSaveTypePoison = 2;
+constexpr int kSaveTypeFear = 4;
+constexpr int kRaceDwarf = 0;
+constexpr int kRaceElf = 1;
+constexpr int kRaceGnome = 2;
+
+// Spell DC, CNWSCreature::CalculateSpellSaveDC(spell id) 0x6659D0, ret 4
+// (RE-NOTES "Saving throws"): spell row = 0x4F85F0(id) with ecx = [rules
+// +0xC0]; casting class slot = byte creature +0x19C (0xFF none, 0xFE innate
+// Charisma); creature +0xA70 set = cast from an item (innate level + 3);
+// slot 0xFF and short +0x1AC == 0xFFFF = a class-less ability (innate level
+// + 3); casting modifier = 0x6AD1D0(slot) on the stats (byte, ret 4);
+// innate level = row byte +0x47, school = row byte +0x20 (1–8); Spell Focus
+// feats by school: +6 0x262 + (school − 1), +4 0x189 + (school − 1), +2
+// 0x23 (school 1) / 0xA6 + (school − 2).
+constexpr uintptr_t kCalculateSpellSaveDc = 0x006659D0;
+constexpr uint8_t kCalculateSpellSaveDcPrologue[] = {0x83, 0xec, 0x0c, 0xa1, 0x64, 0xdc, 0x92, 0x00};
+constexpr uintptr_t kRulesSpells = 0xC0;
+constexpr uintptr_t kGetSpell = 0x004F85F0;     // ecx = spell array, push id, ret 4
+constexpr uintptr_t kCreatureCastingSlot = 0x19C;  // uint8
+constexpr uintptr_t kCreatureCastingFromItem = 0xA70;  // int32
+constexpr uintptr_t kCreatureCastingClass = 0x1AC;  // int16, 0xFFFF none
+constexpr uintptr_t kGetCastingAbilityModifier = 0x006AD1D0;  // ecx = stats, push slot, ret 4, byte
+constexpr uintptr_t kSpellInnateLevel = 0x47;   // uint8
+constexpr uintptr_t kSpellSchool = 0x20;        // uint8
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

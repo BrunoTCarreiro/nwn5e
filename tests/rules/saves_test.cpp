@@ -137,6 +137,42 @@ TEST(SpellFocusInNwnMode) {
   CHECK_EQ(NwnModeSpellFocusDcBonus(6), 3);
 }
 
+// C1-C3 put together. Breaks caught: a creature proficient in faithful mode;
+// NWN mode losing creature good saves; a save feat counted twice in NWN mode
+// (proficiency and +2); the aura in NWN mode or NWN's extras in faithful;
+// magic effects dropped in either mode.
+TEST(SaveValueByMode) {
+  SaveFacts fighter;
+  fighter.save = NwnSave::kFortitude;
+  fighter.ability_modifier = 2;
+  fighter.proficiency_bonus = 3;
+  fighter.character = true;
+  fighter.first_class = CharacterClass::kFighter;
+  CHECK_EQ(SaveValue(fighter, RuleVariant::kFaithful), 5);
+  CHECK_EQ(SaveValue(fighter, RuleVariant::kNwn), 5);
+  SaveFacts fighter_will = fighter;
+  fighter_will.save = NwnSave::kWill;
+  fighter_will.ability_modifier = 1;
+  CHECK_EQ(SaveValue(fighter_will, RuleVariant::kFaithful), 1);
+  fighter_will.save_feat = true;  // Iron Will
+  fighter_will.nwn_extras = 2;    // NWN's +2 for it
+  CHECK_EQ(SaveValue(fighter_will, RuleVariant::kFaithful), 4);
+  CHECK_EQ(SaveValue(fighter_will, RuleVariant::kNwn), 3);
+  SaveFacts ogre;
+  ogre.save = NwnSave::kFortitude;
+  ogre.ability_modifier = 4;
+  ogre.proficiency_bonus = 2;
+  ogre.good_nwn_table = true;
+  CHECK_EQ(SaveValue(ogre, RuleVariant::kFaithful), 4);
+  CHECK_EQ(SaveValue(ogre, RuleVariant::kNwn), 6);
+  SaveFacts buffed = fighter;
+  buffed.effects = 1;
+  buffed.aura = 3;
+  buffed.nwn_extras = 2;
+  CHECK_EQ(SaveValue(buffed, RuleVariant::kFaithful), 9);
+  CHECK_EQ(SaveValue(buffed, RuleVariant::kNwn), 8);
+}
+
 // C4: faithful has no automatic success or failure; NWN mode: a natural 20
 // always saves, a natural 1 always fails when the game option is on.
 TEST(NaturalRollsOnSaves) {
