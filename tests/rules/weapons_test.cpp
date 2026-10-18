@@ -55,3 +55,35 @@ TEST(OffHandDamageModifier) {
   CHECK_EQ(OffHandDamageAbilityModifier(-1, true), -1);
   CHECK_EQ(OffHandDamageAbilityModifier(0, false), 0);
 }
+
+// D1: Light is the 2024 property, by NWN base item. Breaks caught: a
+// one-handed martial weapon (longsword, rapier) or light mace/flail counted
+// as Light; kukri or kama left out.
+TEST(LightWeaponsAre2024) {
+  for (int light : {0, 22, 28, 37, 38, 40, 42, 53, 60}) CHECK_EQ(IsLightNwnBaseItem(light), true);
+  for (int other : {1, 4, 9, 51, 13, 50, 8, -1}) CHECK_EQ(IsLightNwnBaseItem(other), false);
+}
+
+// D1: one extra attack at most, only with two Light weapons, a double weapon
+// or Dual Wielder. Breaks caught: Improved Two-Weapon Fighting's second
+// attack kept; non-Light pairs allowed; an attack created where NWN saw no
+// second weapon.
+TEST(OffHandAttacksAre2024) {
+  CHECK_EQ(OffHandAttacks(1, false, false, true, true), 1);
+  CHECK_EQ(OffHandAttacks(1, false, false, true, false), 0);
+  CHECK_EQ(OffHandAttacks(1, false, false, false, true), 0);
+  CHECK_EQ(OffHandAttacks(2, false, true, false, false), 1);
+  CHECK_EQ(OffHandAttacks(1, true, false, false, false), 1);
+  CHECK_EQ(OffHandAttacks(2, true, true, false, false), 1);
+  CHECK_EQ(OffHandAttacks(0, false, true, true, true), 0);
+}
+
+// NWN's off-hand Strength term, which the D1 hook takes back out. Breaks
+// caught: rounding up (Str +3 gives 1, not 2); halving a negative modifier.
+TEST(NwnOffHandStrength) {
+  CHECK_EQ(NwnOffHandStrengthDamage(3), 1);
+  CHECK_EQ(NwnOffHandStrengthDamage(4), 2);
+  CHECK_EQ(NwnOffHandStrengthDamage(1), 0);
+  CHECK_EQ(NwnOffHandStrengthDamage(0), 0);
+  CHECK_EQ(NwnOffHandStrengthDamage(-1), -1);
+}

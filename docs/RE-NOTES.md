@@ -335,6 +335,17 @@ action state 5/6.
   double weapon), +2 with a feat; off-hand −10 (−8 light/double), +4 and +2
   with feats (Ambidexterity 1, Two-Weapon Fighting 41). Off-hand damage adds
   half Strength ("Offhand Strength Bonus", 0x697D10).
+- Details for D1 (2026-10-18): the off-hand count function 0x73BF80 has one
+  caller, InitializeNumberOfAttacks (0x73C651), which reads +0x213C. The
+  penalty is built twice: in GetAttackModifierVersus (0x695C06–0x695CE8, a
+  local that stays 0 when skipped) and again in the sheet's
+  GetMeleeAttackBonus (0x69485F–0x69491D, in ebx). 0x697D10 is the damage
+  bonus (target or 0, bOffHand; ret 8), called once, by GetDamageRoll
+  (0x69BE8B); the off-hand Strength term is trunc(Str mod × 0.5) when
+  positive (float 0x8A6930), Str mod otherwise. The same function gives
+  two-handed weapons (weapon size = creature size + 1, not double) Str mod ×
+  1.5 ("Two Handed Strength Bonus") and Point Blank Shot (27) +1 damage
+  within 5 m. Faithful D1 patches and hooks: nwmain_1_69.h.
 - Attacks of opportunity: combat round +0x2128 = AoOs left this round
   ("NumAOOs" in the save, 0x73E9B0), reset to 1 at the end of **every
   round**: 0x73B7A0 is EndCombatRound (clears the 50 attack slots, resets

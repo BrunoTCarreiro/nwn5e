@@ -513,6 +513,43 @@ constexpr SmallPatch kFaithfulOpportunityPatches[] = {
     {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, 2, {0x75, 0x5d}, {0xeb, 0x5d}},
 };
 
+// Two-weapon fighting (D1; RE-NOTES "Two-weapon fighting and attacks of
+// opportunity"):
+//   off-hand attacks  CNWSCombatRound 0x73BF80 (plain ret; one caller,
+//                     InitializeNumberOfAttacks at 0x73C651) stores and returns
+//                     round +0x213C: 1 with a non-shield weapon in the left
+//                     hand and a right-hand weapon no bigger than the creature,
+//                     or a double weapon (WeaponWield 8); 2 with Improved
+//                     Two-Weapon Fighting (20). Faithful: hooked, then
+//                     rules::OffHandAttacks.
+//   attack penalty    GetAttackModifierVersus 0x695C06–0x695CE8 builds it in a
+//                     local that stays 0 when skipped (all outside jumps land on
+//                     0x695C06); the sheet's GetMeleeAttackBonus repeats it at
+//                     0x69485F–0x69491D in ebx (0 on every skip path). Faithful:
+//                     each block's first 5 bytes become a jmp to its end.
+//   off-hand damage   CNWSCreatureStats 0x697D10 (target or 0, bOffHand; ret 8;
+//                     one caller, GetDamageRoll at 0x69BE8B) returns the damage
+//                     bonus; with bOffHand the Strength term is Str mod × 0.5
+//                     (float 0x8A6930, truncated) when positive, else Str mod.
+//                     Faithful: hooked, NWN's term swapped for
+//                     rules::OffHandDamageAbilityModifier.
+// Also seen, not D1: two-handed weapons add Str × 1.5 ("Two Handed Strength
+// Bonus", same function); Point Blank Shot adds +1 damage within 5 m.
+constexpr uintptr_t kGetOffHandAttacks = 0x0073BF80;
+constexpr uint8_t kGetOffHandAttacksPrologue[] = {0x56, 0x57, 0x8b, 0xf9, 0x8b, 0x87, 0x5c, 0x21};
+constexpr uintptr_t kGetDamageBonus = 0x00697D10;
+constexpr uint8_t kGetDamageBonusPrologue[] = {0x6a, 0xff, 0x68, 0x60, 0x7f, 0x89, 0x00, 0x64};
+constexpr SmallPatch kFaithfulTwoWeaponPatches[] = {
+    {"no off-hand attack penalty (attack roll)", 0x00695C06, 5, {0x8b, 0x44, 0x24, 0x28, 0x83},
+     {0xe9, 0xdd, 0x00, 0x00, 0x00}},
+    {"no off-hand attack penalty (character sheet)", 0x0069485F, 5, {0x8b, 0x44, 0x24, 0x18, 0x85},
+     {0xe9, 0xb9, 0x00, 0x00, 0x00}},
+};
+constexpr int kSlotLeftHand = 0x20;
+constexpr uint8_t kBaseItemWieldDouble = 8;
+constexpr int kFeatImprovedTwoWeaponFighting = 20;
+constexpr int kFeatTwoWeaponFighting = 41;
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

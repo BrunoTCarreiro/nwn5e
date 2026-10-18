@@ -295,6 +295,10 @@ attack); Ambidexterity does nothing; double weapons give the one extra
 attack. NWN mode: NWN's rules unchanged (penalties, feats, Improved TWF's
 second attack, half Strength).
 
+*Built 0.8.5 (2026-10-18).* Same as decided. Found on the way, for a later
+decision: NWN also adds 1.5 × Strength to damage with two-handed weapons and
++1 damage within 5 m with Point Blank Shot (both 3e; 2024 has neither).
+
 **D2. Opportunity attacks.** Faithful: casting no longer provokes; moving
 away still does, once per round per creature; Combat Reflexes gives no extra
 ones and Spring Attack no longer protects (feat rework); Tumble stays as the

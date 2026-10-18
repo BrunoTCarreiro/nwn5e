@@ -76,4 +76,32 @@ int OffHandDamageAbilityModifier(int ability_modifier, bool two_weapon_fighting_
   return 0;
 }
 
+bool IsLightNwnBaseItem(int base_item) {
+  switch (base_item) {
+    case 0:   // shortsword
+    case 22:  // dagger
+    case 28:  // club
+    case 37:  // light hammer
+    case 38:  // handaxe
+    case 40:  // kama
+    case 42:  // kukri
+    case 53:  // scimitar
+    case 60:  // sickle
+      return true;
+    default:
+      return false;
+  }
+}
+
+int OffHandAttacks(int nwn_attacks, bool double_weapon, bool dual_wielder, bool main_hand_light,
+                   bool off_hand_light) {
+  if (nwn_attacks <= 0) return 0;
+  if (double_weapon || dual_wielder) return 1;
+  return main_hand_light && off_hand_light ? 1 : 0;
+}
+
+int NwnOffHandStrengthDamage(int strength_modifier) {
+  return strength_modifier > 0 ? strength_modifier / 2 : strength_modifier;
+}
+
 }  // namespace rules

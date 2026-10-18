@@ -15,6 +15,10 @@ struct Config {
   // D2: faithful = only moving away provokes (no casting, potion, ranged,
   // unarmed or Disarm AoOs; Spring Attack no longer protects). nwn/off = NWN's AoOs.
   rules::RuleVariant opportunity_attacks = rules::RuleVariant::kFaithful;
+  // D1: faithful = no off-hand penalties, one off-hand attack (Light weapons,
+  // double weapon or Dual Wielder), no Strength on its damage unless negative
+  // or with the Two-Weapon Fighting style. nwn/off = NWN's rules.
+  rules::RuleVariant two_weapon_fighting = rules::RuleVariant::kFaithful;
   bool crit_nat20_only = true;     // threat only on a natural 20
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon
