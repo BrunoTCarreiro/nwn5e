@@ -202,102 +202,135 @@ Later sources, as each NWN effect is converted: conditions (Restrained,
 Paralyzed, Poisoned, Frightened…), hidden attackers, Reckless Attack, Help,
 spells (Faerie Fire, Bless's d4 is not adv/disadv).
 
-## Phase 1c proposal — six saving throws (2026-10-18, awaiting owner)
+## Modes: faithful and NWN (owner, 2026-10-18)
 
-**How NWN does it** (RE-NOTES "Saving throws"). Scripts ask for one of three
-saves with a DC and a save type (fear, poison, fire…). The engine's save roll
-(0x749230) adds the save value (GetFort/Ref/WillSavingThrow 0x6AD4F0 /
-0x6AD630 / 0x6AD590), effect and feat bonuses against that save type (capped
-at +20) and a d20; a natural 20 always succeeds, a natural 1 fails only under
-a server option. The save value is: class base save (table) + ability
-modifier (Con / Dex / Wis) + Luck of Heroes (+1) + Dark Blessing (Cha) + a
-creature blueprint bonus + magic effects. Spell DCs (0x6659D0) are 10 +
-spell level + casting ability modifier + Spell Focus (+2 / +4 / +6). The
-character sheet reads the same three save functions.
+Every rule decided from here on has two versions: **faithful** (D&D 2024 as
+written) and **NWN mode** (2024, with NWN's own choice kept where it exists
+for gameplay — NWN is a video game, and long playtests aren't planned). One
+line in nwn5e.ini picks the default for all of them — `mode=faithful`
+(default) or `mode=nwn` — and each rule's own key can still override it.
+"NWN mode" is not the original 3e game: that stays available by switching a
+rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
+retargeting, Phase 1b) are the same in both modes unless noted.
 
-**Plan.** Hook the three save functions to return the 2024 save: ability
-modifier + proficiency bonus when proficient + magic effects; hook the spell
-DC to 8 + proficiency bonus + casting ability modifier. The sheet follows.
-Rules built and tested (`src/rules/saves.cpp`).
+## Phase 1c/1d and racial bonuses — decided by the owner, 2026-10-18
 
-**C1. Which 2024 save each NWN save is.** Proposed: Fortitude →
-Constitution, Reflex → Dexterity, Will → Wisdom. Strength, Intelligence and
-Charisma saves only appear when spells are converted (Phase 4).
+Walked through one by one (issue, what NWN does, what 2024 does, what to
+expect). Engine facts: RE-NOTES "Saving throws" and "Two-weapon fighting and
+attacks of opportunity". Owner: "both versions, faithful as default" for
+each, except where noted.
 
-**C2. Proficiency.** Characters (and henchmen): the two saves of their first
-class (2024; multiclassing adds none) — proposed. Creatures: proficient where
-their NWN base save is a "good" save (the 3e good progression) — proposed;
-alternatives: never proficient, or keep NWN's numbers for creatures.
+**R1. Racial combat bonuses.** NWN: Battle Training (+1 to hit vs orcs and
+goblinoids for dwarves, vs reptilians for gnomes), halfling Good Aim (+1
+thrown) and +1 with slings, Defensive Training (+4 AC vs giants). Faithful:
+all removed (the attack then always matches the sheet); the 2024 species
+traits replace them (the save ones with C3, the rest in Phase 3). NWN mode:
+kept.
 
-**C3. 3e save bonuses** (Luck of Heroes, Dark Blessing, Divine Grace, Great Fortitude /
-Lightning Reflexes / Iron Will, racial +1/+2s, the blueprint bonus).
-Proposed: dropped, except magic effects and items; 2024 equivalents
-(Paladin Aura of Protection, dwarf/halfling/gnome advantages) come with the
-class and species rework (Phase 3). Alternative: keep them for now.
+**C1. Which save.** Faithful: Fortitude → Con, Reflex → Dex, Will → Wis by
+default, plus a per-spell table switching to the 2024 spell's ability
+(Banishment → Cha, Feeblemind → Int, Entangle → Str…), filled as spells are
+converted (Phase 4); needs the spell behind a save (recon). NWN mode: the
+three saves with the default mapping only (computed the 2024 way). The
+original 3e saves stay available by switching the save rule off.
 
-**C4. Natural 1 / 20 on saves.** 2024: no automatic success or failure on
-saves. Proposed: follow 2024 (a 20 can fail a DC 25).
+**C2. Save proficiency.** Faithful: characters and henchmen — the two saves
+of their first class (2024; later class features add more: Monk 14, Rogue
+15); creatures — ability modifier only (most 2024 monsters have none); NPCs
+built with real classes count as characters. Bosses get Legendary
+Resistance with the monster conversion (Phase 8). NWN mode: characters the
+same; creatures proficient in every save their NWN tables make "good".
 
-**C5. Spell DC.** Proposed: 8 + proficiency bonus + casting ability modifier
-— spell level no longer raises the DC (2024). Spell Focus feats: proposed
-dropped (no 2024 equivalent) — alternative: keep +1/+2/+3.
+**C3. 3e save bonuses.** Faithful: flat feat and racial bonuses dropped;
+Great Fortitude / Lightning Reflexes / Iron Will → proficiency in Con / Dex
+/ Wis saves (like 2024 Resilient); Divine Grace and Dark Blessing → Aura of
+Protection (Charisma modifier, min +1, to saves of the paladin and allies
+within 3 m, from paladin level 6; the Blackguard counts as a paladin);
+Luck of Heroes and the creature blueprint save bonus dropped; species get
+2024 advantages by save type — dwarf vs poison, halfling vs fear plus
+rerolling natural 1s on d20 tests (Luck), elf vs charm (and sleep immunity
+as Trance), gnome on Wis (later Int/Cha) saves. Needs advantage on the save
+roll's d20. NWN mode: the same base and advantages, plus NWN's flat feat and
+racial bonuses and the blueprint bonus; Divine Grace as NWN (self, from
+level 2).
 
-**C6. Other DCs** (scrolls/wands/potions, monster abilities with the fixed
-"3" modifier, traps, poisons from 2DAs). Proposed: monster abilities use 8 +
-their CR proficiency bonus + 3 now; items, traps and poisons stay NWN's until
-Phase 8 (creatures and campaign balance).
+**C4. Natural 1 / 20 on saves.** Faithful: no automatic success or failure.
+NWN mode: NWN's — a natural 20 always saves, a natural 1 fails when the game
+option "Saving Throw Automatic Failure On 1" is on.
 
-**C7. Effect and feat bonuses inside the save roll** (vs fear, poison,
-mind…). Proposed: kept for now (they are mostly items and spells); racial
-ones move to advantage with Phase 3.
+**C5. Spell DC.** Faithful: class casters 8 + proficiency bonus + casting
+modifier (spell level and Spell Focus no longer count); spells from items
+use the 2024 spell-scroll DCs by spell level (13 for 0–2, 15 for 3–4, 17 for
+5–6, 18 for 7–8, 19 for 9); monster abilities 8 + their CR proficiency bonus
++ their Charisma modifier (instead of NWN's fixed 3). NWN mode: the same,
+with Spell Focus / Greater / Epic as +1 / +2 / +3.
 
-**C8. Character sheet.** It shows the three NWN saves; with C1 it would show
-the Con / Dex / Wis saves under the Fortitude / Reflex / Will labels.
-Proposed: fine until the interface phase (Phase 7) relabels them.
+**C6. Other DCs** (traps, poisons, diseases, item powers, scripted monster
+abilities, module scripts) — both modes: converted when the save is rolled,
+new DC = 10 + (old DC − 10) / 2, rounded, kept within 10–30 (14 → 12, 20 →
+15, 26 → 18, 30 → 20, 40 → 25); spell DCs (C5) excluded. Phase 8 replaces
+the formula with exact 2024 values for the main sources.
 
-## Phase 1d proposal — two-weapon fighting, opportunity attacks, weapon mastery (2026-10-18, awaiting owner)
+**C7. Bonuses inside the save roll.** Faithful: item save bonuses kept
+(balance pass in Phase 8); spell effects kept until each spell is converted
+(Phase 4: Bless → +1d4, Protection from Evil → advantage…); feat and racial
+"+2 vs X" dropped (C3's advantages replace them); immunities kept. NWN mode:
+all kept.
 
-Engine facts: RE-NOTES "Two-weapon fighting and attacks of opportunity".
-Ordered by how much each needs: D1–D2 are small engine changes, D3–D4 need
-the Phase 1c saves (Topple) and new effects (Slow, Push).
+**C8. Character sheet.** Both modes: the three numbers show the 2024 saves.
+Faithful: the labels are swapped in memory ("Fortitude / Reflex / Will" →
+"Constitution / Dexterity / Wisdom") wherever the game shows them, sheet and
+combat log included — no game files changed; needs the text lookup (recon).
+NWN mode: NWN's labels. All six saves: a `!saves` chat command prints them
+with the proficient ones marked; three more rows on the sheet itself are
+looked into in Phase 7.
 
-**D1. Two-weapon fighting.** NWN: an off-hand weapon gives one off-hand
-attack each round (two with Improved Two-Weapon Fighting), with −6/−10 on
-the main and off hand (−4/−8 if the off-hand weapon is light; feats reduce
-it); the off-hand adds half Strength to damage. 2024: one extra attack with
-the other Light weapon (a Bonus Action), no attack penalty, and no ability
-modifier on its damage unless negative (the Two-Weapon Fighting style adds
-it). Proposed: no penalties on either hand; one off-hand attack (Improved
-Two-Weapon Fighting's second one dropped); off-hand damage without the
-Strength bonus unless negative — NWN's Two-Weapon Fighting feat stands in
-for the fighting style and keeps it. Light weapons: 2024 requires both to
-be Light; proposed: require a light off-hand weapon (NWN's "light" = smaller
-than the wielder) or a double weapon — alternative: any one-handed weapon.
+**D1. Two-weapon fighting.** Faithful: no attack penalty on either hand; one
+off-hand attack per round; off-hand damage without the ability modifier
+unless negative (NWN's Two-Weapon Fighting feat = the 2024 fighting style,
+adds it back); both weapons must be Light (club, dagger, handaxe, light
+hammer, sickle, scimitar, shortsword, plus kukri and kama); Improved
+Two-Weapon Fighting → Dual Wielder (any one-handed weapon, still one extra
+attack); Ambidexterity does nothing; double weapons give the one extra
+attack. NWN mode: NWN's rules unchanged (penalties, feats, Improved TWF's
+second attack, half Strength).
 
-**D2. Opportunity attacks.** NWN: moving away and casting a spell provoke
-(Spring Attack and Epic Improved Combat Casting avoid them; a Tumble check
-can avoid the movement one); each creature has one per round. 2024: only
-leaving a creature's reach provokes, one per round (the Reaction).
-Proposed: casting no longer provokes; moving keeps provoking, one per round
-as now; the Tumble check stays as NWN's stand-in for Disengage until the
-action-economy phase (Phase 6).
+**D2. Opportunity attacks.** Faithful: casting no longer provokes; moving
+away still does, once per round per creature; Combat Reflexes gives no extra
+ones and Spring Attack no longer protects (feat rework); Tumble stays as the
+way out until Phase 6 adds Disengage. NWN mode: NWN's rules unchanged.
 
-**D3. Weapon mastery — who.** 2024: Barbarian, Fighter, Paladin, Ranger and
-Rogue master a few chosen weapons (2–3 at level 1, Fighters more later).
-NWN has no screen for choosing. Proposed: those classes have mastery with
-every weapon they are proficient with (simple, generous); alternative: a
-"mastery" feat per weapon picked at level-up (like decision 12).
+**D3. Weapon mastery — who.** Faithful: the 2024 counts (Fighter 3/4/5/6 at
+1/4/10/16, Barbarian 2/3/4 at 1/4/10, Paladin, Ranger, Rogue 2); chosen with
+chat commands (`!mastery`, `!mastery <weapon>`, swap one after a long rest);
+empty slots fill with the weapon kinds actually used (announced in chat);
+Weapon Focus also gives mastery of its weapon for any class (2024 Weapon
+Master stand-in); later the choice may move into level-up (Phase 3/7). NWN
+mode: the mastery classes have mastery with every weapon they are
+proficient with; Weapon Focus the same.
 
 **D4. Weapon mastery — what.** Each NWN weapon gets its 2024 property
-(dagger Nick, longsword Sap, greatsword Graze, greataxe Cleave, rapier Vex,
-shortbow Vex, longbow Slow, warhammer Push, maul Topple…); NWN-only weapons
-take the closest (bastard sword Sap, katana Sap, kukri Nick, kama Nick,
-scythe Graze, dire mace / double axe / two-bladed sword Cleave, dwarven
-waraxe Topple, throwing axe Vex, shuriken Vex, heavy flail Topple…).
-Proposed build order: Vex, Sap (the advantage system already exists), Graze
-and Cleave (Cleave reuses NWN's cleave attack), Nick (with D1), Topple
-(after 1c), then Slow and Push (need new effects). Per-property approval
-with each step.
+(`src/rules/weapons.cpp`; NWN-only weapons take the closest). Faithful: all
+eight, automatic whenever their condition holds — Vex and Sap (advantage /
+disadvantage), Graze (damage on a miss), Cleave (NWN's cleave attack on a
+hit), Topple (Con save or knockdown, after C1–C4), Slow (−33% speed for a
+round), Push (3 m knockback; last, possibly approximated); Nick waits for
+the action economy (Phase 6); monsters don't use mastery. NWN mode: the
+same without Push.
+
+### Build order
+
+1. The mode switch (`mode=faithful|nwn`, per-rule keys override).
+2. R1 — remove the racial combat bonuses (small).
+3. Saves (0.8.x): save values (C1 default, C2, C3 numbers) → save roll (C4,
+   C3 advantages, C6 conversion) → spell DC (C5) → `!saves` and labels (C8)
+   → the per-spell save table scaffold (C1).
+4. D2 — opportunity attacks (small).
+5. D1 — two-weapon fighting.
+6. D3 then D4 — mastery choice (`!mastery`), then Vex, Sap, Graze, Cleave,
+   Topple, Slow, Push.
+7. Follow-ups noted for later phases: Legendary Resistance (8), Disengage
+   (6), sheet rows (7), species traits (3), spells (4).
 
 ## Decided (owner, 2026-10-17)
 
