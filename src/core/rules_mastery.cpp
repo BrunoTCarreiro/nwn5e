@@ -328,6 +328,17 @@ std::unordered_map<uint32_t, VexMark> g_vex;            // by attacker id
 std::unordered_map<uint32_t, SapMark> g_sap;            // by sapped creature id
 std::unordered_map<uint32_t, DWORD> g_slowed;           // D4 Slow / Topple: last applied, by target id
 std::unordered_map<uint32_t, DWORD> g_toppled;
+// Vex / Slow need the hit to deal damage (2024): the hit's damage is applied a
+// moment after the roll, so they wait for it here (attacker -> target).
+struct AwaitDamage {
+  uint32_t target;
+  DWORD tick;
+};
+std::unordered_map<uint32_t, AwaitDamage> g_slow_awaiting;  // Slow applies once the damage lands
+std::unordered_map<uint32_t, AwaitDamage> g_vex_awaiting;   // Vex's mark is withdrawn if it dealt none
+constexpr DWORD kAwaitDamageMs = 5000;
+using OnApplyDamageFn = int(__fastcall*)(void* handler, void* edx, void* object, void* effect, int loading);
+OnApplyDamageFn g_on_apply_damage = nullptr;
 struct CleavePending {
   uint32_t target;
   uint32_t attacker_rounds;
@@ -494,7 +505,8 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
   switch (mastery) {
     case rules::Mastery::kVex:
       g_vex[attacker_id] = VexMark{target_id, rounds, now};
-      what = "Vex (advantage on its next attack at that target)";
+      g_vex_awaiting[attacker_id] = AwaitDamage{target_id, now};
+      what = "Vex (advantage on its next attack at that target, if the hit deals damage)";
       break;
     case rules::Mastery::kSap:
       g_sap[target_id] = SapMark{attacker_id, rounds, now};
@@ -508,9 +520,8 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
       break;
     }
     case rules::Mastery::kSlow:
-      if (RecentlyApplied(&g_slowed, target_id, now)) return;  // 2024: no more than 10 ft
-      engine::ApplyMovementSpeedDecrease(target, attacker_id, 33, kRoundSeconds, delay);
-      what = "Slow: speed -33% for a round";
+      g_slow_awaiting[attacker_id] = AwaitDamage{target_id, now};  // applied when the damage lands
+      what = "Slow: waiting for the hit's damage";
       break;
     case rules::Mastery::kTopple: {
       if (RecentlyApplied(&g_toppled, target_id, now)) return;
@@ -558,6 +569,52 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
   }
 }
 
+namespace {
+
+int HitPointsOf(const void* object) {
+  return Field<int16_t>(object, nwmain::kObjectCurrentHitPoints) +
+         Field<int32_t>(object, nwmain::kObjectTemporaryHitPoints);
+}
+
+// A damage effect landed: Slow takes hold if it dealt damage, Vex's mark is
+// withdrawn if it dealt none.
+void AfterDamage(uint32_t attacker_id, void* target, int damage) {
+  const uint32_t target_id = Field<uint32_t>(target, nwmain::kCreatureObjectId);
+  const DWORD now = GetTickCount();
+  const auto slow = g_slow_awaiting.find(attacker_id);
+  if (slow != g_slow_awaiting.end() && slow->second.target == target_id) {
+    const bool fresh = now - slow->second.tick <= kAwaitDamageMs;
+    g_slow_awaiting.erase(slow);
+    if (fresh && damage > 0 && !RecentlyApplied(&g_slowed, target_id, now)) {  // 2024: no more than 10 ft
+      engine::ApplyMovementSpeedDecrease(target, attacker_id, 33, kRoundSeconds, 0);
+      if (EffectLogSlot()) Log("mastery: 0x%08X Slow on 0x%08X: speed -33%% for a round", attacker_id, target_id);
+    } else if (fresh && damage <= 0 && EffectLogSlot()) {
+      Log("mastery: 0x%08X Slow on 0x%08X: no damage dealt, no Slow", attacker_id, target_id);
+    }
+  }
+  const auto vex = g_vex_awaiting.find(attacker_id);
+  if (vex != g_vex_awaiting.end() && vex->second.target == target_id) {
+    const bool fresh = now - vex->second.tick <= kAwaitDamageMs;
+    g_vex_awaiting.erase(vex);
+    const auto mark = g_vex.find(attacker_id);
+    if (fresh && damage <= 0 && mark != g_vex.end() && mark->second.target == target_id) {
+      g_vex.erase(mark);
+      if (EffectLogSlot()) Log("mastery: 0x%08X Vex on 0x%08X withdrawn: no damage dealt", attacker_id, target_id);
+    }
+  }
+}
+
+int __fastcall OnApplyDamage(void* handler, void* edx, void* object, void* effect, int loading) {
+  const bool awaiting = !g_slow_awaiting.empty() || !g_vex_awaiting.empty();
+  void* target = object && awaiting ? engine::GetCreature(Field<uint32_t>(object, nwmain::kCreatureObjectId)) : nullptr;
+  const int before = target ? HitPointsOf(target) : 0;
+  const int result = g_on_apply_damage(handler, edx, object, effect, loading);
+  if (target && effect) AfterDamage(Field<uint32_t>(effect, nwmain::kEffectCreator), target, before - HitPointsOf(target));
+  return result;
+}
+
+}  // namespace
+
 int MasteryCleaveDamage(void* stats, int bonus) {
   if (!MasteryOn() || g_cleave_pending.empty() || !stats) return bonus;
   void* creature = Field<void*>(stats, nwmain::kStatsCreature);
@@ -593,6 +650,9 @@ void InstallVexSapRound() {
   InstallHook({"CNWSCombatRound::EndCombatRound (mastery rounds)", nwmain::kEndCombatRound,
                nwmain::kEndCombatRoundPrologue, sizeof(nwmain::kEndCombatRoundPrologue),
                reinterpret_cast<void*>(&EndCombatRound), reinterpret_cast<void**>(&g_end_combat_round)});
+  InstallHook({"CNWSEffectListHandler::OnApplyDamage (Vex / Slow need damage)", nwmain::kOnApplyDamage,
+               nwmain::kOnApplyDamagePrologue, sizeof(nwmain::kOnApplyDamagePrologue),
+               reinterpret_cast<void*>(&OnApplyDamage), reinterpret_cast<void**>(&g_on_apply_damage)});
 }
 
 }  // namespace

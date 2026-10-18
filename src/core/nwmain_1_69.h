@@ -607,6 +607,15 @@ constexpr uintptr_t kAttackDataResult = 0x50;
 // CNWSObject::GetCurrentHitPoints(bExcludeTemporary) 0x63AA50: current hit
 // points int16 at +0xB4, temporary hit points int32 at +0xBC.
 constexpr uintptr_t kObjectCurrentHitPoints = 0xB4;
+constexpr uintptr_t kObjectTemporaryHitPoints = 0xBC;  // int32
+// CNWSEffectListHandler::OnApplyDamage(object, effect, bLoadingGame) 0x6686C0
+// (ret 0xC): the apply handlers are a table by effect type x 4 filled at
+// 0x667B90 (death 19 at +0x4C = 0x669A10, damage 38 at +0x98). Immunity and
+// resistance are applied in it, so the hit points it takes off are the damage
+// dealt. Effect +0x18 = creator.
+constexpr uintptr_t kOnApplyDamage = 0x006686C0;
+constexpr uint8_t kOnApplyDamagePrologue[] = {0x6a, 0xff, 0x68, 0xb8, 0x5e, 0x89, 0x00, 0x64};
+constexpr uintptr_t kEffectCreator = 0x18;
 constexpr uintptr_t kEndCombatRound = 0x0073B7A0;
 constexpr uint8_t kEndCombatRoundPrologue[] = {0x53, 0x33, 0xdb, 0x56, 0x8b, 0xf1, 0x8b, 0x8e};
 
