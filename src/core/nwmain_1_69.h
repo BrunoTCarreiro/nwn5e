@@ -400,6 +400,21 @@ constexpr uint8_t kSaveNatural1CheckBytes[] = {0x75, 0x1a};
 constexpr uint8_t kSaveNatural1CheckSkip[] = {0xeb, 0x1a};
 constexpr uintptr_t kSaveNatural20Check = 0x00749D00;
 constexpr uint8_t kSaveNatural20CheckBytes[] = {0x74, 0x45};
+// The save roll's feat bonuses (C7), all before its d20: HasFeat (0x6A3630)
+// calls with the feat pushed just before — Hardiness vs spells 230 (twice),
+// Arcane Defense 415–422, Still Mind 208, Lliira's Heart 439, Hardiness vs
+// illusion 241 / enchantment 236, Deneir's Eye 437, Fearless 249, Resist
+// Nature's Lure 202, Hardiness vs poisons 229, prestige poison saves 1070 /
+// 467–463, Resist Poison 383, Snake Blood 386, Resist Disease 426, Strong
+// Soul 388, Uncanny Dodge 255 / 254–251, Defensive Awareness 951. Effect
+// (item / spell) bonuses are separate calls; the feat immunities come after
+// the d20. Faithful: these calls answer "no feat".
+constexpr uintptr_t kSaveRollFeatBonusCalls[] = {
+    0x00749446, 0x00749467, 0x00749485, 0x007494A3, 0x007494C1, 0x007494DB, 0x007494F5, 0x0074950F, 0x00749529,
+    0x0074954C, 0x00749567, 0x00749582, 0x0074959A, 0x007495BB, 0x007495DC, 0x007495F7, 0x0074961C, 0x00749637,
+    0x0074967D, 0x00749696, 0x007496AF, 0x007496C8, 0x007496E1, 0x00749705, 0x00749720, 0x0074973A, 0x0074975B,
+    0x00749776, 0x0074987F, 0x0074993E, 0x00749957, 0x00749970, 0x00749989, 0x007499A2};
+
 // NWN save types (nwscript SAVING_THROW_TYPE_*) used by the species traits.
 constexpr int kSaveTypeMindSpells = 1;
 constexpr int kSaveTypePoison = 2;

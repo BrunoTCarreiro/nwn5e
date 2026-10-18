@@ -318,8 +318,9 @@ action state 5/6.
   its versus object (C6), its d20 (0x7499C9) rolls species advantage and
   Halfling Luck, and in faithful mode the natural-1 / natural-20 branches
   are patched (0x749CE1 jnz→jmp, 0x749D00 jz NOPed). Quick launch: all
-  installed. Not yet removed: the save roll's own racial/feat "+2 vs X"
-  bonuses (C7).
+  installed. 0.8.1 (C7, faithful): the 34 feat-bonus HasFeat calls before
+  the save d20 (nwmain_1_69.h kSaveRollFeatBonusCalls) call a stub that
+  answers "no feat"; quick launch: 34 of 34 patched.
 
 ## Two-weapon fighting and attacks of opportunity (decompiled 2026-10-18)
 

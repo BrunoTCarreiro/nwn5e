@@ -6,6 +6,8 @@
 // - C6: any other DC reaching the save roll (traps, poisons, item powers,
 //   scripted monster abilities) is converted to the 2024 scale.
 // - C4 (faithful): natural 1s and 20s on saves are not automatic.
+// - C7 (faithful): the save roll's own feat and racial bonuses ("+2 vs X")
+//   are dropped; item and spell effects stay.
 // - C3 species: advantage for dwarves vs poison, halflings vs fear, elves vs
 //   mind spells (charm), gnomes on Will (Wisdom) saves; Halfling Luck rerolls
 //   a natural 1. Both modes.
@@ -184,6 +186,14 @@ int __fastcall RollSaveD20(void* rules_object, void* edx, int count, int sides) 
   return kept;
 }
 
+// C7: stands in for HasFeat at the save roll's feat-bonus checks (faithful).
+int __fastcall NoFeatBonus(void* stats, void* edx, int feat) {
+  (void)stats;
+  (void)edx;
+  (void)feat;
+  return 0;
+}
+
 bool PatchCallSite(const char* name, uintptr_t site, uintptr_t expected_target, const void* new_target) {
   const auto* code = reinterpret_cast<const uint8_t*>(site);
   int32_t rel = 0;
@@ -219,5 +229,14 @@ void InstallSaveRollRules() {
                nwmain::kSaveNatural1CheckBytes, nwmain::kSaveNatural1CheckSkip, sizeof(nwmain::kSaveNatural1CheckSkip));
     PatchBytes("save roll: natural 20 not automatic (faithful)", nwmain::kSaveNatural20Check,
                nwmain::kSaveNatural20CheckBytes, kNops, sizeof(kNops));
+    int dropped = 0;
+    for (uintptr_t site : nwmain::kSaveRollFeatBonusCalls) {
+      dropped += PatchCallSite("save roll feat bonus (C7)", site, nwmain::kHasFeat,
+                               reinterpret_cast<void*>(&NoFeatBonus))
+                     ? 1
+                     : 0;
+    }
+    Log("save roll: %d of %u feat/racial bonus checks dropped (faithful)", dropped,
+        static_cast<unsigned>(sizeof(nwmain::kSaveRollFeatBonusCalls) / sizeof(nwmain::kSaveRollFeatBonusCalls[0])));
   }
 }
