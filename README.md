@@ -103,7 +103,9 @@ Quick check without the UAC prompt (used by Claude, owner-approved
 `__COMPAT_LAYER=RunAsInvoker ./nwn5e.exe` runs the loader and the game with
 normal user rights (the game folder is user-writable). `build\nwn5e.log`
 then shows the version, the verified call sites and "hooks active"; close
-the game with `taskkill //IM nwmain.exe` before building again.
+the game completely with `taskkill //F //IM nwmain.exe` (without `/F` NWN
+ignores the request and keeps running) and check `tasklist` before building
+again.
 
 ## Changes to the game folder
 
