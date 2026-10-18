@@ -180,13 +180,14 @@ void ReadPendingAttack(void* creature, void* target_object) {
   g_pending.active = true;
 }
 
-// [debug] creature_hp_multiplier: the first time a character attacks a
-// creature that is not a character, its current hit points are multiplied
-// (once per creature per session), so weak monsters survive several hits
-// in mastery tests.
+// [debug] creature_hp_multiplier / creature_min_hp: the first time a character
+// attacks a creature that is not a character, its current hit points are
+// multiplied and raised to the minimum (once per creature per session), so
+// weak monsters survive several hits in mastery tests.
 void BoostTestTarget(void* attacker, void* target_object) {
-  const int multiplier = g_config.debug_creature_hp_multiplier;
-  if (multiplier <= 1 || !attacker || !target_object) return;
+  const int multiplier = g_config.debug_creature_hp_multiplier > 1 ? g_config.debug_creature_hp_multiplier : 1;
+  const int minimum = g_config.debug_creature_min_hp;
+  if ((multiplier <= 1 && minimum <= 0) || !attacker || !target_object) return;
   const uint32_t target_id = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
   void* target = engine::GetCreature(target_id);
   void* attacker_stats = Field<void*>(attacker, nwmain::kCreatureStats);
@@ -197,10 +198,13 @@ void BoostTestTarget(void* attacker, void* target_object) {
   if (!boosted.insert(target_id).second) return;
   const int hit_points = Field<int16_t>(target, nwmain::kObjectCurrentHitPoints);
   if (hit_points <= 0) return;
-  const int new_hit_points = hit_points * multiplier > 30000 ? 30000 : hit_points * multiplier;
+  int new_hit_points = hit_points * multiplier;
+  if (new_hit_points < minimum) new_hit_points = minimum;
+  if (new_hit_points > 30000) new_hit_points = 30000;
+  if (new_hit_points == hit_points) return;
   SetField<int16_t>(target, nwmain::kObjectCurrentHitPoints, static_cast<int16_t>(new_hit_points));
-  Log("debug: creature 0x%08X hit points %d -> %d (creature_hp_multiplier=%d)", target_id, hit_points,
-      new_hit_points, multiplier);
+  Log("debug: creature 0x%08X hit points %d -> %d (creature_hp_multiplier=%d, creature_min_hp=%d)", target_id,
+      hit_points, new_hit_points, multiplier, minimum);
 }
 
 void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
@@ -283,7 +287,7 @@ void InstallAdvantageRules() {
   // Weapon mastery (D3) fills empty slots from this hook too.
   const bool mastery = g_config.weapon_mastery == rules::RuleVariant::kFaithful;
   if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown && !mastery &&
-      g_config.debug_creature_hp_multiplier <= 1) {
+      g_config.debug_creature_hp_multiplier <= 1 && g_config.debug_creature_min_hp <= 0) {
     return;
   }
   InstallHook({g_config.advantage_disadvantage ? "CNWSCreature::ResolveAttackRoll (advantage/disadvantage)"
