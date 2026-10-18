@@ -27,13 +27,13 @@ float PersonalSpace(const void* creature) {
 
 }  // namespace
 
-void* ServerInternal() {
-  return Field<void*>(*reinterpret_cast<void**>(nwmain::kServerExoAppInternalHolder), 4);
+void* ServerExoApp() {
+  return Field<void*>(*reinterpret_cast<void**>(nwmain::kAppManager), 4);
 }
 
 void* GetCreature(uint32_t id) {
-  void* server_internal = ServerInternal();
-  return server_internal ? g_get_creature(server_internal, nullptr, id) : nullptr;
+  void* app = ServerExoApp();
+  return app ? g_get_creature(app, nullptr, id) : nullptr;
 }
 
 void* GetArea(void* object) { return g_get_area(object, nullptr); }

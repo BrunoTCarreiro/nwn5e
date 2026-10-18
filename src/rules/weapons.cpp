@@ -1,5 +1,9 @@
 #include "rules/weapons.h"
 
+#include <ctype.h>
+
+#include <algorithm>
+
 namespace rules {
 
 Mastery MasteryForNwnBaseItem(int base_item) {
@@ -102,6 +106,156 @@ int OffHandAttacks(int nwn_attacks, bool double_weapon, bool dual_wielder, bool 
 
 int NwnOffHandStrengthDamage(int strength_modifier) {
   return strength_modifier > 0 ? strength_modifier / 2 : strength_modifier;
+}
+
+int WeaponMasterySlots(CharacterClass character_class, int levels) {
+  if (levels < 1) return 0;
+  switch (character_class) {
+    case CharacterClass::kFighter:
+      return levels >= 16 ? 6 : levels >= 10 ? 5 : levels >= 4 ? 4 : 3;
+    case CharacterClass::kBarbarian:
+      return levels >= 10 ? 4 : levels >= 4 ? 3 : 2;
+    case CharacterClass::kPaladin:
+    case CharacterClass::kRanger:
+    case CharacterClass::kRogue:
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+int WeaponMasterySlots(const std::vector<ClassLevels>& classes) {
+  int slots = 0;
+  for (const ClassLevels& entry : classes) slots = std::max(slots, WeaponMasterySlots(entry.character_class, entry.levels));
+  return slots;
+}
+
+namespace {
+
+struct NwnWeapon {
+  int base_item;
+  const char* name;
+  int weapon_focus_feat;  // GetWeaponFocus 0x6A5C20; -1 none
+  std::vector<int> proficiency_feats;  // baseitems.2da ReqFeat0-4
+};
+
+// Proficiency feats: 44 exotic, 45 martial, 46 simple, 48 druid, 49 monk,
+// 50 rogue, 51 wizard, 256 elf.
+const std::vector<NwnWeapon>& Weapons() {
+  static const std::vector<NwnWeapon> kWeapons = {
+      {22, "Dagger", 90, {46, 48, 49, 50, 51}},     {28, "Club", 43, {46, 48, 49, 50, 51}},
+      {9, "Light Mace", 94, {46, 50}},              {47, "Morningstar", 95, {46, 50}},
+      {50, "Quarterstaff", 96, {46, 48, 49, 50, 51}}, {58, "Spear", 97, {46, 48}},
+      {60, "Sickle", 98, {46, 48}},                 {7, "Light Crossbow", 93, {46, 49, 50, 51}},
+      {6, "Heavy Crossbow", 92, {46, 49, 50, 51}},  {31, "Dart", 91, {46, 48, 50}},
+      {61, "Sling", 99, {46, 48, 49, 50}},          {0, "Short Sword", 103, {45, 50}},
+      {1, "Longsword", 106, {45, 256}},             {2, "Battleaxe", 110, {45}},
+      {4, "Light Flail", 114, {45}},                {5, "Warhammer", 115, {45}},
+      {10, "Halberd", 112, {45}},                   {13, "Greatsword", 107, {45}},
+      {18, "Greataxe", 111, {45}},                  {35, "Heavy Flail", 116, {45}},
+      {37, "Light Hammer", 113, {45}},              {38, "Handaxe", 108, {45, 49, 50}},
+      {51, "Rapier", 104, {45, 50, 256}},           {53, "Scimitar", 105, {45, 48}},
+      {63, "Throwing Axe", 109, {45}},              {95, "Trident", -1, {45}},
+      {8, "Longbow", 101, {45, 256}},               {11, "Shortbow", 102, {45, 50, 256}},
+      {92, "Lance", -1, {}},                        {3, "Bastard Sword", 123, {44}},
+      {12, "Two-Bladed Sword", 127, {44}},          {32, "Dire Mace", 125, {44}},
+      {33, "Double Axe", 126, {44}},                {40, "Kama", 117, {44, 49}},
+      {41, "Katana", 122, {44}},                    {42, "Kukri", 118, {44}},
+      {55, "Scythe", 121, {44}},                    {59, "Shuriken", 120, {44, 49}},
+      {108, "Dwarven Waraxe", 952, {44}},           {111, "Whip", 993, {44}},
+  };
+  return kWeapons;
+}
+
+const NwnWeapon* FindWeapon(int base_item) {
+  const int kind = MasteryKindOfNwnBaseItem(base_item);
+  for (const NwnWeapon& weapon : Weapons()) {
+    if (weapon.base_item == kind) return &weapon;
+  }
+  return nullptr;
+}
+
+std::string Squeeze(const std::string& text) {
+  std::string out;
+  for (char c : text) {
+    if (c == ' ' || c == '-' || c == '_' || c == '\'') continue;
+    out += static_cast<char>(tolower(static_cast<unsigned char>(c)));
+  }
+  return out;
+}
+
+}  // namespace
+
+const std::vector<int>& NwnMasteryWeapons() {
+  static const std::vector<int> kIds = [] {
+    std::vector<int> ids;
+    for (const NwnWeapon& weapon : Weapons()) ids.push_back(weapon.base_item);
+    return ids;
+  }();
+  return kIds;
+}
+
+int MasteryKindOfNwnBaseItem(int base_item) { return base_item == 45 ? 50 : base_item; }
+
+const char* NwnWeaponName(int base_item) {
+  const NwnWeapon* weapon = FindWeapon(base_item);
+  return weapon ? weapon->name : nullptr;
+}
+
+int NwnWeaponFromName(const std::string& text) {
+  const std::string key = Squeeze(text);
+  if (key.empty()) return -1;
+  for (const NwnWeapon& weapon : Weapons()) {
+    if (Squeeze(weapon.name) == key) return weapon.base_item;
+  }
+  static const struct {
+    const char* alias;
+    int base_item;
+  } kAliases[] = {{"shortspear", 58}, {"staff", 50}, {"waraxe", 108}, {"twobladed", 12}, {"flail", 4},
+                  {"mace", 9}, {"hammer", 5}, {"lightxbow", 7}, {"heavyxbow", 6}, {"crossbow", 7}};
+  for (const auto& alias : kAliases) {
+    if (key == alias.alias) return alias.base_item;
+  }
+  return -1;
+}
+
+const char* MasteryName(Mastery mastery) {
+  switch (mastery) {
+    case Mastery::kCleave: return "Cleave";
+    case Mastery::kGraze: return "Graze";
+    case Mastery::kNick: return "Nick";
+    case Mastery::kPush: return "Push";
+    case Mastery::kSap: return "Sap";
+    case Mastery::kSlow: return "Slow";
+    case Mastery::kTopple: return "Topple";
+    case Mastery::kVex: return "Vex";
+    default: return "none";
+  }
+}
+
+int WeaponFocusFeatForNwnBaseItem(int base_item) {
+  const NwnWeapon* weapon = FindWeapon(base_item);
+  return weapon ? weapon->weapon_focus_feat : -1;
+}
+
+std::vector<int> ProficiencyFeatsForNwnBaseItem(int base_item) {
+  if (base_item == 45) return {};  // magic staff: anyone
+  const NwnWeapon* weapon = FindWeapon(base_item);
+  return weapon ? weapon->proficiency_feats : std::vector<int>{};
+}
+
+int FreeMasterySlot(const std::vector<int>& chosen, int slots) {
+  for (int i = 0; i < slots && i < static_cast<int>(chosen.size()); ++i) {
+    if (chosen[i] < 0) return i;
+  }
+  return -1;
+}
+
+int MasterySlotOf(const std::vector<int>& chosen, int slots, int base_item) {
+  for (int i = 0; i < slots && i < static_cast<int>(chosen.size()); ++i) {
+    if (chosen[i] >= 0 && chosen[i] == MasteryKindOfNwnBaseItem(base_item)) return i;
+  }
+  return -1;
 }
 
 }  // namespace rules

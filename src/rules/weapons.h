@@ -4,6 +4,9 @@
 // properties on NWN weapons, the classes that use them, and two-weapon
 // fighting damage.
 
+#include <string>
+#include <vector>
+
 #include "rules/combat.h"
 
 namespace rules {
@@ -36,5 +39,35 @@ int OffHandAttacks(int nwn_attacks, bool double_weapon, bool dual_wielder, bool 
 // NWN's off-hand Strength damage: half the modifier (truncated) when it is
 // positive, all of it when not (0x697D10).
 int NwnOffHandStrengthDamage(int strength_modifier);
+
+// D3: weapon mastery slots (2024): Fighter 3/4/5/6 at levels 1/4/10/16,
+// Barbarian 2/3/4 at 1/4/10, Paladin, Ranger and Rogue 2; 0 for the rest.
+int WeaponMasterySlots(CharacterClass character_class, int levels);
+// Several classes: the most slots any one of them gives (they do not add up,
+// like Extra Attack).
+int WeaponMasterySlots(const std::vector<ClassLevels>& classes);
+
+// D3: the weapon kinds a mastery can be chosen for, as NWN base items, in
+// display order. A magic staff (45) is a quarterstaff (50).
+const std::vector<int>& NwnMasteryWeapons();
+int MasteryKindOfNwnBaseItem(int base_item);
+// "Longsword"; nullptr when the base item is not a mastery weapon kind.
+const char* NwnWeaponName(int base_item);
+// Base item named by `text` (case, spaces and hyphens ignored; a few aliases
+// such as "spear", "staff", "waraxe"); -1 when unknown.
+int NwnWeaponFromName(const std::string& text);
+const char* MasteryName(Mastery mastery);
+
+// The Weapon Focus feat for a base item (GetWeaponFocus 0x6A5C20); -1 none.
+int WeaponFocusFeatForNwnBaseItem(int base_item);
+// Proficiency feats (baseitems.2da ReqFeat0-4): any one makes the wielder
+// proficient; none listed means everyone is.
+std::vector<int> ProficiencyFeatsForNwnBaseItem(int base_item);
+
+// D3 slots: `chosen` holds one base item per slot (-1 = empty); only the
+// first `slots` count. The first empty slot, or -1.
+int FreeMasterySlot(const std::vector<int>& chosen, int slots);
+// The slot holding `base_item` among the first `slots`, or -1.
+int MasterySlotOf(const std::vector<int>& chosen, int slots, int base_item);
 
 }  // namespace rules

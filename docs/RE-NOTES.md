@@ -512,3 +512,26 @@ not confirmed.
   0x47E260(option 0, game difficulty at server options +0x170)) with a
   player-controlled target and the attacker not player-controlled sets
   result 1 (hit). 0.7.1 skips it (jnz → jmp at 0x744746, decision B7).
+
+## Local variables, rests and server objects (decompiled 2026-10-18, D3)
+
+- Every object keeps its script local variables at object +0xD8
+  (LoadVarTable 0x639BD0 adds 0xD8); they are saved with the game.
+  CNWSScriptVarTable::GetInt(CExoString*) 0x74E7B0, ret 4, 0 when missing;
+  SetInt(CExoString*, value, flag) 0x74E970, ret 0xC — MatchIndex 0x74E640
+  (name, type 1 = int, create) copies the name into a new entry. Names
+  compare with strcmp (0x5BA5E0, case-sensitive). A CExoString is {char*,
+  buffer length including the null} (constructor 0x5BA260).
+- Resting: CNWSCreature::Rest 0x659C50 only starts a rest (it refuses with
+  an enemy within 30 m); the rest action AIActionRest 0x6883E0 readies
+  spells and calls CNWSCreatureStats::ResetFeatRemainingUses 0x6A4B10 (plain
+  ret) when the rest completes, as does the script command ForceRest
+  (0x7103D0, call at 0x710467).
+- [0x92DC50] is the app manager and [+4] the CServerExoApp; its methods at
+  0x5FFxxx forward to the CServerExoAppInternal at [app + 4]
+  (GetCreatureByGameObjectID 0x5FFAD0 → 0x609C50, GetPlayerIDByGameObjectID
+  0x5FFB70 → 0x6108B0). GetNWSMessage 0x5FFBD0 = [[app + 4] + 0x10018]. Until
+  0.8.7 the chat code called the internal 0x6108B0 with the app pointer.
+- GetWeaponFocus 0x6A5C20 maps an item's base item to its Weapon Focus feat
+  (no item or gloves 36/78 → 100 unarmed; creature weapons 69–72 → 291) and
+  returns HasFeat; the table is in src/rules/weapons.cpp.

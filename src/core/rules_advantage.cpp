@@ -27,6 +27,7 @@
 
 void TraceAttackRoll(const void* creature);  // rules_attack_trace.cpp
 void KeepCombatBreakdownOn();                 // rules_attack_trace.cpp
+void NoteWeaponUsed(void* creature);          // rules_mastery.cpp
 
 namespace {
 
@@ -175,6 +176,7 @@ void ReadPendingAttack(void* creature, void* target_object) {
 void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
   if (g_config.debug_attack_trace) TraceAttackRoll(creature);
   KeepCombatBreakdownOn();
+  NoteWeaponUsed(creature);
   const PendingAttack outer = g_pending;
   g_pending = PendingAttack();
   if (g_config.advantage_disadvantage) ReadPendingAttack(creature, target);
@@ -243,9 +245,13 @@ int PendingSituationalTotal(const void* stats, const void* target) {
 
 void InstallAdvantageRules() {
   if (g_config.advantage_disadvantage && !PatchAttackD20Call()) g_config.advantage_disadvantage = false;
-  if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown) return;
+  // Weapon mastery (D3) fills empty slots from this hook too.
+  const bool mastery = g_config.weapon_mastery == rules::RuleVariant::kFaithful;
+  if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown && !mastery) {
+    return;
+  }
   InstallHook({g_config.advantage_disadvantage ? "CNWSCreature::ResolveAttackRoll (advantage/disadvantage)"
-                                               : "CNWSCreature::ResolveAttackRoll (trace)",
+                                               : "CNWSCreature::ResolveAttackRoll (trace, weapon mastery)",
                nwmain::kResolveAttackRoll, nwmain::kResolveAttackRollPrologue,
                sizeof(nwmain::kResolveAttackRollPrologue), reinterpret_cast<void*>(&ResolveAttackRoll),
                reinterpret_cast<void**>(&g_resolve_attack_roll)});

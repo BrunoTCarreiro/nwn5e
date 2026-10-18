@@ -11,7 +11,7 @@
 
 namespace engine {
 
-void* ServerInternal();                          // [[0x92DC50]+4]
+void* ServerExoApp();                            // [[0x92DC50]+4], the CServerExoApp
 void* GetCreature(uint32_t id);                  // CNWSCreature*, or null (not a creature)
 void* GetArea(void* object);                     // 0x63ECC0
 bool IsEnemy(void* creature, uint32_t other_id);  // reaction 0x731520 == 2

@@ -58,8 +58,7 @@ std::optional<CharacterClass> ClassFromNwnId(int nwn_class_id) {
   return std::nullopt;
 }
 
-int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks) {
-  if (!is_player_character) return engine_attacks;
+std::vector<ClassLevels> GroupClassLevels(const std::vector<NwnClassSlot>& classes) {
   // Levels of a prestige class add to its parent class (Fighter 6 + Weapon
   // Master 6 is a Fighter 12); different classes still do not add up.
   std::vector<ClassLevels> by_class;
@@ -74,7 +73,12 @@ int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClass
       by_class.push_back({*character_class, slot.levels});
     }
   }
-  return AttacksPerAttackAction(by_class);
+  return by_class;
+}
+
+int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks) {
+  if (!is_player_character) return engine_attacks;
+  return AttacksPerAttackAction(GroupClassLevels(classes));
 }
 
 int ConvertCriticalThreatFloor(int engine_threat_floor) { return engine_threat_floor > 20 ? engine_threat_floor : 20; }

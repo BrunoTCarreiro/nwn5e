@@ -323,6 +323,16 @@ Master stand-in); later the choice may move into level-up (Phase 3/7). NWN
 mode: the mastery classes have mastery with every weapon they are
 proficient with; Weapon Focus the same.
 
+*Built 0.8.7 (2026-10-18).* Choices made on the way: several mastery classes
+give the larger count, not the sum (like Extra Attack; prestige levels add to
+the parent class); a swap is `!mastery <new> for <old>` and becomes available
+when a rest finishes (also the ForceRest script command); filling an empty
+slot by `!mastery <weapon>` is free; only weapons the character is proficient
+with (baseitems.2da ReqFeat) can be chosen or auto-filled, unarmed never;
+a magic staff counts as a quarterstaff; henchmen fill their slots by use only
+(the player is told). The choices are local variables on the creature
+(`nwn5e_mastery_1`…`6`, `nwn5e_mastery_swap`), so they live in the save game.
+
 **D4. Weapon mastery — what.** Each NWN weapon gets its 2024 property
 (`src/rules/weapons.cpp`; NWN-only weapons take the closest). Faithful: all
 eight, automatic whenever their condition holds — Vex and Sap (advantage /

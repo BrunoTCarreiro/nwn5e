@@ -172,7 +172,9 @@ constexpr uintptr_t kHasFeat = 0x006A3630;
 constexpr uintptr_t kMaxAttackRange = 0x0064B5D0;
 constexpr uintptr_t kGetNearestEnemy = 0x00658C00;
 constexpr uintptr_t kGetCreatureByGameObjectId = 0x005FFAD0;
-constexpr uintptr_t kServerExoAppInternalHolder = 0x0092DC50;  // [[0x92DC50]+4] = CServerExoAppInternal*
+// [0x92DC50] = the app manager; [+4] = the CServerExoApp, whose methods at
+// 0x5FFxxx forward to the CServerExoAppInternal at [app + 4].
+constexpr uintptr_t kAppManager = 0x0092DC50;
 constexpr uint32_t kObjectInvalid = 0x7F000000;
 // CNWSCombatAttackData* CNWSCombatRound::GetAttack(int index) 0x73C0A0, ret 4;
 // attack data +0x04 is the attack's target object id (ResolveMeleeAttack).
@@ -457,13 +459,14 @@ constexpr uintptr_t kStatsIntModifier = 0x3FF;
 // SendServerToPlayerChat_ServerTell 0x6220D0 (this = the same CNWSMessage,
 // player id, CExoString by value — destroyed by the callee, so it must come
 // from the engine's CExoString(const char*) 0x5BA260); player id from
-// CServerExoAppInternal::GetPlayerIDByGameObjectID 0x6108B0 (0xFFFFFFFE for
-// none).
+// CServerExoApp::GetPlayerIDByGameObjectID 0x5FFB70 (0xFFFFFFFE for none; it
+// forwards to the internal 0x6108B0 — 0.8.2 to 0.8.6 called that one with the
+// app pointer, the wrong object, so `!saves` could not reply).
 constexpr uintptr_t kSendServerToPlayerChatMessage = 0x00620C30;
 constexpr uint8_t kSendServerToPlayerChatMessagePrologue[] = {0x6a, 0xff, 0x68, 0x48, 0x37, 0x89, 0x00, 0x64};
 constexpr uintptr_t kSendServerToPlayerChatServerTell = 0x006220D0;
 constexpr uintptr_t kExoStringFromText = 0x005BA260;
-constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x006108B0;
+constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x005FFB70;
 
 // Opportunity attacks (D2; RE-NOTES "Two-weapon fighting and attacks of
 // opportunity"). Broadcast 0x655E70, this = the provoker (target, or
@@ -549,6 +552,24 @@ constexpr int kSlotLeftHand = 0x20;
 constexpr uint8_t kBaseItemWieldDouble = 8;
 constexpr int kFeatImprovedTwoWeaponFighting = 20;
 constexpr int kFeatTwoWeaponFighting = 41;
+
+// Weapon mastery (D3). Every object keeps its local variables (the ones
+// scripts read with GetLocalInt) at object +0xD8, saved with the game:
+// CNWSScriptVarTable::GetInt(CExoString*) 0x74E7B0 (ret 4; 0 when missing)
+// and SetInt(CExoString*, value, flag) 0x74E970 (ret 0xC; creates the entry,
+// copying the name). Names compare with strcmp; a CExoString is {char*,
+// length including the null}.
+constexpr uintptr_t kObjectVarTable = 0xD8;
+constexpr uintptr_t kVarTableGetInt = 0x0074E7B0;
+constexpr uintptr_t kVarTableSetInt = 0x0074E970;
+// A finished rest: CNWSCreatureStats::ResetFeatRemainingUses() 0x6A4B10 (plain
+// ret) runs once a rest completes, from AIActionRest (0x688ADA, the rest
+// action 0x6883E0) and from the script command ForceRest (0x710467). Rest
+// 0x659C50 is only the start (it refuses with enemies within 30 m).
+constexpr uintptr_t kResetFeatRemainingUses = 0x006A4B10;
+constexpr uint8_t kResetFeatRemainingUsesPrologue[] = {0x8b, 0x41, 0x10, 0x33, 0xd2, 0x85, 0xc0, 0x7e};
+// Messages outside a chat: CServerExoApp::GetNWSMessage() 0x5FFBD0, plain ret.
+constexpr uintptr_t kGetNwsMessage = 0x005FFBD0;
 
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll

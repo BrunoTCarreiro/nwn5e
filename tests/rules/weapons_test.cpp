@@ -87,3 +87,54 @@ TEST(NwnOffHandStrength) {
   CHECK_EQ(NwnOffHandStrengthDamage(0), 0);
   CHECK_EQ(NwnOffHandStrengthDamage(-1), -1);
 }
+
+// D3 slot counts. Breaks caught: a Fighter's count not growing at 4/10/16; a
+// Barbarian given Fighter counts; a non-mastery class given slots; two
+// classes adding up instead of taking the larger.
+TEST(WeaponMasterySlotsAre2024) {
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kFighter, 1), 3);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kFighter, 4), 4);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kFighter, 10), 5);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kFighter, 16), 6);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kBarbarian, 3), 2);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kBarbarian, 4), 3);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kBarbarian, 10), 4);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kRogue, 1), 2);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kWizard, 20), 0);
+  CHECK_EQ(WeaponMasterySlots(CharacterClass::kFighter, 0), 0);
+  CHECK_EQ(WeaponMasterySlots({{CharacterClass::kFighter, 1}, {CharacterClass::kRogue, 3}}), 3);
+}
+
+// D3 weapon names and the Weapon Focus / proficiency tables. Breaks caught:
+// a name not round-tripping; "short sword" vs "shortsword" treated apart; a
+// magic staff not counted as a quarterstaff; wrong feat ids.
+TEST(MasteryWeaponTables) {
+  for (int id : NwnMasteryWeapons()) {
+    CHECK_EQ(NwnWeaponFromName(NwnWeaponName(id)), id);
+    CHECK_EQ(MasteryForNwnBaseItem(id) != Mastery::kNone, true);
+  }
+  CHECK_EQ(NwnWeaponFromName("short sword"), 0);
+  CHECK_EQ(NwnWeaponFromName("ShortSword"), 0);
+  CHECK_EQ(NwnWeaponFromName("two-bladed sword"), 12);
+  CHECK_EQ(NwnWeaponFromName("spear"), 58);
+  CHECK_EQ(NwnWeaponFromName("banana"), -1);
+  CHECK_EQ(MasteryKindOfNwnBaseItem(45), 50);
+  CHECK_EQ(WeaponFocusFeatForNwnBaseItem(1), 106);
+  CHECK_EQ(WeaponFocusFeatForNwnBaseItem(45), 96);
+  CHECK_EQ(WeaponFocusFeatForNwnBaseItem(95), -1);
+  CHECK_EQ(ProficiencyFeatsForNwnBaseItem(1).size(), static_cast<size_t>(2));
+  CHECK_EQ(ProficiencyFeatsForNwnBaseItem(45).size(), static_cast<size_t>(0));
+  CHECK_EQ(std::string(MasteryName(MasteryForNwnBaseItem(1))) == "Sap", true);
+}
+
+// D3 slot helpers. Breaks caught: a slot past the class's count used; an
+// empty slot missed; a magic staff not found as the quarterstaff slot.
+TEST(MasterySlotHelpers) {
+  const std::vector<int> chosen = {1, -1, 22, -1, -1, -1};
+  CHECK_EQ(FreeMasterySlot(chosen, 3), 1);
+  CHECK_EQ(FreeMasterySlot({1, 22, 11, -1, -1, -1}, 3), -1);
+  CHECK_EQ(FreeMasterySlot({1, 22, 11, -1, -1, -1}, 4), 3);
+  CHECK_EQ(MasterySlotOf(chosen, 3, 22), 2);
+  CHECK_EQ(MasterySlotOf(chosen, 2, 22), -1);
+  CHECK_EQ(MasterySlotOf({50, -1}, 2, 45), 0);
+}

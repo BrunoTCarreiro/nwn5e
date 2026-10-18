@@ -19,6 +19,10 @@ struct Config {
   // double weapon or Dual Wielder), no Strength on its damage unless negative
   // or with the Two-Weapon Fighting style. nwn/off = NWN's rules.
   rules::RuleVariant two_weapon_fighting = rules::RuleVariant::kFaithful;
+  // D3: faithful = 2024 slots chosen with !mastery or filled by use, one swap
+  // per long rest; nwn = mastery classes master every proficient weapon;
+  // Weapon Focus adds its weapon in both. off = no mastery.
+  rules::RuleVariant weapon_mastery = rules::RuleVariant::kFaithful;
   bool crit_nat20_only = true;     // threat only on a natural 20
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon

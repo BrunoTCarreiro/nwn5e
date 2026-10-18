@@ -28,6 +28,10 @@ struct NwnClassSlot {
 // 2024 Attack action (Extra Attack from their classes, prestige levels added
 // to the parent class); other creatures keep the engine's count, standing in
 // for a 5e Multiattack.
+// NWN class slots as 2024 class levels: prestige levels add to their parent
+// class; monster classes are dropped.
+std::vector<ClassLevels> GroupClassLevels(const std::vector<NwnClassSlot>& classes);
+
 int MainHandAttacksPerRound(bool is_player_character, const std::vector<NwnClassSlot>& classes, int engine_attacks);
 
 // Decision 11: player characters and henchmen use the character rules (gear
