@@ -343,6 +343,24 @@ round), Push (3 m knockback; last, possibly approximated); Nick waits for
 the action economy (Phase 6); monsters don't use mastery. NWN mode: the
 same without Push.
 
+*Built 0.9.0–0.9.7 (2026-10-18).* Vex, Sap, Graze, Slow, Topple and Cleave
+work and are verified in game (README has the evidence). Choices made on the
+way: a "hit" is attack result 1/3/7/10 and Vex/Sap last in NWN combat rounds
+(an NWN round is a 2024 turn); Graze, Slow and Topple effects land when the
+swing does (queued like the engine's own hit damage); Topple's knockdown lasts
+a round; Cleave's extra attack is the engine's own cleave attack, aimed
+through the round's target as Great Cleave does. Known gap: Vex and Slow also
+trigger on hits that deal 0 damage (immune targets; 2024 needs damage).
+
+*Push parked (owner, 2026-10-18), with this design for later:* on a Push hit
+(target Large or smaller, faithful only) the target plays NWN's knockdown
+(falling) animation as a visual only — no knockdown effect, no prone, it gets
+straight back up — and during the fall is moved up to 3 m straight away from
+the attacker, through the engine's own jump (the path scripts'
+JumpToLocation uses), onto walkable ground only and stopping short at walls.
+Recon needed: playing the fall animation without the knockdown state, and the
+jump / safe-location call.
+
 ### Build order
 
 1. The mode switch (`mode=faithful|nwn`, per-rule keys override).
