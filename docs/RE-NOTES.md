@@ -350,7 +350,11 @@ action state 5/6.
   AddAttackActions(provoker) + 0x73DD30 (the AoO attack) and +0x2128 − 1;
   with the second argument 1 the provoker first makes a Tumble check
   (skill 21) — feedback 0xA87. Provoked by moving (0x6475B0, the move
-  action; Spring Attack 392 skips it) by drinking a potion (0x67B550, see
+  action: only while the mover's animation +0xAC is 4, 0x56 or 0x57 —
+  apparently running, as walking away drew none in tests while running in
+  circles drew four (2026-10-18) — at most once per 1.5 s (+0x508), not
+  while the mover's own AoO cooldown +0x50C is set; the taker must also
+  roughly face the mover; Spring Attack 392 skips it) by drinking a potion (0x67B550, see
   below) and by casting (0x67C070; Epic Improved Combat Casting 696 skips
   it). The fifth caller,
   0x64A364, is the creature event handler 0x64A220 (vtable 0x8B5F88) for
