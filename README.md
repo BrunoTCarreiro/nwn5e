@@ -44,11 +44,10 @@ in `nwn5e.ini`:
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).
 
-Known gaps: flat damage bonuses from effects (e.g. Divine Favor) still double
-on a crit; two-handed weapons still add 1.5 × Strength to damage (3e; not
-yet decided);
-the sheet's "Base Attack Bonus" line stays 3e (the client may use it for feat
-prerequisites); player AC is unchanged.
+Known gaps: the sheet's "Base Attack Bonus" line stays 3e (the client may use
+it for feat prerequisites); player AC is unchanged; Vex and Slow also trigger on
+hits that deal no damage. Flat effect damage bonuses (e.g. Divine Favor) are
+added once on a crit since 0.6.4, not yet seen in a crit in game.
 
 Test switches (`[debug]`, all off by default): `attacks_per_round=N` (1–6)
 gives player characters N main-hand attacks per round; `creature_ac=N` gives
