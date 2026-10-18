@@ -571,3 +571,40 @@ not confirmed.
 - spells.2da: the expansion's copy (xp2patch.bif, 840 rows) overrides the
   original (417 rows); Sunburst 427, Banishment 430, the Inflict spells
   431-435 and Bane 449 are only in the former.
+
+## Condition effects (decoded 2026-10-19, for CN8)
+
+- Effect apply/remove tables are filled at 0x667B90 (apply at handler +4,
+  remove at +8, by effect type x 4). SetState 8 -> 0x66DD30, SetState
+  internal 9 -> 0x66EA00, Deaf 21 -> 0x66D770, spell failure 25 -> 0x66DB70.
+- SetState states (from their immunity checks, IMMUNITY_TYPE_*): 1 charmed
+  (14), 2 confused (16), 3 frightened (4), 4 turned (no check), 5 dazed (18),
+  6 stunned (12), 7 dominated (15; 21 shares its case), 8 paralysed (6),
+  9 sleep (13), 15 petrified (no check), 20 paralysis without icon.
+  Every state but dazed also clears AI-state bit 0x100; the highest state
+  number held is kept at creature +0x9DD and re-applied as SetState
+  internal (type 9). Sub-effects per state (0x66EA00, jump table 0x66F3D4,
+  byte index 0x66F404): icon (type 0x43, effecticons.2da row) plus
+  - charmed: icon 12; personal reputation toward the creator set to 100
+    (0x687C30), current target cleared (0x6427E0).
+  - dominated: icon 15; becomes the creator's associate, type 5
+    (0x68B030); target cleared.
+  - confused: icon 13; actions cleared (0x63A650); the behaviour is AI.
+  - dazed: icon 17; actions cleared; an extra type-0x3B effect whose
+    handler (0x673990) sets creature +0x9D8 = 1 (not decoded further).
+  - stunned: icon 18; AI mask clears 0x2; visual 208.
+  - paralysed: icon 16; AI mask clears 0x0E.
+  - petrified: icon 109; AI mask clears 0x0E (same as paralysis); visuals
+    351 VFX_DUR_PETRIFY + 352 FREEZE_ANIMATIONS. No damage resistance.
+  - sleep: icon 19; AI mask clears 0x15E.
+  - frightened / turned: saving throw -2 (type 0x1B) and icon 14 / 24.
+- Deaf: AI mask clears 0x10 (hearing), spell failure +20 (type 25) and
+  icon 7; nothing else. The type-25 amount goes to stats +0x42C, which is
+  summed with armour (+0x42D) and shield (+0x42E) failure (0x656740) and
+  rolled at casting (0x67D664) only for Bard (1), Sorcerer (9) and Wizard
+  (10) spells, and not with metamagic 0x20 (Still Spell). So NWN's deafness
+  never fails a divine spell, and Still Spell (not Silent) avoids it.
+- Difficulty texts (dialog.tlk 67577-67581): charm and domination on a
+  player daze them at every difficulty; confusion dazes a player only on
+  DM Easy. Flesh to Stone (3045): 1 round / level on Normal or easier,
+  permanent above; the caster resting restores.
