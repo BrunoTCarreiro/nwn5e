@@ -361,6 +361,22 @@ JumpToLocation uses), onto walkable ground only and stopping short at walls.
 Recon needed: playing the fall animation without the knockdown state, and the
 jump / safe-location call.
 
+**E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
+modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:
+once; NWN mode: 1.5 x. Point Blank Shot's +1 damage stays with B3 (Phase 3).
+*Built 0.9.8.*
+
+**C1 table (owner, 2026-10-18): option A.** Faithful: the NWN spells that exist
+in SRD 5.2 with another save ability use it — Strength (Entangle 53, Gust of
+Wind 75, Evard's Black Tentacles 375), Intelligence (Feeblemind 55), Charisma
+(Bane 449, Banishment 430, Lesser/Planar/Greater Planar Binding 96/128/69),
+Constitution (Cone of Cold 25, Sunbeam 183, Sunburst 427, Inflict Minor to
+Critical Wounds 431-435 and the Blackguard's 611/612). NWN-only spells
+(Dismissal and the like) keep the default mapping; NWN mode has no table.
+The spell is the running script's (OBJECT_SELF +0x188, an area of effect's
+own +0x1CC), so lingering clouds use their own spell. Effects on the NWN save
+(items, spells) still apply to the overridden one. *Built 0.9.8.*
+
 ### Build order
 
 1. The mode switch (`mode=faithful|nwn`, per-rule keys override).

@@ -68,8 +68,9 @@ int SpellScrollDc(int spell_level) {
 int NwnModeSpellFocusDcBonus(int nwn_focus_bonus) { return nwn_focus_bonus / 2; }
 
 int SaveValue(const SaveFacts& facts, RuleVariant variant) {
+  const Ability ability = facts.ability ? *facts.ability : AbilityForNwnSave(facts.save);
   const bool class_proficient =
-      facts.character && facts.first_class && HasSaveProficiency(*facts.first_class, AbilityForNwnSave(facts.save));
+      facts.character && facts.first_class && HasSaveProficiency(*facts.first_class, ability);
   if (variant == RuleVariant::kNwn) {
     const bool proficient = facts.character ? class_proficient : facts.good_nwn_table;
     return facts.ability_modifier + (proficient ? facts.proficiency_bonus : 0) + facts.effects + facts.nwn_extras;
@@ -94,6 +95,36 @@ Ability AbilityForNwnSave(NwnSave save) {
       return Ability::kWisdom;
   }
   return Ability::kConstitution;
+}
+
+std::optional<Ability> SaveAbilityForNwnSpell(int spell_id) {
+  switch (spell_id) {
+    case 53:   // Entangle
+    case 75:   // Gust of Wind
+    case 375:  // Evard's Black Tentacles
+      return Ability::kStrength;
+    case 55:   // Feeblemind
+      return Ability::kIntelligence;
+    case 69:   // Greater Planar Binding
+    case 96:   // Lesser Planar Binding
+    case 128:  // Planar Binding
+    case 430:  // Banishment
+    case 449:  // Bane
+      return Ability::kCharisma;
+    case 25:   // Cone of Cold
+    case 183:  // Sunbeam
+    case 427:  // Sunburst
+    case 431:  // Inflict Minor Wounds
+    case 432:  // Inflict Light Wounds
+    case 433:  // Inflict Moderate Wounds
+    case 434:  // Inflict Serious Wounds
+    case 435:  // Inflict Critical Wounds
+    case 611:  // Inflict Serious Wounds (Blackguard)
+    case 612:  // Inflict Critical Wounds (Blackguard)
+      return Ability::kConstitution;
+    default:
+      return std::nullopt;
+  }
 }
 
 }  // namespace rules

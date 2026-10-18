@@ -15,10 +15,13 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <optional>
+#include <string>
 #include <utility>
 
 #include "config.h"
 #include "creature.h"
+#include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
@@ -74,7 +77,50 @@ struct SaveContext {
   void* creature = nullptr;
   int save = 0;  // 1 Fortitude, 2 Reflex, 3 Will
   int type = 0;  // NWN save type
+  int spell = -1;  // the spell whose script asked for this save, or -1
+  std::optional<rules::Ability> ability;  // C1: the 2024 ability that spell uses
 };
+
+// The spell of the script running the current FortitudeSave / ReflexSave /
+// WillSave command (-1 outside one).
+int g_script_spell = -1;
+
+std::string SpellNote(int spell);
+
+using VmCommandFn = int(__fastcall*)(void* commands, void* edx, int command, int parameters);
+using GetObjectArrayFn = void*(__fastcall*)(void* app, void* edx);
+using GetGameObjectFn = uint8_t(__fastcall*)(void* array, void* edx, uint32_t id, void** object);
+using VirtualCastFn = void*(__fastcall*)(void* object, void* edx);
+VmCommandFn g_vm_save_command = nullptr;
+const auto g_get_object_array = reinterpret_cast<GetObjectArrayFn>(nwmain::kGetObjectArray);
+const auto g_get_game_object = reinterpret_cast<GetGameObjectFn>(nwmain::kGetGameObject);
+
+void* VirtualCast(void* object, uintptr_t slot) {
+  void** vtable = *reinterpret_cast<void***>(object);
+  return reinterpret_cast<VirtualCastFn>(vtable[slot / sizeof(void*)])(object, nullptr);
+}
+
+// The spell id of an object, as GetSpellId reads it (an area of effect keeps
+// its own); -1 when unknown.
+int SpellOfObject(uint32_t id) {
+  void* app = engine::ServerExoApp();
+  void* array = app ? g_get_object_array(app, nullptr) : nullptr;
+  void* object = nullptr;
+  if (!array || g_get_game_object(array, nullptr, id, &object) != 0 || !object) return -1;
+  if (void* aoe = VirtualCast(object, nwmain::kVtableAsAreaOfEffect)) {
+    return Field<int32_t>(aoe, nwmain::kAreaOfEffectSpellId);
+  }
+  void* nws_object = VirtualCast(object, nwmain::kVtableAsNwsObject);
+  return nws_object ? Field<int32_t>(nws_object, nwmain::kObjectLastSpellId) : -1;
+}
+
+int __fastcall VmSaveCommand(void* commands, void* edx, int command, int parameters) {
+  const int outer = g_script_spell;
+  g_script_spell = SpellOfObject(Field<uint32_t>(commands, nwmain::kVmCommandsObjectSelf));
+  const int result = g_vm_save_command(commands, edx, command, parameters);
+  g_script_spell = outer;
+  return result;
+}
 SaveContext g_save;
 
 bool HasFeat(void* stats, int feat) { return g_has_feat(stats, nullptr, feat) != 0; }
@@ -138,21 +184,42 @@ uint32_t __fastcall SavingThrowRoll(void* creature, void* edx, uint32_t save, ui
     return g_saving_throw_roll(creature, edx, save, dc, type, versus, a5, a6, a7);
   }
   const int engine_dc = dc & 0xFFFF;
-  const bool spell_dc = IsSpellDc(versus, engine_dc);
+  // A save asked for by a spell's script uses that spell's DC (GetSpellSaveDC,
+  // already 2024 — persistent areas of effect pass themselves as the
+  // opponent, so the caster check alone misses them).
+  const bool spell_dc = g_script_spell >= 0 || IsSpellDc(versus, engine_dc);
   const int new_dc = spell_dc ? engine_dc : rules::ConvertNwnFixedDc(engine_dc);
   const SaveContext outer = g_save;
-  g_save = {true, creature, static_cast<int>(save & 0xFF), static_cast<int>(type & 0xFF)};
+  g_save = SaveContext();
+  g_save.active = true;
+  g_save.creature = creature;
+  g_save.save = static_cast<int>(save & 0xFF);
+  g_save.type = static_cast<int>(type & 0xFF);
+  g_save.spell = g_script_spell;
+  if (g_config.saves == rules::RuleVariant::kFaithful && g_script_spell >= 0) {
+    g_save.ability = rules::SaveAbilityForNwnSpell(g_script_spell);
+  }
   const uint32_t result =
       g_saving_throw_roll(creature, edx, save, (dc & 0xFFFF0000u) | static_cast<uint32_t>(new_dc), type, versus, a5,
                           a6, a7);
   g_save = outer;
   if (g_config.log_attacks && g_save_log_lines < 300) {
     ++g_save_log_lines;
-    Log("save roll: object 0x%08X save %d type %d vs 0x%08X: DC %d%s -> %d, %s",
+    Log("save roll: object 0x%08X save %d type %d vs 0x%08X: DC %d%s -> %d%s, %s",
         Field<uint32_t>(creature, nwmain::kCreatureObjectId), save & 0xFF, type & 0xFF, versus, engine_dc,
-        spell_dc ? " (spell)" : "", new_dc, result == 1 ? "success" : (result == 2 ? "immune" : "failure"));
+        spell_dc ? " (spell)" : "", new_dc, SpellNote(g_script_spell).c_str(),
+        result == 1 ? "success" : (result == 2 ? "immune" : "failure"));
   }
   return result;
+}
+
+std::string SpellNote(int spell) {
+  if (spell < 0) return std::string();
+  const std::optional<rules::Ability> ability =
+      g_config.saves == rules::RuleVariant::kFaithful ? rules::SaveAbilityForNwnSpell(spell) : std::nullopt;
+  static const char* const kNames[] = {"Strength", "Dexterity", "Constitution", "Intelligence", "Wisdom", "Charisma"};
+  return ", spell " + std::to_string(spell) +
+         (ability ? std::string(" uses ") + kNames[static_cast<int>(*ability)] : std::string());
 }
 
 bool SpeciesAdvantage(void* stats, int save, int type) {
@@ -217,11 +284,21 @@ bool PatchCallSite(const char* name, uintptr_t site, uintptr_t expected_target, 
 // convert it: remembered like a spell DC for `caster`.
 void RememberSaveDc2024(uint32_t caster, int dc) { RememberSpellDc(caster, dc); }
 
+// C1: the ability the save being rolled for `stats` uses, when its spell asks
+// for another one than the NWN save's default.
+std::optional<rules::Ability> SaveAbilityOverride(void* stats) {
+  if (!g_save.active || !g_save.ability || !g_save.creature) return std::nullopt;
+  return Field<void*>(g_save.creature, nwmain::kCreatureStats) == stats ? g_save.ability : std::nullopt;
+}
+
 void InstallSaveRollRules() {
   if (g_config.saves == rules::RuleVariant::kOff) return;
   InstallHook({"CNWSCreature::CalculateSpellSaveDC (2024 spell DC)", nwmain::kCalculateSpellSaveDc,
                nwmain::kCalculateSpellSaveDcPrologue, sizeof(nwmain::kCalculateSpellSaveDcPrologue),
                reinterpret_cast<void*>(&CalculateSpellSaveDc), reinterpret_cast<void**>(&g_calculate_spell_save_dc)});
+  InstallHook({"script save commands (the spell behind a save)", nwmain::kVmSaveCommand,
+               nwmain::kVmSaveCommandPrologue, sizeof(nwmain::kVmSaveCommandPrologue),
+               reinterpret_cast<void*>(&VmSaveCommand), reinterpret_cast<void**>(&g_vm_save_command)});
   InstallHook({"CNWSCreature saving throw roll (DCs, species advantage)", nwmain::kSavingThrowRoll,
                nwmain::kSavingThrowRollPrologue, sizeof(nwmain::kSavingThrowRollPrologue),
                reinterpret_cast<void*>(&SavingThrowRoll), reinterpret_cast<void**>(&g_saving_throw_roll)});

@@ -59,6 +59,9 @@ struct SaveFacts {
   int effects = 0;            // magic effects (items, spells)
   int aura = 0;               // Aura of Protection
   int nwn_extras = 0;         // NWN's flat feat/racial/blueprint bonuses
+  // C1: the ability this save uses when a spell asks for another one than
+  // AbilityForNwnSave(save) (ability_modifier is then of this ability).
+  std::optional<Ability> ability;
 };
 
 // Faithful: ability modifier + proficiency bonus when proficient (characters:
@@ -66,6 +69,13 @@ struct SaveFacts {
 // characters from the first class, for creatures from a good NWN table; the
 // save feats give NWN's flat bonus instead (in nwn_extras); no aura.
 int SaveValue(const SaveFacts& facts, RuleVariant variant);
+
+// C1 (faithful): the 2024 save ability of an NWN spell (spells.2da row) when
+// it is not the default for its NWN save — only spells that exist in SRD 5.2:
+// Strength (Entangle, Gust of Wind, Evard's Black Tentacles), Intelligence
+// (Feeblemind), Charisma (Bane, Banishment, the Planar Bindings),
+// Constitution (Cone of Cold, Sunbeam, Sunburst, the Inflict Wounds spells).
+std::optional<Ability> SaveAbilityForNwnSpell(int spell_id);
 
 // C4: whether a save succeeds. A natural 20 succeeds automatically only with
 // `natural_20_succeeds`, a natural 1 fails automatically only with

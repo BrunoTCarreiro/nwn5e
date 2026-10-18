@@ -552,3 +552,22 @@ not confirmed.
   type 38, 20 integers, 0-12 copied from attack data +0x16 (int16 per damage
   type), 13 = 1, 14 = attack data +2 / 2, 17 = 1, applied as EVENT_APPLY_EFFECT
   at the hit time.
+
+## The spell behind a save (decompiled 2026-10-18, C1)
+
+- FortitudeSave / ReflexSave / WillSave (script commands 108-110) share
+  0x6EE070: (command, parameters), ret 8; versus defaults to OBJECT_SELF
+  (commands +0x08); it calls SavingThrowRoll(1/2/3, DC, type, versus, 1, 0, 0)
+  on the target.
+- GetSpellId (248) 0x6F6AA0: OBJECT_SELF via CServerExoApp::GetObjectArray
+  0x5FFA90 + CGameObjectArray::GetGameObject 0x42E730 (0 = found), vtable +0x10
+  (as CNWSObject), field +0x188. An area-of-effect object (vtable +0x54, as
+  in GetAreaOfEffectCreator 0x6F83D0) keeps its spell at +0x1CC ("SpellId" in
+  its load code at 0x756406; "AreaEffectId" at +0x1C4).
+- Persistent areas of effect pass themselves as the save's opponent, so the
+  C6 "is this a remembered spell DC for the caster" check missed their DCs and
+  converted them again; from 0.9.8 any save asked for by a spell script keeps
+  its DC.
+- spells.2da: the expansion's copy (xp2patch.bif, 840 rows) overrides the
+  original (417 rows); Sunburst 427, Banishment 430, the Inflict spells
+  431-435 and Bane 449 are only in the former.

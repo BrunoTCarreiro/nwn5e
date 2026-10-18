@@ -395,6 +395,24 @@ constexpr int kFeatDarkBlessing = 473;
 //   0x749D00  jz  0x749D47   ; 74 45 — a 20: success
 // Faithful (C4): jnz -> jmp and the jz NOPed, so the total always decides.
 constexpr uintptr_t kSavingThrowRoll = 0x00749230;
+// C1: the script save commands FortitudeSave / ReflexSave / WillSave (108-110)
+// share 0x6EE070 (CNWVirtualMachineCommands, (command, parameters), ret 8);
+// it calls SavingThrowRoll on the target. The running script's OBJECT_SELF is
+// commands +0x08. Its spell, as GetSpellId (0x6F6AA0) reads it: the object
+// from CServerExoApp::GetObjectArray 0x5FFA90 ([[app+4]+0x10080]) and
+// CGameObjectArray::GetGameObject(id, &object) 0x42E730 (0 = found), then
+// vtable +0x10 (as CNWSObject) +0x188; for an area-of-effect object
+// (vtable +0x54 non-null) the spell is AoE +0x1CC (its load code reads
+// "SpellId" there, "AreaEffectId" at +0x1C4).
+constexpr uintptr_t kVmSaveCommand = 0x006EE070;
+constexpr uint8_t kVmSaveCommandPrologue[] = {0x83, 0xec, 0x14, 0x8b, 0x41, 0x08, 0x56, 0x8d};
+constexpr uintptr_t kVmCommandsObjectSelf = 0x08;
+constexpr uintptr_t kGetObjectArray = 0x005FFA90;
+constexpr uintptr_t kGetGameObject = 0x0042E730;
+constexpr uintptr_t kVtableAsNwsObject = 0x10;
+constexpr uintptr_t kVtableAsAreaOfEffect = 0x54;
+constexpr uintptr_t kObjectLastSpellId = 0x188;
+constexpr uintptr_t kAreaOfEffectSpellId = 0x1CC;
 constexpr uint8_t kSavingThrowRollPrologue[] = {0x64, 0xa1, 0x00, 0x00, 0x00, 0x00, 0x6a, 0xff};
 constexpr uintptr_t kSaveD20Call = 0x007499C9;
 constexpr uintptr_t kSaveNatural1Check = 0x00749CE1;

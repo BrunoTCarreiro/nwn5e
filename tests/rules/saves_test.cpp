@@ -183,3 +183,37 @@ TEST(NaturalRollsOnSaves) {
   CHECK_EQ(SaveSucceeds(12, 3, 15, false, false), true);
   CHECK_EQ(SaveSucceeds(11, 3, 15, false, false), false);
 }
+
+// C1: spells that use another ability in 2024. Breaks caught: a table spell
+// left on the default ability; a spell whose 2024 save already matches (e.g.
+// Fireball 58, Hold Person 82) or an unknown id given an override.
+TEST(SpellSaveAbilitiesAre2024) {
+  CHECK_EQ(static_cast<int>(*SaveAbilityForNwnSpell(53)), static_cast<int>(Ability::kStrength));
+  CHECK_EQ(static_cast<int>(*SaveAbilityForNwnSpell(55)), static_cast<int>(Ability::kIntelligence));
+  CHECK_EQ(static_cast<int>(*SaveAbilityForNwnSpell(430)), static_cast<int>(Ability::kCharisma));
+  CHECK_EQ(static_cast<int>(*SaveAbilityForNwnSpell(25)), static_cast<int>(Ability::kConstitution));
+  CHECK_EQ(SaveAbilityForNwnSpell(58).has_value(), false);
+  CHECK_EQ(SaveAbilityForNwnSpell(82).has_value(), false);
+  CHECK_EQ(SaveAbilityForNwnSpell(-1).has_value(), false);
+}
+
+// C1: an overriding ability decides proficiency. Breaks caught: a Fighter not
+// proficient in a Strength save (or proficient in an Intelligence one); a
+// creature given proficiency in faithful mode.
+TEST(SaveValueWithSpellAbility) {
+  SaveFacts facts;
+  facts.save = NwnSave::kReflex;  // Entangle: NWN Reflex, 2024 Strength
+  facts.ability = Ability::kStrength;
+  facts.ability_modifier = 3;
+  facts.proficiency_bonus = 2;
+  facts.character = true;
+  facts.first_class = CharacterClass::kFighter;
+  CHECK_EQ(SaveValue(facts, RuleVariant::kFaithful), 5);
+  facts.ability = Ability::kIntelligence;
+  facts.ability_modifier = 0;
+  CHECK_EQ(SaveValue(facts, RuleVariant::kFaithful), 0);
+  facts.character = false;
+  facts.ability = Ability::kStrength;
+  facts.ability_modifier = 3;
+  CHECK_EQ(SaveValue(facts, RuleVariant::kFaithful), 3);
+}

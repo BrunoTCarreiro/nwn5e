@@ -23,6 +23,8 @@
 #include "rules/nwn_conversion.h"
 #include "rules/saves.h"
 
+std::optional<rules::Ability> SaveAbilityOverride(void* stats);  // rules_save_roll.cpp
+
 namespace {
 
 using SaveFn = int(__fastcall*)(void* stats, void* edx, int base_only);
@@ -55,6 +57,24 @@ int AbilityModifier(void* stats, rules::NwnSave save) {
       return static_cast<int8_t>(g_get_dex_mod(stats, nullptr, 0) & 0xFF);
     case rules::NwnSave::kWill:
       return Int8(stats, nwmain::kStatsWisModifier);
+  }
+  return 0;
+}
+
+int AbilityModifierOf(void* stats, rules::Ability ability) {
+  switch (ability) {
+    case rules::Ability::kStrength:
+      return Int8(stats, nwmain::kStatsStrModifier);
+    case rules::Ability::kDexterity:
+      return static_cast<int8_t>(g_get_dex_mod(stats, nullptr, 0) & 0xFF);
+    case rules::Ability::kConstitution:
+      return Int8(stats, nwmain::kStatsConModifier);
+    case rules::Ability::kIntelligence:
+      return Int8(stats, nwmain::kStatsIntModifier);
+    case rules::Ability::kWisdom:
+      return Int8(stats, nwmain::kStatsWisModifier);
+    case rules::Ability::kCharisma:
+      return Int8(stats, nwmain::kStatsChaModifier);
   }
   return 0;
 }
@@ -176,6 +196,13 @@ int ConvertSave(rules::NwnSave save, SaveFn original, void* stats, void* edx, in
   save_facts.proficiency_bonus =
       rules::ProficiencyBonusForCreature(save_facts.character, facts.level, facts.challenge_rating);
   save_facts.save_feat = HasFeat(stats, SaveFeat(save));
+  // C1: the spell behind this save asks for another ability (faithful).
+  const std::optional<rules::Ability> spell_ability = SaveAbilityOverride(stats);
+  if (spell_ability && *spell_ability != rules::AbilityForNwnSave(save)) {
+    save_facts.ability = spell_ability;
+    save_facts.ability_modifier = AbilityModifierOf(stats, *spell_ability);
+    save_facts.save_feat = false;  // Great Fortitude & co. are for their own save
+  }
   save_facts.good_nwn_table = !save_facts.character && HasGoodNwnTable(slots, save);
   save_facts.effects = base_only ? 0 : engine_value - SaveByte(original(stats, edx, 1));
   if (variant == rules::RuleVariant::kFaithful && !base_only) save_facts.aura = AuraOfProtection(stats);
@@ -183,8 +210,9 @@ int ConvertSave(rules::NwnSave save, SaveFn original, void* stats, void* edx, in
   const int value = rules::SaveValue(save_facts, variant);
   if (g_config.log_attacks &&
       g_save_logged.First(LogOnce::Key(ObjectIdOf(stats) ^ (static_cast<uint32_t>(save) << 28), engine_value, value))) {
-    Log("save: object 0x%08X %s %s%s: 3e %+d -> 5e %+d (ability %+d, %s, effects %+d%s)", ObjectIdOf(stats),
-        KindOf(facts), SaveName(save), base_only ? " base" : "", engine_value, value, save_facts.ability_modifier,
+    Log("save: object 0x%08X %s %s%s%s: 3e %+d -> 5e %+d (ability %+d, %s, effects %+d%s)", ObjectIdOf(stats),
+        KindOf(facts), SaveName(save), base_only ? " base" : "", save_facts.ability ? " as the spell's ability" : "",
+        engine_value, value, save_facts.ability_modifier,
         save_facts.character ? "character" : "creature", save_facts.effects,
         save_facts.aura ? ", aura" : (save_facts.nwn_extras ? ", NWN extras" : ""));
   }
