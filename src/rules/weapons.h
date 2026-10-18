@@ -4,6 +4,8 @@
 // properties on NWN weapons, the classes that use them, and two-weapon
 // fighting damage.
 
+#include <stdint.h>
+
 #include <string>
 #include <vector>
 
@@ -77,5 +79,14 @@ struct MasterySwap {
   int take;
 };
 bool ResolveMasterySwap(const std::vector<int>& chosen, int slots, int a, int b, MasterySwap* swap);
+
+// D4: NWN attack results that hit (1 hit, 3 critical, 7 automatic hit, 10
+// devastating critical); 2 parried, 4 miss, 8/9 concealment are misses.
+bool MasteryAttackHit(int nwn_attack_result);
+// D4 timing, counted in the creature's ended combat rounds (an NWN round is a
+// 2024 turn). Vex: advantage until the end of the attacker's next round.
+bool VexActive(uint32_t attacker_rounds_now, uint32_t attacker_rounds_at_hit);
+// Sap: disadvantage until the start of the sapping creature's next round.
+bool SapActive(uint32_t source_rounds_now, uint32_t source_rounds_at_hit);
 
 }  // namespace rules

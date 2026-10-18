@@ -94,3 +94,14 @@ TEST(RangedAttacksInCloseCombat) {
   CHECK_EQ(RangedCloseCombat(false, false, 2), false);
   CHECK_EQ(RangedCloseCombat(true, false, 0), false);
 }
+
+// D4: Vex / Sap count as ordinary advantage / disadvantage sources and cancel
+// with the situational ones. Breaks caught: mastery overriding the situation;
+// an advantage + disadvantage pair not cancelling.
+TEST(MasteryRollSourcesCancel) {
+  NwnSituationalTerms none;
+  CHECK_EQ(static_cast<int>(SituationalRollMode(none, false, 1, 0)), static_cast<int>(RollMode::kAdvantage));
+  CHECK_EQ(static_cast<int>(SituationalRollMode(none, false, 0, 1)), static_cast<int>(RollMode::kDisadvantage));
+  CHECK_EQ(static_cast<int>(SituationalRollMode(none, false, 1, 1)), static_cast<int>(RollMode::kNormal));
+  CHECK_EQ(static_cast<int>(SituationalRollMode(none, true, 1, 0)), static_cast<int>(RollMode::kNormal));
+}

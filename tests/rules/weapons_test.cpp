@@ -154,3 +154,16 @@ TEST(MasterySwapEitherOrder) {
   CHECK_EQ(ResolveMasterySwap(chosen, 3, 8, 7, &swap), false);   // both in slots
   CHECK_EQ(ResolveMasterySwap(chosen, 3, 61, 22, &swap), false);  // neither
 }
+
+// D4 Vex / Sap timing and what counts as a hit. Breaks caught: Vex lasting
+// past the attacker's next round (or not reaching it); Sap outliving the
+// round it was dealt in; a parry or concealment miss counted as a hit.
+TEST(VexSapTiming) {
+  CHECK_EQ(VexActive(5, 5), true);   // same round
+  CHECK_EQ(VexActive(6, 5), true);   // next round
+  CHECK_EQ(VexActive(7, 5), false);  // after the next round
+  CHECK_EQ(SapActive(5, 5), true);
+  CHECK_EQ(SapActive(6, 5), false);
+  for (int hit : {1, 3, 7, 10}) CHECK_EQ(MasteryAttackHit(hit), true);
+  for (int miss : {0, 2, 4, 8, 9}) CHECK_EQ(MasteryAttackHit(miss), false);
+}

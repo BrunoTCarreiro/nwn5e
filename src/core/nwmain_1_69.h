@@ -571,6 +571,16 @@ constexpr uint8_t kResetFeatRemainingUsesPrologue[] = {0x8b, 0x41, 0x10, 0x33, 0
 // Messages outside a chat: CServerExoApp::GetNWSMessage() 0x5FFBD0, plain ret.
 constexpr uintptr_t kGetNwsMessage = 0x005FFBD0;
 
+// Weapon mastery effects (D4). Attack data +0x50 is the result (1 hit, 2
+// parried, 3 critical, 4 miss, 7 automatic hit, 8/9 concealment, 10
+// devastating critical). Rounds: CNWSCombatRound::EndCombatRound() 0x73B7A0
+// (plain ret; this = the round, owner at +0x215C) runs at the end of each of
+// a creature's combat rounds (UpdateCombatRound 0x73B8F0); D4 counts them as
+// the 2024 turns Vex and Sap last for.
+constexpr uintptr_t kAttackDataResult = 0x50;
+constexpr uintptr_t kEndCombatRound = 0x0073B7A0;
+constexpr uint8_t kEndCombatRoundPrologue[] = {0x53, 0x33, 0xdb, 0x56, 0x8b, 0xf1, 0x8b, 0x8e};
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

@@ -36,6 +36,9 @@ bool RangedCloseCombat(bool ranged, bool point_blank_shot, int threatening_enemi
 // a ranged attack in close combat (`ranged_close_combat`, the 2024 check —
 // NWN's target-only term is not used). Nothing for a moving target (no 2024
 // rule) or flanking (B2: off). Sources cancel as in ResolveRollMode.
-RollMode SituationalRollMode(const NwnSituationalTerms& terms, bool ranged_close_combat);
+// `extra_advantage` / `extra_disadvantage`: other sources (weapon mastery:
+// Vex, Sap) that count like the situational ones.
+RollMode SituationalRollMode(const NwnSituationalTerms& terms, bool ranged_close_combat, int extra_advantage = 0,
+                             int extra_disadvantage = 0);
 
 }  // namespace rules

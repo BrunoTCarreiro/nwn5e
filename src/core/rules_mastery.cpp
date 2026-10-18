@@ -13,7 +13,10 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <windows.h>
+
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "config.h"
@@ -21,6 +24,7 @@
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
+#include "mastery.h"
 #include "nwmain_1_69.h"
 #include "rules/nwn_conversion.h"
 #include "rules/weapons.h"
@@ -154,6 +158,7 @@ void Announce(void* creature, const CreatureFacts& facts, const std::string& for
 
 // The base item of the weapon making the current attack; -1 unarmed or unknown.
 int CurrentAttackBaseItem(void* creature) {
+  if (!creature) return -1;
   void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
   if (!round) return -1;
   const void* attack = g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack));
@@ -312,7 +317,114 @@ std::vector<std::string> MasteryCommand(void* creature, const std::string& args)
   return {Choose(creature, stats, args)};
 }
 
+// --- D4 Vex / Sap -----------------------------------------------------------
+
+namespace {
+
+using EndCombatRoundFn = void(__fastcall*)(void* round, void* edx);
+EndCombatRoundFn g_end_combat_round = nullptr;
+
+struct VexMark {
+  uint32_t target;
+  uint32_t attacker_rounds;  // the attacker's ended rounds when it hit
+  DWORD tick;
+};
+struct SapMark {
+  uint32_t source;
+  uint32_t source_rounds;
+  DWORD tick;
+};
+std::unordered_map<uint32_t, uint32_t> g_rounds_ended;  // by creature id
+std::unordered_map<uint32_t, VexMark> g_vex;            // by attacker id
+std::unordered_map<uint32_t, SapMark> g_sap;            // by sapped creature id
+// Rounds only end in combat; a mark from an old fight also lapses after this.
+constexpr DWORD kMarkMaxAgeMs = 30000;
+int g_effect_log_lines = 0;
+constexpr int kEffectLogLimit = 400;
+
+bool EffectLogSlot() { return g_config.log_attacks && g_effect_log_lines < kEffectLogLimit && ++g_effect_log_lines; }
+
+bool MasteryOn() { return g_config.weapon_mastery != rules::RuleVariant::kOff; }
+
+uint32_t RoundsEnded(uint32_t id) {
+  const auto it = g_rounds_ended.find(id);
+  return it == g_rounds_ended.end() ? 0 : it->second;
+}
+
+void __fastcall EndCombatRound(void* round, void* edx) {
+  void* owner = Field<void*>(round, nwmain::kRoundOwner);
+  if (owner) ++g_rounds_ended[IdOf(owner)];
+  g_end_combat_round(round, edx);
+}
+
+}  // namespace
+
+int MasteryAttackWeapon(void* creature) { return CurrentAttackBaseItem(creature); }
+
+MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id) {
+  MasteryRollSources sources;
+  if (!MasteryOn() || !attacker) return sources;
+  const uint32_t attacker_id = IdOf(attacker);
+  const DWORD now = GetTickCount();
+  const auto vex = g_vex.find(attacker_id);
+  if (vex != g_vex.end()) {
+    const bool live = now - vex->second.tick <= kMarkMaxAgeMs &&
+                      rules::VexActive(RoundsEnded(attacker_id), vex->second.attacker_rounds);
+    if (!live) {
+      g_vex.erase(vex);
+    } else if (vex->second.target == target_id) {
+      ++sources.advantage;
+      sources.note = "Vex advantage";
+      g_vex.erase(vex);
+    }
+  }
+  const auto sap = g_sap.find(attacker_id);
+  if (sap != g_sap.end()) {
+    if (now - sap->second.tick <= kMarkMaxAgeMs &&
+        rules::SapActive(RoundsEnded(sap->second.source), sap->second.source_rounds)) {
+      ++sources.disadvantage;
+      sources.note += sources.note.empty() ? "Sap disadvantage" : ", Sap disadvantage";
+    }
+    g_sap.erase(sap);
+  }
+  return sources;
+}
+
+void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) {
+  if (!MasteryOn() || !attacker || !target_object || base_item < 0) return;
+  const rules::Mastery mastery = rules::MasteryForNwnBaseItem(base_item);
+  if (mastery != rules::Mastery::kVex && mastery != rules::Mastery::kSap) return;
+  void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
+  const void* attack = round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
+  if (!attack || !rules::MasteryAttackHit(Field<uint8_t>(attack, nwmain::kAttackDataResult))) return;
+  if (!HasWeaponMasteryWith(attacker, base_item)) return;
+  const uint32_t attacker_id = IdOf(attacker);
+  const uint32_t target_id = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
+  const uint32_t rounds = RoundsEnded(attacker_id);
+  if (mastery == rules::Mastery::kVex) {
+    g_vex[attacker_id] = VexMark{target_id, rounds, GetTickCount()};
+  } else {
+    g_sap[target_id] = SapMark{attacker_id, rounds, GetTickCount()};
+  }
+  if (EffectLogSlot()) {
+    Log("mastery: 0x%08X hit 0x%08X with %s: %s", attacker_id, target_id, Label(base_item).c_str(),
+        mastery == rules::Mastery::kVex ? "Vex (advantage on its next attack at that target)"
+                                        : "Sap (target's next attack has disadvantage)");
+  }
+}
+
+namespace {
+
+void InstallVexSapRound() {
+  InstallHook({"CNWSCombatRound::EndCombatRound (mastery rounds)", nwmain::kEndCombatRound,
+               nwmain::kEndCombatRoundPrologue, sizeof(nwmain::kEndCombatRoundPrologue),
+               reinterpret_cast<void*>(&EndCombatRound), reinterpret_cast<void**>(&g_end_combat_round)});
+}
+
+}  // namespace
+
 void InstallMasteryRules() {
+  if (MasteryOn()) InstallVexSapRound();
   if (!Faithful()) return;
   InstallHook({"CNWSCreatureStats::ResetFeatRemainingUses (mastery swap after a rest)", nwmain::kResetFeatRemainingUses,
                nwmain::kResetFeatRemainingUsesPrologue, sizeof(nwmain::kResetFeatRemainingUsesPrologue),

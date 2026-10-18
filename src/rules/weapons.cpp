@@ -251,6 +251,18 @@ int FreeMasterySlot(const std::vector<int>& chosen, int slots) {
   return -1;
 }
 
+bool MasteryAttackHit(int nwn_attack_result) {
+  return nwn_attack_result == 1 || nwn_attack_result == 3 || nwn_attack_result == 7 || nwn_attack_result == 10;
+}
+
+bool VexActive(uint32_t attacker_rounds_now, uint32_t attacker_rounds_at_hit) {
+  return attacker_rounds_now <= attacker_rounds_at_hit + 1;
+}
+
+bool SapActive(uint32_t source_rounds_now, uint32_t source_rounds_at_hit) {
+  return source_rounds_now == source_rounds_at_hit;
+}
+
 bool ResolveMasterySwap(const std::vector<int>& chosen, int slots, int a, int b, MasterySwap* swap) {
   const bool a_in = MasterySlotOf(chosen, slots, a) >= 0;
   const bool b_in = MasterySlotOf(chosen, slots, b) >= 0;

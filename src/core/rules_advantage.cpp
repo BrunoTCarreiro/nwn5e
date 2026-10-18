@@ -22,12 +22,12 @@
 #include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
+#include "mastery.h"
 #include "nwmain_1_69.h"
 #include "rules/nwn_situational.h"
 
 void TraceAttackRoll(const void* creature);  // rules_attack_trace.cpp
 void KeepCombatBreakdownOn();                 // rules_attack_trace.cpp
-void NoteWeaponUsed(void* creature);          // rules_mastery.cpp
 
 namespace {
 
@@ -65,6 +65,7 @@ struct PendingAttack {
   rules::RollMode mode = rules::RollMode::kNormal;
   uint32_t attacker_id = 0;
   uint32_t target_id = 0;
+  std::string mastery;  // D4 Vex / Sap note for the log
 };
 PendingAttack g_pending;
 
@@ -164,8 +165,12 @@ void ReadPendingAttack(void* creature, void* target_object) {
   g_pending.nwn_total = rules::NwnSituationalTotal(g_pending.terms);
   g_pending.point_blank_shot = HasFeat(creature, nwmain::kFeatPointBlankShot);
   g_pending.threats = ranged ? CountCloseCombatThreats(creature) : 0;
+  const MasteryRollSources mastery =
+      TakeMasteryRollSources(creature, Field<uint32_t>(target, nwmain::kCreatureObjectId));
+  g_pending.mastery = mastery.note;
   g_pending.mode = rules::SituationalRollMode(
-      g_pending.terms, rules::RangedCloseCombat(ranged, g_pending.point_blank_shot, g_pending.threats));
+      g_pending.terms, rules::RangedCloseCombat(ranged, g_pending.point_blank_shot, g_pending.threats),
+      mastery.advantage, mastery.disadvantage);
   g_pending.attacker_stats = stats;
   g_pending.target = target;
   g_pending.attacker_id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
@@ -177,15 +182,18 @@ void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
   if (g_config.debug_attack_trace) TraceAttackRoll(creature);
   KeepCombatBreakdownOn();
   NoteWeaponUsed(creature);
+  const int weapon = MasteryAttackWeapon(creature);
   const PendingAttack outer = g_pending;
   g_pending = PendingAttack();
   if (g_config.advantage_disadvantage) ReadPendingAttack(creature, target);
-  if (g_pending.active && g_pending.mode == rules::RollMode::kNormal && g_pending.nwn_total != 0 && LogSlotLeft()) {
-    Log("advantage: 0x%08X vs 0x%08X (%s): 3e situational %+d removed (%s); normal roll", g_pending.attacker_id,
+  if (g_pending.active && g_pending.mode == rules::RollMode::kNormal &&
+      (g_pending.nwn_total != 0 || !g_pending.mastery.empty()) && LogSlotLeft()) {
+    Log("advantage: 0x%08X vs 0x%08X (%s): 3e situational %+d removed (%s)%s%s; normal roll", g_pending.attacker_id,
         g_pending.target_id, g_pending.terms.ranged ? "ranged" : "melee", g_pending.nwn_total,
-        TermNames(g_pending.terms).c_str());
+        TermNames(g_pending.terms).c_str(), g_pending.mastery.empty() ? "" : "; mastery: ", g_pending.mastery.c_str());
   }
   g_resolve_attack_roll(creature, edx, target);
+  MasteryAfterAttackRoll(creature, target, weapon);
   g_pending = outer;
 }
 
@@ -209,11 +217,12 @@ int __fastcall RollAttackD20(void* rules_object, void* edx, int count, int sides
   const bool keep_higher = g_pending.mode == rules::RollMode::kAdvantage;
   const int kept = keep_higher ? (first > second ? first : second) : (first < second ? first : second);
   if (LogSlotLeft()) {
-    Log("advantage: 0x%08X vs 0x%08X (%s): %s; 3e situational %+d removed (%s); close-combat enemies %d%s; d20 %d / "
-        "%d -> %d",
+    Log("advantage: 0x%08X vs 0x%08X (%s): %s; 3e situational %+d removed (%s); close-combat enemies %d%s%s%s; d20 "
+        "%d / %d -> %d",
         g_pending.attacker_id, g_pending.target_id, g_pending.terms.ranged ? "ranged" : "melee",
         ModeName(g_pending.mode), g_pending.nwn_total, TermNames(g_pending.terms).c_str(), g_pending.threats,
-        g_pending.point_blank_shot ? " (Point Blank Shot)" : "", first, second, kept);
+        g_pending.point_blank_shot ? " (Point Blank Shot)" : "", g_pending.mastery.empty() ? "" : "; mastery: ",
+        g_pending.mastery.c_str(), first, second, kept);
   }
   return HalflingLuck(rules_object, edx, count, sides, kept);
 }
