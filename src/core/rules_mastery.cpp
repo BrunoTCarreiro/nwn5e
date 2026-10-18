@@ -332,6 +332,8 @@ struct CleavePending {
   uint32_t target;
   uint32_t attacker_rounds;
   DWORD tick;
+  bool rolled = false;  // the extra attack's roll has happened
+  int attack_index = -1;  // its slot in the round, for the damage adjustment
 };
 std::unordered_map<uint32_t, uint32_t> g_cleave_used;         // attacker -> its ended rounds + 1 when it cleaved
 std::unordered_map<uint32_t, CleavePending> g_cleave_pending;  // attacker -> the extra attack not resolved yet
@@ -459,6 +461,21 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
   if (!attack) return;
   const int result = Field<uint8_t>(attack, nwmain::kAttackDataResult);
   const bool hit = rules::MasteryAttackHit(result);
+  // The first roll at a pending Cleave target is the extra attack Cleave added.
+  {
+    const uint32_t rolled_at = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
+    const auto pending = g_cleave_pending.find(IdOf(attacker));
+    if (pending != g_cleave_pending.end() && !pending->second.rolled && pending->second.target == rolled_at) {
+      pending->second.rolled = true;
+      pending->second.attack_index = Field<uint8_t>(round, nwmain::kRoundCurrentAttack);
+      if (EffectLogSlot()) {
+        Log("mastery: 0x%08X Cleave extra attack at 0x%08X: %s (result %d)", IdOf(attacker), rolled_at,
+            hit ? "hit" : "miss", result);
+      }
+      if (!hit) g_cleave_pending.erase(pending);
+      return;  // the extra attack itself does not cleave again
+    }
+  }
   if (mastery == rules::Mastery::kGraze ? !rules::MasteryAttackMiss(result) : !hit) return;
   const uint32_t target_id = Field<uint32_t>(target_object, nwmain::kCreatureObjectId);
   void* target = engine::GetCreature(target_id);  // creatures only (not doors / placeables)
@@ -542,7 +559,11 @@ int MasteryCleaveDamage(void* stats, int bonus) {
   }
   void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
   const void* attack = round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
-  if (!attack || Field<uint32_t>(attack, nwmain::kAttackDataTarget) != pending->second.target) return bonus;
+  if (!attack || !pending->second.rolled ||
+      Field<uint8_t>(round, nwmain::kRoundCurrentAttack) != pending->second.attack_index ||
+      Field<uint32_t>(attack, nwmain::kAttackDataTarget) != pending->second.target) {
+    return bonus;
+  }
   g_cleave_pending.erase(pending);
   const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
   const int nwn_term = rules::NwnMainHandStrengthDamage(strength, TwoHandedStrength(creature, attack));
