@@ -29,6 +29,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.ranged_retarget_range = GetPrivateProfileIntW(L"rules", L"ranged_retarget_range", 40, ini);
   Log("config: retarget_remaining_attacks=%d ranged_retarget_range=%d m", g_config.retarget_remaining_attacks,
       g_config.ranged_retarget_range);
+  g_config.crits_against_players = ReadBool(ini, L"crits_against_players", g_config.crits_against_players);
+  Log("config: crits_against_players=%d", g_config.crits_against_players);
   g_config.advantage_disadvantage = ReadBool(ini, L"advantage_disadvantage", g_config.advantage_disadvantage);
   Log("config: advantage_disadvantage=%d", g_config.advantage_disadvantage);
   g_config.log_attacks = ReadBool(ini, L"log_attacks", g_config.log_attacks);

@@ -29,6 +29,19 @@ constexpr uint8_t kGetCriticalHitMultiplierPrologue[] = {0x83, 0x7c, 0x24, 0x04,
 constexpr uintptr_t kCritConfirmBranch = 0x00744725;
 constexpr uint8_t kCritConfirmBranchBytes[] = {0x0f, 0x8c, 0x4a, 0x01, 0x00, 0x00};
 
+// Crits against players (decision B7). Before the immunity checks,
+// ResolveAttackRoll asks a difficulty option:
+//   0x74473E  call 0x600100(0)   ; -> 0x610D40 -> 0x47E260(0, server
+//                                ;    options +0x170 = game difficulty)
+//   0x744743  cmp eax, 1
+//   0x744746  jnz 0x74477B       ; 75 33
+// and when it is 1, the target is player-controlled (+0xAD8 or possessed
+// familiar 0x68E510) and the attacker is not, the critical becomes a plain
+// hit (result 1) — seen at Normal difficulty. jnz -> jmp keeps the crit.
+constexpr uintptr_t kNoCritsOnPlayersBranch = 0x00744746;
+constexpr uint8_t kNoCritsOnPlayersBranchBytes[] = {0x75, 0x33};
+constexpr uint8_t kNoCritsOnPlayersBranchSkip[] = {0xeb, 0x33};
+
 // The combat log's "Threat Roll": CNWSMessage::SendServerToPlayerCCMessage
 // 0x62F850, attack-roll messages (cases 5 and 6), writes the attack data's
 // critical-threat flag (+0x48) as a bool and, when it is 1, the threat roll

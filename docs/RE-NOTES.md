@@ -360,7 +360,7 @@ not confirmed.
   scanning for 5-bit writes (`push 5` before the bit writer 0x4FBD80).
   Patches applied in game at load; the log itself awaits a crit.
 - A natural 20 against the player came out as a plain hit (21:31 session):
-  in ResolveAttackRoll's crit path, `0x600100(0) == 1` with a
+  in ResolveAttackRoll's crit path, `0x600100(0) == 1` (→ 0x610D40 →
+  0x47E260(option 0, game difficulty at server options +0x170)) with a
   player-controlled target and the attacker not player-controlled sets
-  result 1 (hit) — likely a difficulty rule (no crits against players below
-  some difficulty). 2024 has no such rule; not changed yet (owner).
+  result 1 (hit). 0.7.1 skips it (jnz → jmp at 0x744746, decision B7).

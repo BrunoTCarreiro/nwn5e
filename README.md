@@ -27,6 +27,7 @@ in `nwn5e.ini`:
 | No −5 on additional attacks (opportunity, Haste, Flurry, Rapid Shot) | with `extra_attack` | verified in game |
 | Character sheet shows the 2024 attack bonus and attacks per round | with `attack_proficiency` / `extra_attack` | attack bonus verified in game (+6 with a sword) |
 | Advantage/disadvantage replace NWN's situational bonuses (Phase 1b, PLAN.md B1–B6) | `advantage_disadvantage` | built (0.7.0): patch and hook installed in game; rolls await a fight |
+| Creatures can crit your party at every difficulty (B7) | `crits_against_players` | built (0.7.1): patch applied in game; awaits a natural 20 against you |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).

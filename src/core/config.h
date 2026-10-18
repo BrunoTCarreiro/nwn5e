@@ -7,6 +7,7 @@ struct Config {
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll
   bool crit_double_damage = true;  // x2 multiplier for every weapon
   bool crit_dice_only = true;      // crits roll damage dice twice, flat bonuses once
+  bool crits_against_players = true;  // no difficulty rule turning creatures' crits on players into hits
   bool attack_proficiency = true;  // attack rolls use the proficiency bonus instead of the 3e BAB
   bool creature_ac_by_cr = true;   // non-player creatures use the expected AC for their CR
   bool extra_attack = true;        // PCs attack per 2024 Extra Attack; no 3e -5 per extra attack

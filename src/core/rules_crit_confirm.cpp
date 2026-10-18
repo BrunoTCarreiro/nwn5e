@@ -5,6 +5,9 @@
 // The threat roll is still made and stored, but the attack-roll message no
 // longer sends it, so the combat log shows no "Threat Roll" (nwmain_1_69.h).
 //
+// crits_against_players (decision B7) removes NWN's difficulty rule that turns
+// a creature's critical hit on a player-controlled character into a hit.
+//
 // [debug] every_hit_crits also needs the confirmation gone, and skips the
 // critical-immunity checks so a test against undead/constructs still shows it.
 
@@ -18,6 +21,11 @@ void InstallCritConfirmRules() {
     static const uint8_t kNops[sizeof(nwmain::kCritConfirmBranchBytes)] = {0x90, 0x90, 0x90, 0x90, 0x90, 0x90};
     PatchBytes("ResolveAttackRoll critical confirmation", nwmain::kCritConfirmBranch, nwmain::kCritConfirmBranchBytes,
                kNops, sizeof(kNops));
+  }
+  if (g_config.crits_against_players) {
+    PatchBytes("ResolveAttackRoll difficulty rule: creatures' crits on players stay crits",
+               nwmain::kNoCritsOnPlayersBranch, nwmain::kNoCritsOnPlayersBranchBytes,
+               nwmain::kNoCritsOnPlayersBranchSkip, sizeof(nwmain::kNoCritsOnPlayersBranchSkip));
   }
   if (g_config.crit_no_confirmation) {
     PatchBytes("combat log attack message: no threat flag (1/2)", nwmain::kCcThreatFlag1, nwmain::kCcThreatFlagBytes,
