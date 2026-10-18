@@ -174,7 +174,7 @@ void __fastcall ResetFeatRemainingUses(void* stats, void* edx) {
   SetVar(creature, kSwapVar, 1);
   if (g_config.log_attacks) Log("mastery: object 0x%08X rested: one swap available", IdOf(creature));
   if (facts.is_player && rules::FreeMasterySlot(slots.chosen, slots.count) < 0) {
-    TellPlayer(IdOf(creature), "nwn5e: rested - you can swap one weapon mastery: !mastery <new weapon> for <old weapon>");
+    TellPlayer(IdOf(creature), "nwn5e: rested - you can swap one weapon mastery: !mastery <old weapon> for <new weapon>");
   }
 }
 
@@ -190,54 +190,67 @@ std::vector<std::string> Status(void* creature, void* stats) {
   lines.push_back("nwn5e: weapon mastery, " + std::to_string(UsedSlots(slots)) + " of " + std::to_string(slots.count) +
                   " slots: " + SlotList(slots) + "." + (focus.empty() ? "" : " Weapon Focus: " + focus + "."));
   lines.push_back(std::string("nwn5e: !mastery <weapon> fills an empty slot (empty slots also fill with the weapons "
-                              "you fight with); !mastery <new> for <old> swaps one after each long rest (") +
+                              "you fight with); !mastery <old> for <new> swaps one after each long rest (") +
                   (slots.swap_ready ? "swap ready)." : "no swap until you rest)."));
   return lines;
 }
 
-std::string Choose(void* creature, void* stats, const std::string& args) {
-  std::string wanted = args;
-  std::string replaced;
-  std::string lower = args;
-  for (char& c : lower) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-  const size_t split = lower.find(" for ");
-  if (split != std::string::npos) {
-    wanted = args.substr(0, split);
-    replaced = args.substr(split + 5);
-  }
-  const int base_item = rules::NwnWeaponFromName(wanted);
-  if (base_item < 0) {
-    return "nwn5e: unknown weapon \"" + wanted + "\" (e.g. longsword, short sword, dagger, shortbow, greataxe).";
-  }
-  Slots slots = ReadSlots(creature, stats);
-  if (slots.count == 0) return Status(creature, stats)[0];
-  if (!Proficient(stats, base_item)) return "nwn5e: you are not proficient with " + Label(base_item) + ".";
+std::string UnknownWeapon(const std::string& text) {
+  return "nwn5e: unknown weapon \"" + text + "\" (e.g. longsword, short sword, dagger, shortbow, greataxe).";
+}
+
+std::string AlreadyMastered(void* stats, const Slots& slots, int base_item) {
   if (rules::MasterySlotOf(slots.chosen, slots.count, base_item) >= 0 || HasFocus(stats, base_item)) {
     return "nwn5e: you already have mastery with " + Label(base_item) + ".";
   }
+  return std::string();
+}
+
+// "!mastery <weapon>" fills an empty slot; "!mastery <A> for <B>" swaps one
+// slot after a long rest, in either word order (the one already in a slot is
+// given up).
+std::string Choose(void* creature, void* stats, const std::string& args) {
+  std::string lower = args;
+  for (char& c : lower) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+  const size_t split = lower.find(" for ");
+  const std::string first = split == std::string::npos ? args : args.substr(0, split);
+  const int first_item = rules::NwnWeaponFromName(first);
+  if (first_item < 0) return UnknownWeapon(first);
+  const Slots slots = ReadSlots(creature, stats);
+  if (slots.count == 0) return Status(creature, stats)[0];
   const uint32_t id = IdOf(creature);
-  if (replaced.empty()) {
+  if (split == std::string::npos) {
+    if (!Proficient(stats, first_item)) return "nwn5e: you are not proficient with " + Label(first_item) + ".";
+    const std::string already = AlreadyMastered(stats, slots, first_item);
+    if (!already.empty()) return already;
     const int free_slot = rules::FreeMasterySlot(slots.chosen, slots.count);
     if (free_slot < 0) {
       return "nwn5e: all " + std::to_string(slots.count) + " slots are used (" + SlotList(slots) +
-             "). After a long rest you can swap one: !mastery " + rules::NwnWeaponName(base_item) + " for <weapon>.";
+             "). After a long rest you can swap one: !mastery <weapon> for " + rules::NwnWeaponName(first_item) + ".";
     }
-    SetVar(creature, kSlotVars[free_slot], base_item + 1);
-    if (g_config.log_attacks) Log("mastery: object 0x%08X slot %d = %s (chosen)", id, free_slot + 1, Label(base_item).c_str());
-    return "nwn5e: weapon mastery with " + Label(base_item) + " - slot " + std::to_string(free_slot + 1) + " of " +
+    SetVar(creature, kSlotVars[free_slot], first_item + 1);
+    if (g_config.log_attacks) Log("mastery: object 0x%08X slot %d = %s (chosen)", id, free_slot + 1, Label(first_item).c_str());
+    return "nwn5e: weapon mastery with " + Label(first_item) + " - slot " + std::to_string(free_slot + 1) + " of " +
            std::to_string(slots.count) + ".";
   }
-  const int old_item = rules::NwnWeaponFromName(replaced);
-  const int old_slot = old_item < 0 ? -1 : rules::MasterySlotOf(slots.chosen, slots.count, old_item);
-  if (old_slot < 0) return "nwn5e: \"" + replaced + "\" is not one of your slots (" + SlotList(slots) + ").";
+  const std::string second = args.substr(split + 5);
+  const int second_item = rules::NwnWeaponFromName(second);
+  if (second_item < 0) return UnknownWeapon(second);
+  rules::MasterySwap swap = {-1, -1};
+  if (!rules::ResolveMasterySwap(slots.chosen, slots.count, first_item, second_item, &swap)) {
+    return "nwn5e: to swap, name one weapon in your slots and one that is not (your slots: " + SlotList(slots) + ").";
+  }
+  if (!Proficient(stats, swap.take)) return "nwn5e: you are not proficient with " + Label(swap.take) + ".";
+  if (HasFocus(stats, swap.take)) return AlreadyMastered(stats, slots, swap.take);
   if (!slots.swap_ready) return "nwn5e: you can swap one weapon mastery after each long rest - rest first.";
-  SetVar(creature, kSlotVars[old_slot], base_item + 1);
+  const int slot = rules::MasterySlotOf(slots.chosen, slots.count, swap.give_up);
+  SetVar(creature, kSlotVars[slot], swap.take + 1);
   SetVar(creature, kSwapVar, 0);
   if (g_config.log_attacks) {
-    Log("mastery: object 0x%08X slot %d = %s instead of %s (swap)", id, old_slot + 1, Label(base_item).c_str(),
-        Label(old_item).c_str());
+    Log("mastery: object 0x%08X slot %d = %s instead of %s (swap)", id, slot + 1, Label(swap.take).c_str(),
+        Label(swap.give_up).c_str());
   }
-  return "nwn5e: weapon mastery with " + Label(base_item) + " instead of " + Label(old_item) + ".";
+  return "nwn5e: weapon mastery with " + Label(swap.take) + " instead of " + Label(swap.give_up) + ".";
 }
 
 }  // namespace

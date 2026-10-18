@@ -138,3 +138,19 @@ TEST(MasterySlotHelpers) {
   CHECK_EQ(MasterySlotOf(chosen, 2, 22), -1);
   CHECK_EQ(MasterySlotOf({50, -1}, 2, 45), 0);
 }
+
+// D3 swap direction (owner report 2026-10-18: "!mastery dart for sling" meant
+// trading the dart for the sling). Breaks caught: one word order only; a swap
+// accepted when both or neither weapon is in a slot.
+TEST(MasterySwapEitherOrder) {
+  const std::vector<int> chosen = {8, 7, 31, -1, -1, -1};  // longbow, light crossbow, dart
+  MasterySwap swap = {-1, -1};
+  CHECK_EQ(ResolveMasterySwap(chosen, 3, 31, 61, &swap), true);  // dart for sling
+  CHECK_EQ(swap.give_up, 31);
+  CHECK_EQ(swap.take, 61);
+  CHECK_EQ(ResolveMasterySwap(chosen, 3, 61, 31, &swap), true);  // sling for dart
+  CHECK_EQ(swap.give_up, 31);
+  CHECK_EQ(swap.take, 61);
+  CHECK_EQ(ResolveMasterySwap(chosen, 3, 8, 7, &swap), false);   // both in slots
+  CHECK_EQ(ResolveMasterySwap(chosen, 3, 61, 22, &swap), false);  // neither
+}

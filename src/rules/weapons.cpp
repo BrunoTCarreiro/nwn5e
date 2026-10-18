@@ -251,6 +251,14 @@ int FreeMasterySlot(const std::vector<int>& chosen, int slots) {
   return -1;
 }
 
+bool ResolveMasterySwap(const std::vector<int>& chosen, int slots, int a, int b, MasterySwap* swap) {
+  const bool a_in = MasterySlotOf(chosen, slots, a) >= 0;
+  const bool b_in = MasterySlotOf(chosen, slots, b) >= 0;
+  if (a_in == b_in) return false;
+  *swap = a_in ? MasterySwap{a, b} : MasterySwap{b, a};
+  return true;
+}
+
 int MasterySlotOf(const std::vector<int>& chosen, int slots, int base_item) {
   for (int i = 0; i < slots && i < static_cast<int>(chosen.size()); ++i) {
     if (chosen[i] >= 0 && chosen[i] == MasteryKindOfNwnBaseItem(base_item)) return i;

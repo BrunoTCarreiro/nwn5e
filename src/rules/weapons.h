@@ -70,4 +70,12 @@ int FreeMasterySlot(const std::vector<int>& chosen, int slots);
 // The slot holding `base_item` among the first `slots`, or -1.
 int MasterySlotOf(const std::vector<int>& chosen, int slots, int base_item);
 
+// D3 swap, "!mastery A for B" in either word order: the one of A and B that is
+// in a slot is given up, the other taken. Both or neither in a slot: none.
+struct MasterySwap {
+  int give_up;
+  int take;
+};
+bool ResolveMasterySwap(const std::vector<int>& chosen, int slots, int a, int b, MasterySwap* swap);
+
 }  // namespace rules

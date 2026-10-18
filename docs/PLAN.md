@@ -325,7 +325,8 @@ proficient with; Weapon Focus the same.
 
 *Built 0.8.7 (2026-10-18).* Choices made on the way: several mastery classes
 give the larger count, not the sum (like Extra Attack; prestige levels add to
-the parent class); a swap is `!mastery <new> for <old>` and becomes available
+the parent class); a swap is `!mastery <old> for <new>` (either order since
+0.8.8: the weapon already in a slot is the one given up) and becomes available
 when a rest finishes (also the ForceRest script command); filling an empty
 slot by `!mastery <weapon>` is free; only weapons the character is proficient
 with (baseitems.2da ReqFeat) can be chosen or auto-filled, unarmed never;
