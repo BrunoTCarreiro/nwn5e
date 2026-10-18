@@ -138,7 +138,10 @@ monster AC by CR.
     classes from the class list. A dedicated subclass screen would need the
     client's level-up UI code reworked — not planned.
 
-## Phase 1b proposal — advantage/disadvantage (2026-10-18, awaiting owner)
+## Phase 1b — advantage/disadvantage (decided by the owner, 2026-10-18)
+
+Proposed the same day; the owner took every recommendation except B5, where
+the 2024 rule was chosen over NWN's check.
 
 **How.** NWN adds situational bonuses as flat 3e numbers inside
 GetAttackModifierVersus (all of them decoded, RE-NOTES "situational terms").
@@ -147,16 +150,16 @@ ResolveAttackRoll rolls its d20 (call at 0x744401, `RollDice(1, 20)`
 1. ResolveAttackRoll hook (already hooked for the trace), at entry: work out
    which situational terms apply to this attacker and target (the engine's
    own checks), keep their 3e total (`rules::NwnSituationalTotal`) and the
-   roll mode (`rules::SituationalRollMode`) for this attack.
+   roll mode (`rules::SituationalRollMode`, with the B5 close-combat check)
+   for this attack.
 2. The d20 call at 0x744401 goes to a function that rolls two dice and keeps
    the higher or lower (`rules::RollD20`, the engine's own RollDice for each
    die). The kept die is the natural roll for natural 1 / 20.
 3. The GetAttackModifierVersus hook takes the 3e total back out for that
    attack.
-The parry roll (0x74465E) and the threat roll (0x744707) are untouched. The
-rules part is built and tested; the hook waits for the decisions below.
+The parry roll (0x74465E) and the threat roll (0x744707) are untouched.
 
-**B1. Mapping** (proposed; built that way in `src/rules/nwn_situational.cpp`):
+**B1. Mapping** (decided as proposed; `src/rules/nwn_situational.cpp`):
 
 | NWN term (3e) | 2024 |
 |---|---|
@@ -164,29 +167,36 @@ rules part is built and tested; the hook waits for the decisions below.
 | Target stunned (+2) | Advantage |
 | Target prone: melee +4 / ranged −4 | Advantage in melee, Disadvantage at range |
 | Can't see the target (−4) | Disadvantage |
-| Ranged attack within the target's melee reach (−4) | Disadvantage |
+| Ranged attack within the target's melee reach (−4) | removed; see B5 |
 | Moving target (−2, ranged) | nothing (no 2024 rule) |
 | Target flanked (+2) | see B2 |
 
-**B2. Flanking.** Core 2024 has no flanking; the DMG has an optional rule
-(Advantage). Proposed: off — with a henchman almost every melee attack would
-flank, making Advantage the norm.
+**B2. Flanking: off.** Core 2024 has no flanking; the DMG's optional rule
+(Advantage) is not used — with a henchman almost every melee attack would
+flank, making Advantage the norm. NWN's +2 is removed. (Sneak Attack's own
+flanking check is separate and unchanged.)
 
 **B3. Point Blank Shot.** The NWN feat removes the −4 for shooting in melee
-and adds +1 within 5 m; 2024 has no such feat. Proposed until feats are
-reworked (Phase 3): it removes the close-combat Disadvantage (as 2024
-Crossbow Expert does for crossbows) and keeps its +1.
+and adds +1 within 5 m; 2024 has no such feat. Until feats are reworked
+(Phase 3): it removes the close-combat Disadvantage (as 2024 Sharpshooter
+and Crossbow Expert do) and keeps its +1.
 
-**B4. Who it applies to.** Proposed: every attacker — party and creatures —
-as in 2024.
+**B4. Every attacker** — party, henchmen, creatures, summons — as in 2024.
 
-**B5. "In close combat".** NWN checks only the target's reach; 2024 checks
-any enemy within 5 ft that can see you. Proposed: NWN's check first (no new
-engine reads), widened later if it feels wrong.
+**B5. Close combat: the 2024 rule.** A ranged attack has Disadvantage when
+any enemy of the attacker that is within its own melee reach of the
+attacker can see the attacker and is not incapacitated (dead, dying,
+helpless) — not only the target. NWN's target-only −4 is still taken out of
+the engine's number.
 
-**B6. Combat log.** It shows one d20 ("17 + 2 = 19"). Proposed: it shows the
-kept die; nwn5e.log records both dice and the mode. An "Advantage" label in
-the log text is Phase 7 (interface).
+**B6. Combat log.** It shows one d20 ("17 + 2 = 19"): the kept die;
+nwn5e.log records both dice and the mode. An "Advantage" label in the log
+text is Phase 7 (interface).
+
+**B7. Crits against players** (taken with "your recommendation for all"):
+NWN turns a creature's critical hit on a player-controlled character into a
+plain hit (ResolveAttackRoll's crit path, 0x600100 — likely a difficulty
+rule); 2024 has no such rule, so it is removed, behind its own switch.
 
 Later sources, as each NWN effect is converted: conditions (Restrained,
 Paralyzed, Poisoned, Frightened…), hidden attackers, Reckless Attack, Help,
