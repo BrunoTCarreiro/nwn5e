@@ -1,3 +1,5 @@
+#include <string>
+
 #include "check.h"
 #include "rules/saves.h"
 
@@ -216,4 +218,19 @@ TEST(SaveValueWithSpellAbility) {
   facts.ability = Ability::kStrength;
   facts.ability_modifier = 3;
   CHECK_EQ(SaveValue(facts, RuleVariant::kFaithful), 3);
+}
+
+// C8: the labels that change. Breaks caught: one of the three saves missed in
+// a label family; an item name ("Ring of Fortitude +1", 56644) or a dialogue
+// line starting with "Will" (44902) renamed.
+TEST(SaveLabelsAre2024) {
+  CHECK_EQ(std::string(Faithful2024SaveLabel(317)) == "Constitution", true);
+  CHECK_EQ(std::string(Faithful2024SaveLabel(978)) == "Dexterity", true);
+  CHECK_EQ(std::string(Faithful2024SaveLabel(745)) == "Wisdom Save", true);
+  CHECK_EQ(std::string(Faithful2024SaveLabel(520)) == "Constitution Save", true);
+  CHECK_EQ(std::string(Faithful2024SaveLabel(6563)) == "Saving Throw Type: Dexterity", true);
+  CHECK_EQ(std::string(Faithful2024SaveLabel(66233)) == "Wisdom Saving Throw Increased", true);
+  CHECK_EQ(Faithful2024SaveLabel(56644) == nullptr, true);
+  CHECK_EQ(Faithful2024SaveLabel(44902) == nullptr, true);
+  CHECK_EQ(Faithful2024SaveLabel(0x1000000 | 317) == nullptr, true);
 }

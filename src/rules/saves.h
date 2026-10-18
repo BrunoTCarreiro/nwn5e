@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // Saving throws (SRD 5.2): six saves, one per ability; d20 + ability modifier
 // + proficiency bonus when proficient. A character is proficient in the two
 // saves of its first class (multiclassing grants no save proficiencies).
@@ -76,6 +78,12 @@ int SaveValue(const SaveFacts& facts, RuleVariant variant);
 // (Feeblemind), Charisma (Bane, Banishment, the Planar Bindings),
 // Constitution (Cone of Cold, Sunbeam, Sunburst, the Inflict Wounds spells).
 std::optional<Ability> SaveAbilityForNwnSpell(int spell_id);
+
+// C8 (faithful): the 2024 text for a dialog.tlk string that labels one of the
+// NWN saves ("Fortitude" -> "Constitution", "Reflex Save" -> "Dexterity Save",
+// ...); nullptr for every other string. Item and feat names ("Ring of
+// Fortitude", "Epic Will") are names, not labels, and are left alone.
+const char* Faithful2024SaveLabel(uint32_t strref);
 
 // C4: whether a save succeeds. A natural 20 succeeds automatically only with
 // `natural_20_succeeds`, a natural 1 fails automatically only with

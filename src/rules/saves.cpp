@@ -127,4 +127,38 @@ std::optional<Ability> SaveAbilityForNwnSpell(int spell_id) {
   }
 }
 
+const char* Faithful2024SaveLabel(uint32_t strref) {
+  switch (strref) {
+    case 317:  // "Fortitude"
+    case 977:
+      return "Constitution";
+    case 318:  // "Reflex"
+    case 978:
+      return "Dexterity";
+    case 319:  // "Will"
+    case 979:
+      return "Wisdom";
+    case 520:
+      return "Constitution Save";
+    case 519:
+      return "Dexterity Save";
+    case 745:
+      return "Wisdom Save";
+    case 6562:
+      return "Saving Throw Type: Constitution";
+    case 6563:
+      return "Saving Throw Type: Dexterity";
+    case 6564:
+      return "Saving Throw Type: Wisdom";
+    case 66232:
+      return "Constitution Saving Throw Increased";
+    case 66231:
+      return "Dexterity Saving Throw Increased";
+    case 66233:
+      return "Wisdom Saving Throw Increased";
+    default:
+      return nullptr;
+  }
+}
+
 }  // namespace rules

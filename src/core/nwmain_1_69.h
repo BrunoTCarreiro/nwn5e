@@ -404,6 +404,14 @@ constexpr uintptr_t kSavingThrowRoll = 0x00749230;
 // vtable +0x10 (as CNWSObject) +0x188; for an area-of-effect object
 // (vtable +0x54 non-null) the spell is AoE +0x1CC (its load code reads
 // "SpellId" there, "AreaEffectId" at +0x1C4).
+// C8: CTlkTable::GetSimpleString(strref, STR_RES* result, gender) 0x5C9C80
+// (ret 0xC, returns 1; result text = CExoString at +0, sound resref at +8;
+// strrefs with 0x1000000 come from the module's custom table). The character
+// sheet asks for 317/318/319 here (0x5B2AA9 and others). CExoString::
+// operator=(const char*) 0x5BA520 replaces a string's text.
+constexpr uintptr_t kTlkGetSimpleString = 0x005C9C80;
+constexpr uint8_t kTlkGetSimpleStringPrologue[] = {0x6a, 0xff, 0x68, 0xb8, 0xdd, 0x88, 0x00, 0x64};
+constexpr uintptr_t kExoStringAssign = 0x005BA520;
 constexpr uintptr_t kVmSaveCommand = 0x006EE070;
 constexpr uint8_t kVmSaveCommandPrologue[] = {0x83, 0xec, 0x14, 0x8b, 0x41, 0x08, 0x56, 0x8d};
 constexpr uintptr_t kVmCommandsObjectSelf = 0x08;
