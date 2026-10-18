@@ -42,6 +42,11 @@ bool HasFeat(void* stats, int feat) { return g_has_feat(stats, nullptr, feat) !=
 
 int Int8(const void* stats, uintptr_t offset) { return Field<int8_t>(stats, offset); }
 
+// The engine's save functions return a char in al: they add byte fields
+// loaded as dwords from stack slots, so the rest of eax is stack garbage
+// (callers read al only). Seen in the log as "3e +610188548" (2026-10-18).
+int SaveByte(int raw) { return static_cast<int8_t>(raw & 0xFF); }
+
 int AbilityModifier(void* stats, rules::NwnSave save) {
   switch (save) {
     case rules::NwnSave::kFortitude:
@@ -157,7 +162,7 @@ const char* SaveName(rules::NwnSave save) {
 }
 
 int ConvertSave(rules::NwnSave save, SaveFn original, void* stats, void* edx, int base_only) {
-  const int engine_value = original(stats, edx, base_only);
+  const int engine_value = SaveByte(original(stats, edx, base_only));
   const rules::RuleVariant variant = g_config.saves;
   if (variant == rules::RuleVariant::kOff) return engine_value;
   const CreatureFacts facts = ReadCreatureFacts(stats);
@@ -172,7 +177,7 @@ int ConvertSave(rules::NwnSave save, SaveFn original, void* stats, void* edx, in
       rules::ProficiencyBonusForCreature(save_facts.character, facts.level, facts.challenge_rating);
   save_facts.save_feat = HasFeat(stats, SaveFeat(save));
   save_facts.good_nwn_table = !save_facts.character && HasGoodNwnTable(slots, save);
-  save_facts.effects = base_only ? 0 : engine_value - original(stats, edx, 1);
+  save_facts.effects = base_only ? 0 : engine_value - SaveByte(original(stats, edx, 1));
   if (variant == rules::RuleVariant::kFaithful && !base_only) save_facts.aura = AuraOfProtection(stats);
   if (variant == rules::RuleVariant::kNwn) save_facts.nwn_extras = NwnExtras(stats, save);
   const int value = rules::SaveValue(save_facts, variant);
@@ -221,7 +226,7 @@ std::string DescribeSaves(void* stats) {
     bool proficient;
   };
   const auto engine_save = [&](uintptr_t address, rules::NwnSave save, rules::Ability ability) {
-    const int value = reinterpret_cast<SaveFn>(address)(stats, nullptr, 0);
+    const int value = SaveByte(reinterpret_cast<SaveFn>(address)(stats, nullptr, 0));
     const bool feat = faithful && character && HasFeat(stats, SaveFeat(save));
     const bool good = !faithful && !character && HasGoodNwnTable(slots, save);
     return Row{"", value, class_proficient(ability) || feat || good};
