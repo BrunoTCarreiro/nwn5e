@@ -443,6 +443,28 @@ constexpr uintptr_t kGetCastingAbilityModifier = 0x006AD1D0;  // ecx = stats, pu
 constexpr uintptr_t kSpellInnateLevel = 0x47;   // uint8
 constexpr uintptr_t kSpellSchool = 0x20;        // uint8
 
+// Ability modifiers (int8): confirmed by the casting-ability switch 0x6AD1D0
+// (class +0x216: 0 Str +0x3F9, 1 Dex GetDexMod(0), 2 Con +0x3FD, 3 Int
+// +0x3FF, 4 Wis +0x401, 5 Cha +0x403).
+constexpr uintptr_t kStatsStrModifier = 0x3F9;
+constexpr uintptr_t kStatsIntModifier = 0x3FF;
+
+// Chat (C8 `!saves`). Every player chat line (talk, shout, whisper, tell,
+// party) reaches CNWSMessage::SendServerToPlayerChatMessage 0x620C30 from
+// the chat handler 0x6C4200 (after the module's chat script), with 6 stack
+// slots (ret 0x18): channel, sender object id, the text (CExoString by
+// value: char*, buffer length — the callee destroys it), two more. Replies:
+// SendServerToPlayerChat_ServerTell 0x6220D0 (this = the same CNWSMessage,
+// player id, CExoString by value — destroyed by the callee, so it must come
+// from the engine's CExoString(const char*) 0x5BA260); player id from
+// CServerExoAppInternal::GetPlayerIDByGameObjectID 0x6108B0 (0xFFFFFFFE for
+// none).
+constexpr uintptr_t kSendServerToPlayerChatMessage = 0x00620C30;
+constexpr uint8_t kSendServerToPlayerChatMessagePrologue[] = {0x6a, 0xff, 0x68, 0x48, 0x37, 0x89, 0x00, 0x64};
+constexpr uintptr_t kSendServerToPlayerChatServerTell = 0x006220D0;
+constexpr uintptr_t kExoStringFromText = 0x005BA260;
+constexpr uintptr_t kGetPlayerIdByGameObjectId = 0x006108B0;
+
 // Engine combat breakdown ([debug] combat_breakdown): with 0x93233C set,
 // GetAttackModifierVersus, ResolveAttackRoll, GetDamageRoll and the save roll
 // write a "[%d] <label>" line per term into the attack data (+0x68), and the

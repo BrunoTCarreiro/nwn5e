@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <optional>
+#include <stdio.h>
+#include <string>
 
 #include "config.h"
 #include "creature.h"
@@ -195,6 +197,55 @@ int __fastcall GetWillSavingThrow(void* stats, void* edx, int base_only) {
 }
 
 }  // namespace
+
+// C8: all six 2024 saves for `!saves` (rules_chat.cpp). Con / Dex / Wis are
+// the hooked Fortitude / Reflex / Will values; Str / Int / Cha (no NWN save
+// asks for them yet) are ability modifier + proficiency bonus when proficient
+// (+ Aura of Protection in faithful mode).
+std::string DescribeSaves(void* stats) {
+  if (g_config.saves == rules::RuleVariant::kOff) return "nwn5e: 2024 saves are off (saves=off in nwn5e.ini).";
+  const CreatureFacts facts = ReadCreatureFacts(stats);
+  const std::vector<rules::NwnClassSlot> slots = ReadClassSlots(stats);
+  const std::optional<rules::CharacterClass> first =
+      slots.empty() ? std::nullopt : rules::ClassFromNwnId(slots[0].nwn_class_id);
+  const bool character = facts.character || (first && !SummonLike(facts.associate_type));
+  const int pb = rules::ProficiencyBonusForCreature(character, facts.level, facts.challenge_rating);
+  const bool faithful = g_config.saves == rules::RuleVariant::kFaithful;
+  const int aura = faithful ? AuraOfProtection(stats) : 0;
+  const auto class_proficient = [&](rules::Ability ability) {
+    return character && first && rules::HasSaveProficiency(*first, ability);
+  };
+  struct Row {
+    const char* name;
+    int value;
+    bool proficient;
+  };
+  const auto engine_save = [&](uintptr_t address, rules::NwnSave save, rules::Ability ability) {
+    const int value = reinterpret_cast<SaveFn>(address)(stats, nullptr, 0);
+    const bool feat = faithful && character && HasFeat(stats, SaveFeat(save));
+    const bool good = !faithful && !character && HasGoodNwnTable(slots, save);
+    return Row{"", value, class_proficient(ability) || feat || good};
+  };
+  const auto plain_save = [&](uintptr_t offset, rules::Ability ability) {
+    const bool proficient = class_proficient(ability);
+    return Row{"", rules::SavingThrowBonus(Int8(stats, offset), proficient, pb, aura), proficient};
+  };
+  Row rows[6] = {plain_save(nwmain::kStatsStrModifier, rules::Ability::kStrength),
+                 engine_save(nwmain::kGetReflexSavingThrow, rules::NwnSave::kReflex, rules::Ability::kDexterity),
+                 engine_save(nwmain::kGetFortSavingThrow, rules::NwnSave::kFortitude, rules::Ability::kConstitution),
+                 plain_save(nwmain::kStatsIntModifier, rules::Ability::kIntelligence),
+                 engine_save(nwmain::kGetWillSavingThrow, rules::NwnSave::kWill, rules::Ability::kWisdom),
+                 plain_save(nwmain::kStatsChaModifier, rules::Ability::kCharisma)};
+  static const char* const kNames[6] = {"Str", "Dex", "Con", "Int", "Wis", "Cha"};
+  std::string text = faithful ? "Saves (2024): " : "Saves (2024, NWN mode): ";
+  char part[32];
+  for (int i = 0; i < 6; ++i) {
+    snprintf(part, sizeof(part), "%s%s %+d%s", i ? ", " : "", kNames[i], rows[i].value, rows[i].proficient ? "*" : "");
+    text += part;
+  }
+  text += "   (* proficient)";
+  return text;
+}
 
 void InstallSaveRules() {
   if (g_config.saves == rules::RuleVariant::kOff) return;
