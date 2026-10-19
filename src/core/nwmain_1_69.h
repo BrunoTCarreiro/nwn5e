@@ -415,6 +415,14 @@ constexpr uintptr_t kExoStringAssign = 0x005BA520;
 constexpr uintptr_t kVmSaveCommand = 0x006EE070;
 constexpr uint8_t kVmSaveCommandPrologue[] = {0x83, 0xec, 0x14, 0x8b, 0x41, 0x08, 0x56, 0x8d};
 constexpr uintptr_t kVmCommandsObjectSelf = 0x08;
+// C1: GetReflexAdjustedDamage (command 299; its table entry, commands +0x4AC,
+// is written at 0x6E198C) has its own handler 0x6F9DC0 of the same shape
+// ((command, parameters), ret 8). It rolls the Reflex save at 0x6F9FAF without
+// passing 0x6EE070 — Cone of Cold, Sunbeam and Sunburst save through it. After
+// the roll it applies Evasion (feat 0xCE) / Improved Evasion (0xD4) to the
+// damage whatever the save ability.
+constexpr uintptr_t kVmReflexDamageCommand = 0x006F9DC0;
+constexpr uint8_t kVmReflexDamageCommandPrologue[] = {0x64, 0xa1, 0x00, 0x00, 0x00, 0x00, 0x6a, 0xff};
 constexpr uintptr_t kGetObjectArray = 0x005FFA90;
 constexpr uintptr_t kGetGameObject = 0x0042E730;
 constexpr uintptr_t kVtableAsNwsObject = 0x10;

@@ -675,7 +675,10 @@ not confirmed.
   not), GetIsImmune 0x6B0090 (stats, type 31, versus creature; ret 8),
   HasFeat(0x380).
 - Saves: every Reflex save goes through 0x749230 (also GetReflexAdjustedDamage
-  0x6F9FAF, poison and disease saves). Order: bonus, d20 (0x7499C9), immunity
+  0x6F9FAF, poison and disease saves). GetReflexAdjustedDamage is command 299,
+  handler 0x6F9DC0 (table slot +0x4AC, written at 0x6E198C), separate from the
+  Fortitude/Reflex/WillSave handler 0x6EE070; Evasion 0xCE / Improved Evasion
+  0xD4 adjust its damage after the roll whatever the save ability. Order: bonus, d20 (0x7499C9), immunity
   by save type (returns 2 before feedback), feedback (DC, total, roll), then
   natural 1 / 20 / total >= DC.
 - Poison (0x670590): poison.2da, Fortitude save (save 1, type 2) at 0x67095C;

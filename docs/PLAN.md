@@ -736,7 +736,8 @@ Arachnida lasts 1 round (caster level 3 / 2), too short to test with.
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:
 once; NWN mode: 1.5 x. Point Blank Shot's +1 damage stays with B3 (Phase 3).
-*Built 0.9.8.*
+*Built 0.9.8; verified in game 2026-10-19 (warhammer, Strength modifier +3: 1.5 x gave
++4 in 3e, now +3).*
 
 **C1 table (owner, 2026-10-18): option A.** Faithful: the NWN spells that exist
 in SRD 5.2 with another save ability use it — Strength (Entangle 53, Gust of
@@ -747,7 +748,12 @@ Critical Wounds 431-435 and the Blackguard's 611/612). NWN-only spells
 (Dismissal and the like) keep the default mapping; NWN mode has no table.
 The spell is the running script's (OBJECT_SELF +0x188, an area of effect's
 own +0x1CC), so lingering clouds use their own spell. Effects on the NWN save
-(items, spells) still apply to the overridden one. *Built 0.9.8.*
+(items, spells) still apply to the overridden one. *Built 0.9.8.* *0.9.27:* the
+first in-game test (Cone of Cold, 2026-10-19) rolled Reflex: spells that save
+through GetReflexAdjustedDamage (Cone of Cold, Sunbeam, Sunburst) go through
+their own command handler (299), which 0.9.8 did not hook; now hooked too.
+Follow-up: that handler still applies Evasion to the damage when the save is no
+longer Dexterity (2024 Evasion covers Dexterity saves only) — class features.
 
 ### Build order
 

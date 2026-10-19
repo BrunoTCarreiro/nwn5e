@@ -91,7 +91,7 @@ struct SaveContext {
 };
 
 // The spell of the script running the current FortitudeSave / ReflexSave /
-// WillSave command (-1 outside one).
+// WillSave / GetReflexAdjustedDamage command (-1 outside one).
 int g_script_spell = -1;
 
 std::string SpellNote(int spell);
@@ -101,6 +101,7 @@ using GetObjectArrayFn = void*(__fastcall*)(void* app, void* edx);
 using GetGameObjectFn = uint8_t(__fastcall*)(void* array, void* edx, uint32_t id, void** object);
 using VirtualCastFn = void*(__fastcall*)(void* object, void* edx);
 VmCommandFn g_vm_save_command = nullptr;
+VmCommandFn g_vm_reflex_damage_command = nullptr;
 const auto g_get_object_array = reinterpret_cast<GetObjectArrayFn>(nwmain::kGetObjectArray);
 const auto g_get_game_object = reinterpret_cast<GetGameObjectFn>(nwmain::kGetGameObject);
 
@@ -123,12 +124,21 @@ int SpellOfObject(uint32_t id) {
   return nws_object ? Field<int32_t>(nws_object, nwmain::kObjectLastSpellId) : -1;
 }
 
-int __fastcall VmSaveCommand(void* commands, void* edx, int command, int parameters) {
+// Runs a script command with g_script_spell set to the running script's spell.
+int WithScriptSpell(VmCommandFn original, void* commands, void* edx, int command, int parameters) {
   const int outer = g_script_spell;
   g_script_spell = SpellOfObject(Field<uint32_t>(commands, nwmain::kVmCommandsObjectSelf));
-  const int result = g_vm_save_command(commands, edx, command, parameters);
+  const int result = original(commands, edx, command, parameters);
   g_script_spell = outer;
   return result;
+}
+
+int __fastcall VmSaveCommand(void* commands, void* edx, int command, int parameters) {
+  return WithScriptSpell(g_vm_save_command, commands, edx, command, parameters);
+}
+
+int __fastcall VmReflexDamageCommand(void* commands, void* edx, int command, int parameters) {
+  return WithScriptSpell(g_vm_reflex_damage_command, commands, edx, command, parameters);
 }
 SaveContext g_save;
 
@@ -326,6 +336,9 @@ void InstallSaveRollRules() {
   InstallHook({"script save commands (the spell behind a save)", nwmain::kVmSaveCommand,
                nwmain::kVmSaveCommandPrologue, sizeof(nwmain::kVmSaveCommandPrologue),
                reinterpret_cast<void*>(&VmSaveCommand), reinterpret_cast<void**>(&g_vm_save_command)});
+  InstallHook({"GetReflexAdjustedDamage command (the spell behind its save)", nwmain::kVmReflexDamageCommand,
+               nwmain::kVmReflexDamageCommandPrologue, sizeof(nwmain::kVmReflexDamageCommandPrologue),
+               reinterpret_cast<void*>(&VmReflexDamageCommand), reinterpret_cast<void**>(&g_vm_reflex_damage_command)});
   InstallHook({"CNWSCreature saving throw roll (DCs, species advantage)", nwmain::kSavingThrowRoll,
                nwmain::kSavingThrowRollPrologue, sizeof(nwmain::kSavingThrowRollPrologue),
                reinterpret_cast<void*>(&SavingThrowRoll), reinterpret_cast<void**>(&g_saving_throw_roll)});
