@@ -292,3 +292,28 @@ void InstallSaveRules() {
                nwmain::kGetWillSavingThrowPrologue, sizeof(nwmain::kGetWillSavingThrowPrologue),
                reinterpret_cast<void*>(&GetWillSavingThrow), reinterpret_cast<void**>(&g_get_will)});
 }
+
+// SK6 (rules_shove.cpp): a creature's 2024 save bonus for `ability`, as !saves
+// shows it — Dex / Con / Wis through the hooked NWN saves, Str / Int / Cha =
+// modifier + PB when proficient (+ Aura of Protection in faithful mode).
+int SaveBonusFor(void* stats, rules::Ability ability) {
+  switch (ability) {
+    case rules::Ability::kDexterity:
+      return SaveByte(reinterpret_cast<SaveFn>(nwmain::kGetReflexSavingThrow)(stats, nullptr, 0));
+    case rules::Ability::kConstitution:
+      return SaveByte(reinterpret_cast<SaveFn>(nwmain::kGetFortSavingThrow)(stats, nullptr, 0));
+    case rules::Ability::kWisdom:
+      return SaveByte(reinterpret_cast<SaveFn>(nwmain::kGetWillSavingThrow)(stats, nullptr, 0));
+    default:
+      break;
+  }
+  const CreatureFacts facts = ReadCreatureFacts(stats);
+  const std::vector<rules::NwnClassSlot> slots = ReadClassSlots(stats);
+  const std::optional<rules::CharacterClass> first =
+      slots.empty() ? std::nullopt : rules::ClassFromNwnId(slots[0].nwn_class_id);
+  const bool character = facts.character || (first && !SummonLike(facts.associate_type));
+  const int pb = rules::ProficiencyBonusForCreature(character, facts.level, facts.challenge_rating);
+  const int aura = g_config.saves == rules::RuleVariant::kFaithful ? AuraOfProtection(stats) : 0;
+  const bool proficient = character && first && rules::HasSaveProficiency(*first, ability);
+  return rules::SavingThrowBonus(AbilityModifierOf(stats, ability), proficient, pb, aura);
+}

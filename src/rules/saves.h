@@ -51,6 +51,14 @@ int SpellScrollAttackBonus(int spell_level);
 // SK10: a 2024 spell attack bonus: proficiency bonus + spellcasting modifier.
 int SpellAttackBonus2024(int proficiency_bonus, int casting_modifier);
 
+// SK6 (faithful): the 2024 Shove. DC 8 + the shover's Strength modifier + PB;
+// the target saves with the better of Strength and Dexterity (Dexterity on a
+// tie); it can be at most one size larger than the shover (creature sizes 1
+// tiny .. 5 huge).
+int ShoveDc(int strength_modifier, int proficiency_bonus);
+Ability ShoveSaveAbility(int strength_save, int dexterity_save);
+bool ShoveSizeAllowed(int shover_size, int target_size);
+
 // C5 NWN mode: NWN's Spell Focus DC bonus (+2 / +4 / +6) as +1 / +2 / +3.
 int NwnModeSpellFocusDcBonus(int nwn_focus_bonus);
 

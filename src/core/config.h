@@ -41,6 +41,10 @@ struct Config {
   // check for defensive casting or for casting while entangled; nwn / off =
   // NWN's.
   rules::RuleVariant concentration = rules::RuleVariant::kFaithful;
+  // SK6: faithful = Knockdown is a 2024 Shove (no attack roll, no damage; the
+  // target's better Strength / Dexterity save against 8 + Str + PB; at most one
+  // size larger) and Disarm is an ordinary attack; nwn / off = NWN's.
+  rules::RuleVariant knockdown = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

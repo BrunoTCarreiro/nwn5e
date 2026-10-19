@@ -93,6 +93,9 @@ struct SaveContext {
 // The spell of the script running the current FortitudeSave / ReflexSave /
 // WillSave / GetReflexAdjustedDamage command (-1 outside one).
 int g_script_spell = -1;
+// SK6 (rules_shove.cpp): the ability of the save being rolled when not NWN's
+// default for it (a Shove's Strength save), set around that one roll.
+std::optional<rules::Ability> g_forced_ability;
 
 std::string SpellNote(int spell);
 
@@ -218,6 +221,7 @@ uint32_t __fastcall SavingThrowRoll(void* creature, void* edx, uint32_t save, ui
   if (g_config.saves == rules::RuleVariant::kFaithful && g_script_spell >= 0) {
     g_save.ability = rules::SaveAbilityForNwnSpell(g_script_spell);
   }
+  if (g_config.saves == rules::RuleVariant::kFaithful && g_forced_ability) g_save.ability = g_forced_ability;
   if (g_save.save >= 1 && g_save.save <= 3) {
     const rules::Ability ability =
         g_save.ability.value_or(rules::AbilityForNwnSave(static_cast<rules::NwnSave>(g_save.save - 1)));
@@ -466,3 +470,7 @@ bool SpellAttackCasting(void* creature, int* bonus, const char** source) {
   }
   return true;
 }
+
+// SK6 (rules_shove.cpp): the next save rolls on `ability` (nullopt: back to
+// the save's own) — its value, conditions and combat-log label.
+void SetForcedSaveAbility(std::optional<rules::Ability> ability) { g_forced_ability = ability; }

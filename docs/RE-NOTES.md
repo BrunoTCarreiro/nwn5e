@@ -906,3 +906,36 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   effect from 0x666680). While an effect of type 18 (entangle) is on the
   caster (loop at 0x67D41C over +0xE8): d20 (0x67D50F) + Concentration >= 15
   (0x67D51B) casts, else the spell fails (message 0x41).
+
+## Knockdown and Disarm (decoded 2026-10-19, SK6)
+
+- The special attack id (attack data +0x52) is the feat: Disarm 9, Improved
+  Disarm 16, Improved Knockdown 17, Knockdown 23, Sap 31, Stunning Fist 39
+  (0x27); Called Shot leg / arm 0xFDE8 / 0xFDE9; Quivering Palm 0x128, Smite
+  Evil 0x12D, Smite Good 0x1D8.
+- The special resolver 0x742BC0 calls ResolveAttackRoll, ResolveDamage
+  0x745670 and 0x746070 unconditionally (0x742C4C / 54 / 5C), then switches
+  (pointers 0x743CA0, bytes 0x743CB0 = id - 9): Disarm 0x742E1E, Knockdown
+  0x742F66, Sap 0x742CAF. Every handler needs result +0x50 in {1, 3, 5, 6,
+  7, 10}. Result codes: 1 hit, 2 parried, 3 critical, 4 miss (+0x14 margin),
+  5 resisted, 6 too large / not possible, 7 automatic hit (coup de grace), 8
+  / 9 concealment / miss chance, 10 devastating critical; the client prints
+  no word for 5 and 6.
+- Knockdown 0x742F66: refuses a target more than one size larger (Improved:
+  two) with feedback 0x1B / 0x1C (tlk 7949 / 7950), result 6; else the target
+  rolls rand d20 + Discipline + 1 - 4 x (attacker - target size) (Improved +4
+  more) against the attack d20 (+0xE) + modifier (+0x10); resisting -> 0x742F5D
+  (result 5); else 0x742FF6 builds a knockdown effect (type 0x14, 4.5 s) on
+  the attack's effect list (+0x78).
+- Disarm 0x742E1E: same roll without size; fails on non-creatures, +0xBEC, or
+  an undroppable right-hand item (+0x28C); success adds effect 0x57 (Improved:
+  int0 = 1); OnApplyDisarm 0x66D2A0 removes the weapon.
+- Penalties are GetSpecialAttackModifier 0x698ED0 (from
+  GetAttackModifierVersus at 0x696049): Knockdown / Improved -4, Disarm -6,
+  Improved Disarm -4 (+/-4 per weapon size step).
+- Damage reaches the target only from the scheduler 0x743F30 (0x7440BB:
+  results 1/3/5/6/7/10 apply the damage values +0x16.. as an effect and queue
+  +0x78 effects); the values are -1 from the round's start (0x73A570), so an
+  attack whose ResolveDamage is skipped applies none.
+- The feat-use handler adds the special attack at 0x657AEC (AddSpecialAttack
+  0x73C760, round in ecx, feat on the stack) for feats 5, 9, 16, 17, 23, 31.

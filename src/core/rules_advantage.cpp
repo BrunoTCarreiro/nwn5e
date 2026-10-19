@@ -29,6 +29,7 @@
 
 void TraceAttackRoll(const void* creature);  // rules_attack_trace.cpp
 void NotePotionResumeTarget(void* attacker, uint32_t target_id);  // rules_potion.cpp
+bool ShoveInsteadOfAttackRoll(void* creature);                      // rules_shove.cpp
 void KeepCombatBreakdownOn();                 // rules_attack_trace.cpp
 
 namespace {
@@ -211,6 +212,7 @@ void BoostTestTarget(void* attacker, void* target_object) {
 }
 
 void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
+  if (ShoveInsteadOfAttackRoll(creature)) return;  // SK6: a Shove makes no attack roll
   if (g_config.debug_attack_trace) TraceAttackRoll(creature);
   KeepCombatBreakdownOn();
   BoostTestTarget(creature, target);
@@ -295,7 +297,7 @@ void InstallAdvantageRules() {
   const bool mastery = g_config.weapon_mastery == rules::RuleVariant::kFaithful;
   if (!g_config.advantage_disadvantage && !g_config.debug_attack_trace && !g_config.debug_combat_breakdown && !mastery &&
       !g_config.resume_attack_after_potion && g_config.debug_creature_hp_multiplier <= 1 &&
-      g_config.debug_creature_min_hp <= 0) {
+      g_config.debug_creature_min_hp <= 0 && g_config.knockdown != rules::RuleVariant::kFaithful) {
     return;
   }
   InstallHook({g_config.advantage_disadvantage ? "CNWSCreature::ResolveAttackRoll (advantage/disadvantage)"

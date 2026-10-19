@@ -57,6 +57,14 @@ int ConvertNwnFixedDc(int dc) {
   return converted < 10 ? 10 : (converted > 30 ? 30 : converted);
 }
 
+int ShoveDc(int strength_modifier, int proficiency_bonus) { return 8 + strength_modifier + proficiency_bonus; }
+
+Ability ShoveSaveAbility(int strength_save, int dexterity_save) {
+  return strength_save > dexterity_save ? Ability::kStrength : Ability::kDexterity;
+}
+
+bool ShoveSizeAllowed(int shover_size, int target_size) { return target_size <= shover_size + 1; }
+
 int SpellScrollAttackBonus(int spell_level) { return SpellScrollDc(spell_level) - 8; }
 
 int SpellAttackBonus2024(int proficiency_bonus, int casting_modifier) { return proficiency_bonus + casting_modifier; }

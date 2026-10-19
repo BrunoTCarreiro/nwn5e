@@ -422,6 +422,16 @@ often (no attack roll), but strong or nimble targets resist by their saves;
 both Topple (Constitution save) and Shove (Strength or Dexterity save) are
 2024 saves (rev.: not "one rule"); NPCs with Disarm stop disarming in
 faithful.
+*Built 0.9.40 (key `knockdown`):* a Knockdown / Improved Knockdown attack
+becomes an "automatic hit" before ResolveAttackRoll (no roll), the special
+path skips its two damage calls for it (no damage), and the handler's size
+check + Discipline roll are replaced by the 2024 size limit (one larger, both
+feats; NWN's Improved allowed two) and the target's better Strength /
+Dexterity save (the engine's save roll, a forced Strength ability when that
+is better, so the log names it) against 8 + Str + PB; the engine's own
+knockdown effect (4.5 s) on a failure. Disarm is never added as a special
+attack: an ordinary attack (no -6 / -4, no opportunity attack, no disarm).
+Recon correction: NWN's Knockdown already limited size to one larger.
 
 **SK7. Concentration (the skill).** NWN: a Concentration check on damage
 while casting (DC from the damage), for defensive casting, when entangled (DC

@@ -267,3 +267,18 @@ TEST(SpellAttacksAre2024) {
   CHECK_EQ(SpellAttackBonus2024(2, 3), 5);
   CHECK_EQ(SpellAttackBonus2024(6, -1), 5);
 }
+
+// SK6. Breaks caught: the shove DC off 8 + Str + PB; the target not using its
+// better save (or Strength winning a tie); a two-sizes-larger target allowed
+// (NWN's Improved Knockdown) or a one-size-larger one refused.
+TEST(ShoveIs2024) {
+  CHECK_EQ(ShoveDc(3, 2), 13);
+  CHECK_EQ(ShoveDc(-1, 4), 11);
+  CHECK_EQ(static_cast<int>(ShoveSaveAbility(5, 2)), static_cast<int>(Ability::kStrength));
+  CHECK_EQ(static_cast<int>(ShoveSaveAbility(1, 4)), static_cast<int>(Ability::kDexterity));
+  CHECK_EQ(static_cast<int>(ShoveSaveAbility(3, 3)), static_cast<int>(Ability::kDexterity));
+  CHECK_EQ(ShoveSizeAllowed(3, 4), true);   // medium shoves large
+  CHECK_EQ(ShoveSizeAllowed(3, 5), false);  // not huge
+  CHECK_EQ(ShoveSizeAllowed(2, 4), false);  // small does not shove large
+  CHECK_EQ(ShoveSizeAllowed(3, 1), true);
+}

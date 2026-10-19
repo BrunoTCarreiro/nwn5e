@@ -1196,4 +1196,35 @@ constexpr MediumPatch kFaithfulConcentrationPatches[] = {
      {0xe9, 0xb5, 0x00, 0x00, 0x00, 0x90}},  // jge 0x67D5D8 -> jmp 0x67D5D8
 };
 
+// SK6: Knockdown and Disarm (RE-NOTES "Knockdown and Disarm"). The special
+// attack id at attack data +0x52 is the feat: Disarm 9, Improved Disarm 16,
+// Improved Knockdown 17, Knockdown 23 (Sap 31, Stunning Fist 39). The
+// special-attack resolver 0x742BC0 calls ResolveAttackRoll (0x742C4C),
+// ResolveDamage 0x745670 (0x742C54) and 0x746070 (0x742C5C) unconditionally,
+// then the handler: Knockdown 0x742F66 checks the size at 0x742F8F (`mov
+// eax,[edi+0x4D4]`; edi attacker, ebp target, esi attack data, cx the id)
+// and rolls Discipline; 0x742FF6 builds the knockdown effect (4.5 s), 0x742F5D
+// = resisted (result 5), 0x743027 / 0x743076 = too large (feedback 0x1B /
+// 0x1C, result bl = 6). Damage is applied by the scheduler only from the
+// attack's damage values (+0x16.., -1 = none since the round started).
+// Disarm reaches the round through the feat-use handler's AddSpecialAttack
+// call at 0x657AEC (round in ecx, feat on the stack, ret 4).
+constexpr uintptr_t kAttackDataD20 = 0x0E;        // uint8, the attack's d20
+constexpr uintptr_t kAttackDataModifier = 0x10;   // int32, its modifier
+constexpr uintptr_t kAttackDataSpecial = 0x52;    // uint16, the special attack (feat id)
+constexpr uint8_t kAttackResultAutomaticHit = 7;  // as coup de grace; shown as "automatic hit"
+constexpr int kFeatDisarm = 9;
+constexpr int kFeatImprovedDisarm = 16;
+constexpr int kFeatImprovedKnockdown = 17;
+constexpr int kFeatKnockdown = 23;
+constexpr int kSaveReflex = 2;
+constexpr uintptr_t kResolveMeleeDamage = 0x00745670;
+constexpr uintptr_t kResolvePostMeleeDamage = 0x00746070;
+constexpr uintptr_t kAddSpecialAttack = 0x0073C760;
+constexpr uintptr_t kSpecialDamageCall = 0x00742C54;
+constexpr uintptr_t kSpecialPostDamageCall = 0x00742C5C;
+constexpr uintptr_t kKnockdownSizeCheck = 0x00742F8F;
+constexpr uint8_t kKnockdownSizeCheckBytes[] = {0x8b, 0x87, 0xd4, 0x04, 0x00, 0x00};
+constexpr uintptr_t kAddSpecialAttackCall = 0x00657AEC;
+
 }  // namespace nwmain
