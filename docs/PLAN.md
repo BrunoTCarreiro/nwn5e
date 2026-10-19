@@ -102,6 +102,14 @@ monster AC by CR.
 - Upcasting; concentration (one at a time, Con save on damage: DC 10 or half
   damage, max 30); rituals (decide).
 - Rewrite spell scripts to SRD 5.2; add missing SRD spells; retire 3e-only ones.
+- **Vicious Mockery** (owner, 2026-10-19: option A — a real Bard cantrip, not
+  a Taunt stand-in; Taunt stays off in faithful, SK8): new spells.2da row +
+  script (ports to EE). Wisdom save against the caster's spell DC (the target
+  must hear: deafened targets are immune); on a failure 1d6 psychic damage
+  (2d6 / 3d6 / 4d6 at levels 5 / 11 / 17) and disadvantage on its next attack
+  roll before the end of its next turn (through the advantage rules' sources,
+  as the conditions add theirs). Decide then: NWN has no psychic damage type
+  (magical or sonic).
 
 ### Phase 5 — Rest, healing, death
 - Short rest (spend Hit Dice) and long rest (8 h, regain all HP and half max HD).
