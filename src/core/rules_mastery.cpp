@@ -689,17 +689,53 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
 
 namespace {
 
+// Points the attacker's attack order at `next` wherever it names `pushed`:
+// the round's target (as the after-kill retarget does, so the round's next
+// swings go there), the queued attack action, the attack targets and the
+// current action. Returns how many of the order fields held `pushed`.
+int RewriteAttackOrder(void* attacker, uint32_t pushed, uint32_t next) {
+  int changed = 0;
+  if (void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound)) {
+    SetField<uint32_t>(round, nwmain::kRoundTarget, next);
+    SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
+  }
+  if (void* action = HeadAttackAction(attacker)) {
+    if (Field<uint32_t>(action, nwmain::kActionFirstParam) == pushed) {
+      SetField<uint32_t>(action, nwmain::kActionFirstParam, next);
+      ++changed;
+    }
+  }
+  if (Field<uint32_t>(attacker, nwmain::kCreatureAttackTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kCreatureAttackTarget, next);
+    ++changed;
+  }
+  if (Field<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget, next);
+    ++changed;
+  }
+  if (Field<int16_t>(attacker, nwmain::kObjectCurrentAction) == nwmain::kActionAttackObject &&
+      Field<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget, next);
+    ++changed;
+  }
+  return changed;
+}
+
 // After a push: when an enemy is now closer to the attacker than the pushed
 // one, the attacker goes for the nearest such enemy instead of chasing (owner,
 // 2026-10-19): a living, hostile enemy it sees, edge to edge nearer than the
-// pushed one will be. Switched in place for the rest of this round (round
-// target, queued attack action, attack targets); KeepPushRetarget makes it
-// stick. Every decision is logged with the candidates.
+// pushed one will be. Decided at the roll (the caller's attack target is the
+// pushed one; the engine's order fields may be empty then), rewritten again
+// when the hit lands (Push) and checked at the round's end
+// (KeepPushRetarget). Every decision is logged with the candidates.
 uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance) {
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
   const uint32_t round_target = round ? Field<uint32_t>(round, nwmain::kRoundTarget) : nwmain::kObjectInvalid;
   const void* head = HeadAttackAction(attacker);
   const uint32_t ordered = head ? Field<uint32_t>(head, nwmain::kActionFirstParam) : nwmain::kObjectInvalid;
+  const uint32_t attack_target = Field<uint32_t>(attacker, nwmain::kCreatureAttackTarget);
+  const int current_action = Field<int16_t>(attacker, nwmain::kObjectCurrentAction);
+  const uint32_t current_target = Field<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget);
   uint32_t next = nwmain::kObjectInvalid;
   float best = pushed_distance;
   std::string candidates;
@@ -715,32 +751,15 @@ uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed
       next = id;
     }
   });
-  const bool attacking_pushed = round_target == pushed || ordered == pushed;
   if (EffectLogSlot()) {
-    Log("mastery: 0x%08X Push retarget: round target 0x%08X, attack order 0x%08X; pushed 0x%08X ends %.1f m away; "
-        "enemies: %s -> %s",
-        attacker_id, round_target, ordered, pushed, pushed_distance, candidates.empty() ? "none" : candidates.c_str(),
-        !round ? "no round" : !attacking_pushed ? "not attacking the pushed one" :
-        next == nwmain::kObjectInvalid ? "none closer, keeps the pushed one" : "switch");
+    Log("mastery: 0x%08X Push retarget (roll): round target 0x%08X, attack order 0x%08X, attack target 0x%08X, "
+        "current action %d at 0x%08X; pushed 0x%08X ends %.1f m away; enemies: %s -> %s",
+        attacker_id, round_target, ordered, attack_target, current_action, current_target, pushed, pushed_distance,
+        candidates.empty() ? "none" : candidates.c_str(),
+        !round ? "no round" : next == nwmain::kObjectInvalid ? "none closer, keeps the pushed one" : "switch");
   }
-  if (!round || !attacking_pushed || next == nwmain::kObjectInvalid) return nwmain::kObjectInvalid;
-  SetField<uint32_t>(round, nwmain::kRoundTarget, next);
-  SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
-  if (void* action = HeadAttackAction(attacker)) {
-    if (Field<uint32_t>(action, nwmain::kActionFirstParam) == pushed) {
-      SetField<uint32_t>(action, nwmain::kActionFirstParam, next);
-    }
-  }
-  if (Field<uint32_t>(attacker, nwmain::kCreatureAttackTarget) == pushed) {
-    SetField<uint32_t>(attacker, nwmain::kCreatureAttackTarget, next);
-  }
-  if (Field<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget) == pushed) {
-    SetField<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget, next);
-  }
-  if (Field<int16_t>(attacker, nwmain::kObjectCurrentAction) == nwmain::kActionAttackObject &&
-      Field<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget) == pushed) {
-    SetField<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget, next);
-  }
+  if (!round || next == nwmain::kObjectInvalid) return nwmain::kObjectInvalid;
+  RewriteAttackOrder(attacker, pushed, next);
   g_push_retargets[attacker_id] = PushRetarget{pushed, next, GetTickCount()};
   return next;
 }
@@ -757,6 +776,19 @@ void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id
       if (plan.blocker != nwmain::kObjectInvalid) Log("mastery:   blocker 0x%08X", plan.blocker);
     }
     return;
+  }
+  // The attacker turned to a closer enemy at the roll: by now the engine has
+  // filled in its attack order (on the pushed one), so it is rewritten again.
+  const auto turned = g_push_retargets.find(attacker_id);
+  if (turned != g_push_retargets.end() && turned->second.pushed == target_id) {
+    const uint32_t ordered_before = HeadAttackAction(attacker)
+                                        ? Field<uint32_t>(HeadAttackAction(attacker), nwmain::kActionFirstParam)
+                                        : nwmain::kObjectInvalid;
+    const int changed = RewriteAttackOrder(attacker, target_id, turned->second.next);
+    if (EffectLogSlot()) {
+      Log("mastery: 0x%08X Push retarget (landing): attack order was 0x%08X; %d order fields moved to 0x%08X",
+          attacker_id, ordered_before, changed, turned->second.next);
+    }
   }
   // It can't walk while it falls and slides (its own attack order would pull
   // it back toward the attacker); its orders stay queued.

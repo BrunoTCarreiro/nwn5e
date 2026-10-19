@@ -497,6 +497,12 @@ D2's faithful rule ("only moving away provokes") now holds for that too.
 was not an AoO (none logged, no AoO text) but the round's next swing, aimed
 before the hit landed; the retarget now happens at the attack roll (the
 landing still moves the target).
+*0.9.19:* at the roll the engine's attack-order fields are still empty
+(round target and queued attack both 0x7F000000), so 0.9.18 never switched
+and the PC walked after the pushed one (drawing AoOs from the other goblin).
+Now the switch is decided at the roll from the attack's own target (round
+target set, as after a kill), the order is rewritten again when the hit lands
+(by then it names the pushed one), and the round-end check stays.
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:
