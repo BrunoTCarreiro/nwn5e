@@ -755,3 +755,16 @@ not confirmed.
   (t, 0, 0, 0/1); AoO (t, 0, 1, 0) in 0x655E70. Cancelling an attack action
   (0x649DCA) clears +0x4E0/+0x4E4, special attacks (0x73BF00) and all 50
   attack slots (0x73C0E0): mid-round it loses the round's remaining attacks.
+
+## AoO direction (0.9.16)
+
+- The AoO broadcast 0x655E70 (this = provoker, kept in ebx) loops over the
+  creatures around and, after the visibility / dead / immunity checks, asks
+  `provoker->GetReactionTo(candidate id)` at 0x6560F2 (push [esi+4]; mov ecx,
+  ebx); only 2 (enemy) continues to the AoO. NWN's movement provocation has
+  no direction check, so a creature running toward an enemy provokes it as
+  much as one running away. Faithful redirects that call: a running provoker
+  (animation 4 / 0x56 / 0x57) whose facing doesn't point away from the
+  candidate gets "not an enemy" there. 0.9.15 also showed the round target
+  (+0x2134) is already cleared (0x7F000000) when a hit's damage lands, so the
+  Push retarget checks the attack order (queued action) as well.

@@ -684,6 +684,16 @@ constexpr int kFeatCriticalHitImmunity = 0x380;
 constexpr uint8_t kAttackResultHit = 1;
 constexpr uint8_t kAttackResultCritical = 3;
 
+// D2 (faithful): only moving away provokes. The AoO broadcast 0x655E70
+// (this = the provoker) asks, for each creature around, the provoker's
+// reaction to it — `push [candidate+4]; mov ecx, ebx; call GetReactionTo` at
+// 0x6560F2 — and only an enemy (2) goes on to take the AoO. NWN's movement
+// check (the move action, while the mover runs) provokes from everyone it
+// runs near, also when running toward them; that call is redirected so a
+// candidate the running mover is not moving away from is answered "not an
+// enemy" for this check only.
+constexpr uintptr_t kAooReactionCall = 0x006560F2;
+
 // Two-weapon fighting (D1; RE-NOTES "Two-weapon fighting and attacks of
 // opportunity"):
 //   off-hand attacks  CNWSCombatRound 0x73BF80 (plain ret; one caller,

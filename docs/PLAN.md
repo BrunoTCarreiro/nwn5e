@@ -488,6 +488,11 @@ back toward the attacker) and retargeting never fired. Now the target cannot
 move for the fall (an AI-state effect, as entangle uses), the fall plays even
 without a round pause, and the retarget is a logged scan of the enemies (each
 decision and the round-end check are in nwn5e.log).
+*0.9.16 (owner's third test, 2026-10-19):* retargeting works (logged
+"attacker now attacks the closer", kept at the round end); the slide is
+0.25 s. The "AoO from the push" was the pushed goblin running back: NWN
+provokes from every enemy a runner passes, also when running toward them;
+D2's faithful rule ("only moving away provokes") now holds for that too.
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:
