@@ -23,16 +23,15 @@
 #include "nwmain_1_69.h"
 #include "rules/nwn_conversion.h"
 #include "rules/progression.h"
+#include "rules_loaded.h"
 
 namespace {
 
-using RulesLoaderFn = void(__fastcall*)(void* rules_object, void* edx);
 using SetExperienceFn = void(__fastcall*)(void* stats, void* edx, uint32_t xp, int level_changes);
 using CanLevelUpInClassFn = int(__fastcall*)(void* stats, void* edx, uint32_t nwn_class);
 using StatFn = int(__fastcall*)(void* stats, void* edx);
 using LevelFn = int(__fastcall*)(void* stats, void* edx, int include_negative);
 
-const auto g_rules_last_loader = reinterpret_cast<RulesLoaderFn>(nwmain::kRulesLastLoader);
 const auto g_set_experience = reinterpret_cast<SetExperienceFn>(nwmain::kSetExperience);
 const auto g_get_level = reinterpret_cast<LevelFn>(nwmain::kGetLevel);
 CanLevelUpInClassFn g_can_level_up_in_class = nullptr;
@@ -43,16 +42,14 @@ uint32_t* XpTable(void* rules_object) {
   return reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(rules_object) + nwmain::kRulesXpTable);
 }
 
-// In place of the last loader call of the rules constructor (0x47A6F8) and of
-// ReloadAll (0x47AD4C): the XP table (filled from exptable.2da just before)
-// becomes faithful's.
-void __fastcall AfterRulesLoaded(void* rules_object, void* edx) {
-  g_rules_last_loader(rules_object, edx);
+// Once the rules object has (re)loaded (rules_loaded.h): the XP table, filled
+// from exptable.2da, becomes faithful's.
+void SetFaithfulXpTable(void* rules_object, bool reload) {
   uint32_t* table = XpTable(rules_object);
   const uint32_t nwn_level_2 = table[1];
   for (int i = 0; i < rules::kXpTableSize; ++i) table[i] = rules::FaithfulXpForLevel(i + 1);
-  Log("progression: XP table set to 2024 (level 2 at %u, 5 at %u, 20 at %u; NWN's level 2 was %u)", table[1],
-      table[4], table[19], nwn_level_2);
+  Log("progression: XP table set to 2024%s (level 2 at %u, 5 at %u, 20 at %u; NWN's level 2 was %u)",
+      reload ? " again after a rules reload" : "", table[1], table[4], table[19], nwn_level_2);
 }
 
 // In place of the SetXP command's SetExperience call (0x6FF52D).
@@ -124,16 +121,7 @@ bool RedirectCall(const char* name, uintptr_t site, uintptr_t expected_target, c
 
 void InstallProgressionRules() {
   if (g_config.progression == rules::RuleVariant::kFaithful) {
-    int applied = 0;
-    applied += RedirectCall("progression: 2024 XP table (faithful)", nwmain::kRulesLoadedCall,
-                            nwmain::kRulesLastLoader, reinterpret_cast<void*>(&AfterRulesLoaded))
-                   ? 1
-                   : 0;
-    applied += RedirectCall("progression: 2024 XP table again after ReloadAll (faithful)",
-                            nwmain::kRulesReloadedCall, nwmain::kRulesLastLoader,
-                            reinterpret_cast<void*>(&AfterRulesLoaded))
-                   ? 1
-                   : 0;
+    int applied = OnRulesLoaded(&SetFaithfulXpTable) ? 1 : 0;
     const uint8_t cap_20 = 20;
     applied += PatchBytes("progression: level cap 20, also with HotU (faithful)", nwmain::kLevelCapHotU,
                           &nwmain::kLevelCapHotUByte, &cap_20, 1)
@@ -143,7 +131,7 @@ void InstallProgressionRules() {
                             nwmain::kSetExperience, reinterpret_cast<void*>(&ScriptSetExperience))
                    ? 1
                    : 0;
-    Log("progression: %d of 4 faithful patches applied", applied);
+    Log("progression: %d of 3 faithful changes installed", applied);
   }
   if (g_config.multiclass == rules::RuleVariant::kFaithful) {
     int applied = PatchBytes("multiclass: no XP penalty (faithful)", nwmain::kMulticlassXpPenalty,

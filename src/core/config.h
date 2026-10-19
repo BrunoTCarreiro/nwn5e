@@ -57,6 +57,9 @@ struct Config {
   // CM2: faithful = no multiclass XP penalty, a new class needs 13 in the
   // primary abilities; nwn / off = NWN's (XP penalty, no 13s).
   rules::RuleVariant multiclass = rules::RuleVariant::kFaithful;
+  // CM14: faithful = alignment is descriptive (no class or item alignment
+  // limits; the campaigns still shift and check it); nwn / off = NWN's.
+  rules::RuleVariant alignment = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

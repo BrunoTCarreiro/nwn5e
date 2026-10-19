@@ -470,8 +470,8 @@ read as their first 20 levels in faithful. The XP floor (CM1) raises stored
 XP — the one write, and the reason a character moved back to NWN mode may
 have levels to take.
 
-**CM14. Alignment (proposed after the decision, 2026-10-19; awaiting the
-owner).** 2024 keeps alignment as a description only (character, monster
+**CM14. Alignment (decided by the owner, 2026-10-19: the recommendation,
+option A).** 2024 keeps alignment as a description only (character, monster
 stat blocks); no SRD 5.2 rule reads it — no class requires one, and the
 "alignment" spells and items (Protection from Evil and Good, Holy Avenger)
 work by creature type. NWN uses it for class limits (Paladin lawful good,
@@ -487,6 +487,12 @@ them), item alignment limits ignored, alignment spells and weapon properties
 converted to creature types where they are rewritten (Phase 4 spells, the
 Paladin brief's smite, Phase 8 items); the campaigns keep shifting and
 checking it as story. NWN mode: NWN's.
+*Built 0.9.48 (key `alignment`):* the three class fields cleared once the
+rules load and after every reload (a shared "rules loaded" hook, also used
+by CM1's XP table and later by CM0's overlay); the creation screen's own
+hard-coded limits skipped (it never read the class fields); the item check
+treats every item as having no alignment limit. Not changed: alignment
+shifts and dialog checks; spells and weapon properties (with their phases).
 
 **Build order (proposed).** 1. RE: resource serving, feat-list filtering,
 the ability read point, the has-feat check, the creation budget. 2. CM1 +

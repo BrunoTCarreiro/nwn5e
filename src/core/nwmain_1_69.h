@@ -1323,4 +1323,26 @@ constexpr uintptr_t kGetWisStat = 0x006A1200;
 constexpr uintptr_t kGetChaStat = 0x006A12B0;
 constexpr uintptr_t kGetDexStat = 0x006A1360;
 
+// Phase 3 CM14 (RE-NOTES "Alignment limits").
+constexpr uintptr_t kRulesClassCount = 0xDD;  // uint8: classes.2da rows loaded (the level-up class list's loop, 0x632974)
+// CNWClass alignment limits, read by GetIsAlignmentAllowed 0x53CD80 (ret 8;
+// from CanLevelUpInClass 0x6A8736 and the alignment-shift code 0x699D40..
+// 0x69A583, which also reads the axes byte at 0x69A253 and marks a class slot
+// +0x1B8 "out of alignment"). All zero = every alignment allowed.
+constexpr uintptr_t kClassAlignRestrict = 0x21D;      // uint8 mask of barred alignments (classes.2da AlignRestrict)
+constexpr uintptr_t kClassAlignRestrictType = 0x21E;  // uint8: 1 law-chaos axis, 2 good-evil axis (AlignRstrctType)
+constexpr uintptr_t kClassInvertRestrict = 0x220;     // uint32 (InvertRestrict; Druid)
+// The creation screen's alignment panel (0x52B0B0) ignores those and
+// compares the class with Barbarian / Bard / Monk / Paladin / Druid
+// (0x52B2CD..0x52B4A0, each greying out buttons); no match goes to 0x52B58A.
+constexpr uintptr_t kCreationAlignmentLimits = 0x0052B2CD;
+constexpr uint8_t kCreationAlignmentLimitsBytes[] = {0x3b, 0xc1, 0x0f, 0x84, 0x3a, 0x02, 0x00, 0x00};
+constexpr uint8_t kCreationAlignmentLimitsSkip[] = {0xe9, 0xb8, 0x02, 0x00, 0x00, 0x90, 0x90, 0x90};  // jmp 0x52B58A
+// The item alignment check 0x68EA50 (ecx = creature, item; ret 4; callers
+// 0x67FE65, 0x68E5A6): an item without item property 0x3E (Use Limitation:
+// Alignment Group) or 0x41 (Specific Alignment) returns 1 at 0x68EA94.
+constexpr uintptr_t kItemAlignmentLimit = 0x0068EA84;
+constexpr uint8_t kItemAlignmentLimitBytes[] = {0x75, 0x18};  // jne 0x68EA9E (has 0x3E)
+constexpr uint8_t kItemAlignmentLimitSkip[] = {0xeb, 0x0e};   // jmp 0x68EA94 (usable)
+
 }  // namespace nwmain

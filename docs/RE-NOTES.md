@@ -1019,3 +1019,28 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   base byte is followed by its modifier byte) + the race's adjustment (race
   +0x18 Str, +0x19 Dex) + ability effects (0x65E7D0), at least 3; Dex is 3
   while helpless.
+
+## Alignment limits (decoded 2026-10-19, CM14)
+
+- Classes: CNWClass +0x21D AlignRestrict (uint8 mask: 0x01 neutral, 0x02
+  lawful, 0x04 chaotic, 0x08 good, 0x10 evil — I from the tests on axis
+  values 1..5), +0x21E AlignRstrctType (uint8: 1 law-chaos, 2 good-evil),
+  +0x220 InvertRestrict (uint32). GetIsAlignmentAllowed 0x53CD80 (ret 8)
+  returns 1 when no barred bit matches; with all three zero it always does.
+  Readers: CanLevelUpInClass (0x6A8736) and the alignment-shift code
+  (0x699D40..0x69A583; GetIsAlignmentAllowed 14 times, the axes byte at
+  0x69A253): out of alignment it gives feedback 0x6E and sets the class slot's
+  +0x1B8 to 1 (0x69A243); back in alignment it reads that flag (0x699D7C).
+  CanLevelUpInClass doesn't read +0x1B8. The class count is rules +0xDD
+  (uint8).
+- Creation: the alignment panel 0x52B0B0 compares the chosen class with the
+  class constants at 0x8AC9E0.. (Barbarian, Bard, Monk, Paladin, Druid;
+  0x52B2CD..0x52B4A0), each branch greying out buttons and joining 0x52B58A —
+  where no match goes. Registers used at 0x52B58A ([esp+0x10]) are set
+  before the chain.
+- Items: the alignment check 0x68EA50 (ecx = creature, item; ret 4;
+  callers 0x67FE65, 0x68E5A6 — both server): no item property 0x3E
+  (Alignment Group) and no 0x41 (Specific Alignment) -> 1 (0x68EA94);
+  otherwise Use Magic Device (0x68EDA0, mode 2) and the alignment test.
+- Rules (re)load: CM1's two redirects now run every in-memory edit
+  (src/core/rules_loaded.cpp).
