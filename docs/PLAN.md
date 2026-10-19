@@ -366,6 +366,10 @@ as its score (the observer can see: not blind, in range) but misses, a hider
 within 2 m in front of the observer (ahead of its shoulders) with a clear line
 (no wall faces or placeables, PlanPush's tests) is found; C
 (`alert_creatures_search`) — +0x4BC set counts as searching for the 6 s roll.
+*Owner test 2026-10-19 (0.9.35):* B verified (found at 1.8 m in front; 1.2 m
+behind and 2.2 m in front not). NWN refuses stealth mode in combat, so C only
+matters for a creature already hidden when others fight (a henchman engaging,
+Hide in Plain Sight); not tested. SK3 (locks, traps) waits for an occasion.
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).

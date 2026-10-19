@@ -51,14 +51,16 @@ void IdleTrace(void* creature) {
   if (idle.logged || now - idle.since < 1500) return;
   idle.logged = true;
   if (g_idle_lines >= 100 || !IsPlayerControlled(id)) return;
-  ++g_idle_lines;
+  // Only with an enemy in sight nearby: idle after the last one fell is the
+  // fight ending, not a lost target.
   const uint32_t enemy = engine::NearestSeenEnemy(creature, 5.0f);
   void* enemy_object = enemy == nwmain::kObjectInvalid ? nullptr : engine::GetCreature(enemy);
+  if (!enemy_object) return;
+  ++g_idle_lines;
   void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
   Log("combat: 0x%08X idle in a fight for %.1f s: nearest seen enemy 0x%08X%s (%.1f m); stealth mode %d, detect mode %d; "
       "attack target 0x%08X, attempted 0x%08X, round target 0x%08X",
-      id, (now - idle.since) / 1000.0f, enemy, enemy_object ? "" : " (none within 5 m)",
-      enemy_object ? engine::EdgeDistance(creature, enemy_object) : 0.0f,
+      id, (now - idle.since) / 1000.0f, enemy, "", engine::EdgeDistance(creature, enemy_object),
       Field<uint8_t>(creature, nwmain::kCreatureStealthMode), Field<uint8_t>(creature, nwmain::kCreatureDetectMode),
       Field<uint32_t>(creature, nwmain::kCreatureAttackTarget),
       Field<uint32_t>(creature, nwmain::kCreatureAttemptedAttackTarget),
