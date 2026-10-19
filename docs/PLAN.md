@@ -223,7 +223,14 @@ line in nwn5e.ini picks the default for all of them — `mode=faithful`
 rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
 retargeting, Phase 1b) are the same in both modes unless noted.
 
-## Phase 2 — skills and checks: proposal for the owner (2026-10-19, not decided)
+## Phase 2 — skills and checks: decided by the owner (2026-10-19)
+
+**Decision (owner, 2026-10-19): the recommendations below, as revised.**
+SK3: option (a) (script skill values scaled to the 3e range in faithful; (b)
+if the project moves to EE). SK6: option A (Disarm does nothing in faithful).
+SK5's open choice (no recommendation was given) is taken as the 2024 rule
+in faithful: the hider rolls Stealth once per hide, not every 6 s. Deferred:
+Craft Trap (Phase 3), item use limitations without Use Magic Device (Phase 8).
 
 Saves (C1–C8) and spell DCs (C5) are done; what is left of Phase 2 is skills,
 ability checks and spell attacks. Engine facts: docs/PHASE2-SKILLS-RECON.md.
