@@ -339,7 +339,7 @@ std::unordered_map<uint32_t, AwaitDamage> g_vex_awaiting;   // Vex's mark is wit
 std::unordered_map<uint32_t, AwaitDamage> g_push_awaiting;  // Push moves the target when the hit lands
 constexpr float kPushMetres = 3.0f;  // 10 ft
 constexpr int kPushFallMs = 1200;    // the fall's round pause
-constexpr float kPushSlideSeconds = 0.25f;  // the move, stepped while it falls (owner: shorter than 0.45 s)
+constexpr float kPushSlideSeconds = 0.15f;  // the move, stepped while it falls (owner: 0.45 -> 0.25 -> 0.15 s)
 constexpr DWORD kPushMoveMaxMs = 3000;      // then it is put at the end
 // A pushed creature sliding along its planned line (target id ->).
 struct PushMove {
