@@ -758,7 +758,8 @@ longer Dexterity (2024 Evasion covers Dexterity saves only) — class features.
 Constitution). 0.9.28:* the combat log still read "Dexterity Save vs. Cold" —
 the client names the save from the kind (1/2/3) the server sends, so a save on
 a spell's own ability is now sent as its own kind and shown as "Constitution
-Save" (and Strength / Intelligence / Charisma Save for the others).
+Save" (and Strength / Intelligence / Charisma Save for the others). *Verified
+in game 2026-10-19 ("Weak Goblin : Constitution Save vs. Cold").*
 
 ### Build order
 
