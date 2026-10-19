@@ -60,7 +60,17 @@ struct Profile {
   rules::SkillSet proficient = 0;
   rules::SkillSet expertise = 0;
 };
-std::unordered_map<uint32_t, Profile> g_profiles;  // characters, by object id (the local variables, cached)
+// Characters, by object id: chosen with !skills, or taken from the ranks
+// fingerprinted by `ranks` — creatures are asked for skill values while a
+// game loads, before their ranks are all in (0.9.25 log), so a profile from
+// ranks is worked out again when they change.
+struct CachedProfile {
+  Profile profile;
+  bool chosen = false;
+  uint32_t ranks = 0;
+  bool told = false;
+};
+std::unordered_map<uint32_t, CachedProfile> g_profiles;
 LogOnce g_logged(400);           // other creatures
 LogOnce g_logged_players(1000);  // player characters
 
@@ -154,36 +164,53 @@ std::string Names(rules::SkillSet set) {
   return names.empty() ? "none" : names;
 }
 
-void StoreProfile(void* creature, uint32_t id, const Profile& profile, int how) {
-  engine::SetLocalInt(creature, kVarProficient, static_cast<int>(profile.proficient));
-  engine::SetLocalInt(creature, kVarExpertise, static_cast<int>(profile.expertise));
-  engine::SetLocalInt(creature, kVarSet, how);
-  g_profiles[id] = profile;
+// A fingerprint of the creature's skill ranks (FNV-1a over the rank bytes).
+uint32_t RankFingerprint(void* stats) {
+  const int8_t* ranks = Field<const int8_t*>(stats, nwmain::kStatsSkillRanks);
+  if (!ranks) return 0;
+  uint32_t hash = 2166136261u;
+  for (int row = 0; row < rules::kNwnSkillCount; ++row) hash = (hash ^ static_cast<uint8_t>(ranks[row])) * 16777619u;
+  return hash;
 }
 
-// A character's proficiencies: chosen with !skills (local variables, cached),
-// or else taken from its ranks — worked out again each session, not stored
-// (they follow from the ranks), and told to the player once.
+// !skills: the choice is kept in the creature's local variables (saved with
+// the game).
+void StoreProfile(void* creature, uint32_t id, const Profile& profile) {
+  engine::SetLocalInt(creature, kVarProficient, static_cast<int>(profile.proficient));
+  engine::SetLocalInt(creature, kVarExpertise, static_cast<int>(profile.expertise));
+  engine::SetLocalInt(creature, kVarSet, 1);
+  CachedProfile& cached = g_profiles[id];
+  cached.profile = profile;
+  cached.chosen = true;
+}
+
+// A character's proficiencies: chosen with !skills (its local variables), or
+// else taken from its ranks — worked out again whenever the ranks change
+// (a game still loading; a level-up), never stored; the player is told once.
 Profile CharacterProfile(void* creature, void* stats) {
   const uint32_t id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
-  const auto cached = g_profiles.find(id);
-  if (cached != g_profiles.end()) return cached->second;
-  Profile profile;
-  if (engine::GetLocalInt(creature, kVarSet) == 1) {
-    profile.proficient = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarProficient));
-    profile.expertise = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarExpertise));
-    g_profiles[id] = profile;
-    return profile;
+  CachedProfile& cached = g_profiles[id];
+  if (cached.chosen) return cached.profile;
+  if (engine::GetLocalInt(creature, kVarSet) == 1) {  // chosen (its variables may load after its ranks)
+    cached.profile.proficient = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarProficient));
+    cached.profile.expertise = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarExpertise));
+    cached.chosen = true;
+    return cached.profile;
   }
-  profile = ProfileFromRanks(stats, rules::SkillAllowanceFor(ClassLevelsOf(stats), SpeciesOf(stats)));
-  g_profiles[id] = profile;
-  Log("skills: 0x%08X 2024 proficiencies taken from its ranks: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
-      Names(profile.expertise).c_str());
-  if (IsPlayerControlled(id)) {
-    TellPlayer(id, "nwn5e: your 2024 skills were taken from your ranks - proficient: " + Names(profile.proficient) +
-                       "; Expertise: " + Names(profile.expertise) + ". Change them with !skills.");
+  const uint32_t ranks = RankFingerprint(stats);
+  if (cached.ranks != ranks || ranks == 0) {
+    cached.profile = ProfileFromRanks(stats, rules::SkillAllowanceFor(ClassLevelsOf(stats), SpeciesOf(stats)));
+    cached.ranks = ranks;
   }
-  return profile;
+  if (!cached.told && IsPlayerControlled(id)) {
+    cached.told = true;
+    Log("skills: 0x%08X 2024 proficiencies taken from its ranks: %s; Expertise: %s", id,
+        Names(cached.profile.proficient).c_str(), Names(cached.profile.expertise).c_str());
+    TellPlayer(id, "nwn5e: your 2024 skills were taken from your ranks - proficient: " +
+                       Names(cached.profile.proficient) + "; Expertise: " + Names(cached.profile.expertise) +
+                       ". Change them with !skills.");
+  }
+  return cached.profile;
 }
 
 // What a 2024 skill value is made of, for the log.
@@ -353,7 +380,7 @@ std::vector<std::string> SkillsCommand(void* creature, const std::string& args) 
     profile.proficient = set;
     profile.expertise &= set;
   }
-  StoreProfile(creature, id, profile, 1);
+  StoreProfile(creature, id, profile);
   Log("skills: 0x%08X chose - proficient: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
       Names(profile.expertise).c_str());
   lines.push_back("nwn5e: 2024 skills - proficient: " + Names(profile.proficient) + "; Expertise: " +
