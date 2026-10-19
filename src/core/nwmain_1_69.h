@@ -1280,4 +1280,42 @@ constexpr MediumPatch kFaithfulNwnOnlySkillPatches[] = {
      {0x90, 0xe9, 0xce, 0x00, 0x00, 0x00}},  // jne -> jmp 0x766360
 };
 
+// Phase 3 CM1 / CM2 (RE-NOTES "XP, level cap and multiclassing").
+// The rules object's XP table: entry i = the XP for level i + 1 (41 entries,
+// from exptable.2da in the rules constructor's loop ending 0x47A6CC; the
+// level-up check and the sheet's XP bar read it).
+constexpr uintptr_t kRulesXpTable = 0x1C;
+// The rules constructor's last loader call (ecx = rules object, no stack
+// arguments), after the XP table is filled.
+constexpr uintptr_t kRulesLoadedCall = 0x0047A6F8;
+constexpr uintptr_t kRulesLastLoader = 0x0047E280;
+// CanLevelUp 0x6A8440 (no arguments, ret): the level cap is a local byte, 20,
+// set to 40 when HotU is installed (mov byte [esp+0x13], 0x28 at 0x6A84B7 —
+// its immediate). The 15 HasExpansionPack calls are all server-side.
+constexpr uintptr_t kLevelCapHotU = 0x006A84BB;
+constexpr uint8_t kLevelCapHotUByte = 0x28;
+// SetExperience(xp, bLevelChanges) 0x6A1C90 (ecx = stats, ret 8); the SetXP
+// script command 0x6FF4A0 calls it once, at 0x6FF52D.
+constexpr uintptr_t kSetExperience = 0x006A1C90;
+constexpr uintptr_t kScriptSetXpCall = 0x006FF52D;
+// AddExperience(xp) 0x6A2030 (ret 4): one class skips the penalty block to
+// 0x6A236A (SetExperience(XP + xp, 1)); faithful takes that path always.
+constexpr uintptr_t kMulticlassXpPenalty = 0x006A204F;
+constexpr uint8_t kMulticlassXpPenaltyBytes[] = {0x0f, 0x86, 0x15, 0x03, 0x00, 0x00};  // jbe 0x6A236A
+constexpr uint8_t kMulticlassXpPenaltySkip[] = {0x90, 0xe9, 0x15, 0x03, 0x00, 0x00};   // jmp 0x6A236A
+// CanLevelUpInClass(class) 0x6A8660 (ecx = stats, ret 4): the level-up
+// screen's class list (0x632995), ValidateLevelUp (0x6A7AEF) and
+// LevelUpAutomatic (0x6AA1B8).
+constexpr uintptr_t kCanLevelUpInClass = 0x006A8660;
+constexpr uint8_t kCanLevelUpInClassPrologue[] = {0x83, 0xec, 0x08, 0x53, 0x8b, 0x5c, 0x24, 0x10};
+// Ability scores (ecx = stats, ret; base + racial adjustment + effects, at
+// least 3): GetSTRStat reads base +0x3F8 and race +0x18; GetDEXStat base
+// +0x3FA and race +0x19 (and is 3 while helpless).
+constexpr uintptr_t kGetStrStat = 0x006A0FF0;
+constexpr uintptr_t kGetConStat = 0x006A10A0;
+constexpr uintptr_t kGetIntStat = 0x006A1150;
+constexpr uintptr_t kGetWisStat = 0x006A1200;
+constexpr uintptr_t kGetChaStat = 0x006A12B0;
+constexpr uintptr_t kGetDexStat = 0x006A1360;
+
 }  // namespace nwmain

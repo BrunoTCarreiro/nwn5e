@@ -51,6 +51,12 @@ struct Config {
   // SK8: faithful = Parry, Taunt, Appraise and Use Magic Device do nothing
   // (2024 has no such skills); nwn / off = NWN's.
   rules::RuleVariant nwn_only_skills = rules::RuleVariant::kFaithful;
+  // CM1: faithful = 2024 XP table, level cap 20 (also with HotU), script SetXP
+  // read in NWN's table; nwn / off = NWN's (cap 40 with HotU).
+  rules::RuleVariant progression = rules::RuleVariant::kFaithful;
+  // CM2: faithful = no multiclass XP penalty, a new class needs 13 in the
+  // primary abilities; nwn / off = NWN's (XP penalty, no 13s).
+  rules::RuleVariant multiclass = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

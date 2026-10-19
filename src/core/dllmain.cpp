@@ -32,6 +32,7 @@ void InstallCastingRules();
 void InstallShoveRules();
 void InstallInitiativeRules();
 void InstallNwnOnlySkillRules();
+void InstallProgressionRules();
 void InstallCreatureUpdate();
 void InstallRetargetRules();
 void InstallSheetRules();
@@ -58,7 +59,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.9.45 loaded");
+  Log("nwn5e 0.9.46 loaded");
 #ifdef NWN5E_PRIVATE
   Log("private layer: compiled in (personal use only; never share this DLL)");
 #endif
@@ -91,6 +92,7 @@ void Start(HMODULE self) {
   InstallShoveRules();
   InstallInitiativeRules();
   InstallNwnOnlySkillRules();
+  InstallProgressionRules();
   InstallCreatureUpdate();
   InstallRetargetRules();
   InstallSheetRules();

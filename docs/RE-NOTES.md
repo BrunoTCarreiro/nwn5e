@@ -978,3 +978,40 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   path (0x766673) instead of +2 (0x766376). Scrolls: 279 of 287 stock ones
   carry Use Limitation: Class; x2_pc_umdcheck adds a script check (UMD vs 25 +
   level) when X2_SWITCH_ENABLE_UMD_SCROLLS is set.
+
+## XP, level cap and multiclassing (decoded 2026-10-19, CM1 / CM2)
+
+- XP table: the rules constructor fills rules +0x1C (uint32[41], entry i = XP
+  for level i + 1) from exptable.2da in a loop ending 0x47A6CC, then calls
+  five loaders on the rules object (0x47DDC0, 0x47D880, 0x47C280, 0x47D170,
+  0x47E280 — the last at 0x47A6F8; ecx = rules, no stack arguments) and
+  returns it.
+- CanLevelUp 0x6A8440 (stats, no arguments, ret): associates 3/5/6/7/8 -> 0;
+  for a player's creature the total level must be below a local cap byte —
+  20 (0x6A8496), 40 when HasExpansionPack(2, 1) (0x6A84B7, immediate at
+  0x6A84BB); then below MaxCharLevel (server options +0xB4); then a PC
+  (+0x74) needs XP >= XP[total level] (0x6A8636). All 15 HasExpansionPack
+  calls are server code: the client has no cap of its own.
+- AddExperience 0x6A2030 (ret 4): associates get nothing (0x6A237D); one
+  class -> 0x6A236A: SetExperience(XP + xp, 1); more -> the penalty (favored
+  class from race +0x1F, XPPenalty classes 2+ levels behind, x (1 − 0.2·n),
+  0x6A233A).
+- SetExperience 0x6A1C90 (xp, bLevelChanges; ret 8). The SetXP command
+  0x6FF4A0 calls it once (0x6FF52D); the campaigns' SetXP calls are level-sets
+  (Prelude m0q01a15gendelc1 1,000 and m1q0efentend 3,000; HotU bk_levelup15 /
+  bk_abort_levels 105,000, then the player or bk_auto_level levels up with
+  LevelUpHenchman), "never lose a level" clamps at 500·L·(L−1) (nw_o0_respawn,
+  x0_o0_respawn, x1_chp1_respawn, x2_respawn, q2e_ud_throncr), x2_dm_leveldown
+  (the threshold of level − 1), and costs (x2_inc_craft, x1_act_harper*,
+  x0_i0_deckmany −10,000, negative plot-wizard awards). Positive plot awards
+  use GiveXPToCreature.
+- CanLevelUpInClass 0x6A8660 (stats, class byte; ret 4; prologue 83 ec 08 53
+  8b 5c 24 10): callers 0x632995 (SendServerToPlayerLevelUp_Begin: one BOOL
+  per class for the screen), 0x6A7AEF (ValidateLevelUp), 0x6AA1B8
+  (LevelUpAutomatic).
+- Ability scores: GetSTRStat 0x6A0FF0, GetCONStat 0x6A10A0, GetINTStat
+  0x6A1150, GetWISStat 0x6A1200, GetCHAStat 0x6A12B0, GetDEXStat 0x6A1360
+  (byte-matched; Str and Dex read): base (stats +0x3F8 Str, +0x3FA Dex — each
+  base byte is followed by its modifier byte) + the race's adjustment (race
+  +0x18 Str, +0x19 Dex) + ability effects (0x65E7D0), at least 3; Dex is 3
+  while helpless.

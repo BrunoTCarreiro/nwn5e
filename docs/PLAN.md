@@ -100,7 +100,7 @@ monster AC by CR.
 - Feats: Origin, General (ASI at 4/8/12/16), Fighting Style, Epic Boon (19).
 - Multiclassing prerequisites (13 in primary ability).
 - Hit points: max at 1st level, fixed average or roll per level.
-- Decision brief: "Phase 3 — character model: decisions to make" below
+- Decided: "Phase 3 — character model: decided by the owner" below
   (CM0–CM13); facts in docs/PHASE3-CHARACTER-RECON.md.
 
 ### Phase 4 — Spellcasting
@@ -240,7 +240,10 @@ line in nwn5e.ini picks the default for all of them — `mode=faithful`
 rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
 retargeting, Phase 1b) are the same in both modes unless noted.
 
-## Phase 3 — character model: decisions to make (2026-10-19)
+## Phase 3 — character model: decided by the owner (2026-10-19)
+
+**Decision (owner, 2026-10-19): the recommendations below (CM0–CM13).**
+PHB material goes to the private layer (docs/PRIVATE-LAYER.md).
 
 Engine and data facts: docs/PHASE3-CHARACTER-RECON.md. "2024" = SRD 5.2;
 Player's Handbook / DMG-only material is named as such and, **since the repo
@@ -297,6 +300,21 @@ HotU PC would wait until 195,000 for level 16. XP past 20 does nothing. NWN
 mode: NWN's table and cap 40 (epic levels; proficiency bonus stays +6).
 Consequences: switching a saved character between modes changes how many
 levels its XP is worth (its levels never drop).
+*Built 0.9.46 (key `progression`):* the XP table is written once the rules
+object has loaded exptable.2da; the cap is CanLevelUp's own byte (20, raised
+to 40 with HotU — now 20). The XP floor is done where scripts set XP (the
+SetXP command; engine awards only add — positive plot awards go through
+GiveXPToCreature): HotU sets XP 105,000 and then the player levels up (or
+bk_auto_level does), so the *value* must become 165,000 — and the respawn
+scripts clamp with NWN's formula (500·L·(L−1)), which on the 2024 table
+would give XP at low levels and take levels at high ones. Rule
+(rules::ScriptSetXp2024): NWN's threshold for another level sets that level
+(HotU, Prelude's 1,000 / 3,000, x2_dm_leveldown); NWN's threshold for the
+current level never raises XP nor drops the level (respawn, q2e_ud_throncr);
+anything else (crafting and Harper costs, the Deck's −10,000, a negative plot
+award) is kept but never below the current level. An XP cost landing exactly
+on an NWN threshold would be read as a level-set (rare: exact multiples of
+500·L·(L−1)).
 
 **CM2. Multiclassing.** 2024: 13 in the primary ability of every current
 class and the new one (Barbarian Str; Bard Cha; Cleric Wis; Druid Wis;
@@ -310,6 +328,13 @@ the validator, so the screen greys the class out), XP penalty off (class
 penalty flag 0 in memory), later-class armour / weapon proficiencies limited
 to 2024's multiclass lists, 3 classes kept (the client's limit). NWN mode:
 NWN's (the penalty is NWN's multiclass brake; no 13 rule).
+*Built 0.9.46 (key `multiclass`):* no XP penalty (AddExperience always takes
+its one-class path); the 13s in CanLevelUpInClass, with the engine's ability
+scores (base + racial adjustment + effects — CM4 will change what they hold),
+prestige classes counted as their parent class (decision 10: a Fighter taking
+Weapon Master is not a new class). It applies to henchmen's automatic
+level-ups too (decision 11). Later-class proficiencies wait for the feature
+mask (CM9).
 
 **CM3. Hit points (open decision 4).** 2024: level 1 = the die's maximum +
 Con; each later level = roll or fixed average (d6 4, d8 5, d10 6, d12 7) +
@@ -442,6 +467,24 @@ ASIs already earned, `!skills` (built). Characters above 20 (HotU saves) are
 read as their first 20 levels in faithful. The XP floor (CM1) raises stored
 XP — the one write, and the reason a character moved back to NWN mode may
 have levels to take.
+
+**CM14. Alignment (proposed after the decision, 2026-10-19; awaiting the
+owner).** 2024 keeps alignment as a description only (character, monster
+stat blocks); no SRD 5.2 rule reads it — no class requires one, and the
+"alignment" spells and items (Protection from Evil and Good, Holy Avenger)
+work by creature type. NWN uses it for class limits (Paladin lawful good,
+Monk lawful, Barbarian / Bard non-lawful, Druid neutral, Blackguard /
+Assassin evil; a paladin who changes alignment can't take paladin levels —
+the creation screen limits alignments by class too), item "Use Limitation:
+Alignment", spells and weapon properties (Smite Evil, Holy / Unholy /
+Axiomatic / Anarchic, Protection from Alignment, Holy Word, Blasphemy), and
+the campaigns shift it in many dialogs and check it in some.
+Recommendation, faithful: alignment is descriptive — class limits cleared in
+memory (the CM0 overlay; the creation screen and CanLevelUpInClass both read
+them), item alignment limits ignored, alignment spells and weapon properties
+converted to creature types where they are rewritten (Phase 4 spells, the
+Paladin brief's smite, Phase 8 items); the campaigns keep shifting and
+checking it as story. NWN mode: NWN's.
 
 **Build order (proposed).** 1. RE: resource serving, feat-list filtering,
 the ability read point, the has-feat check, the creation budget. 2. CM1 +
