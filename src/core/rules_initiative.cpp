@@ -13,6 +13,7 @@
 
 #include <string>
 
+#include "condition_effects.h"
 #include "config.h"
 #include "creature.h"
 #include "hooks.h"
@@ -70,13 +71,12 @@ int __stdcall InitiativeD20(void* creature) {
   if (!rules_object) return 10;
   const bool invisible = creature && Invisible(creature);
   const bool hidden = creature && !invisible && HiddenByStealth(creature);
+  const std::string worse = creature ? CheckDisadvantage(creature) : std::string();  // SK11
+  const int advantage = invisible || hidden ? 1 : 0;
+  const int disadvantage = worse.empty() ? 0 : 1;
   const int first = D20(rules_object);
-  int kept = first;
-  int second = 0;
-  if (invisible || hidden) {
-    second = D20(rules_object);
-    if (second > kept) kept = second;
-  }
+  const int second = advantage || disadvantage ? D20(rules_object) : 0;
+  int kept = rules::KeptCheckD20(first, second, advantage, disadvantage);
   void* stats = creature ? Field<void*>(creature, nwmain::kCreatureStats) : nullptr;
   int luck = 0;
   if (kept == 1 && stats && Field<uint16_t>(stats, nwmain::kStatsRace) == nwmain::kRaceHalfling) {
@@ -86,9 +86,12 @@ int __stdcall InitiativeD20(void* creature) {
   const uint32_t id = creature ? Field<uint32_t>(creature, nwmain::kCreatureObjectId) : nwmain::kObjectInvalid;
   if (g_config.log_attacks && (second || luck) && g_roll_lines < 200 && IsPlayerControlled(id)) {
     ++g_roll_lines;
-    Log("initiative: 0x%08X d20 %d%s%s -> %d%s", id, first, second ? " / " : "",
-        second ? std::to_string(second).c_str() : "", kept,
-        luck ? " (Halfling Luck rerolled a 1)" : invisible ? " (advantage: invisible)" : hidden ? " (advantage: hidden)" : "");
+    std::string why = invisible ? "advantage: invisible" : hidden ? "advantage: hidden" : "";
+    if (disadvantage) why += (why.empty() ? "disadvantage: " : "; disadvantage: ") + worse;
+    if (advantage && disadvantage) why += " - they cancel";
+    if (luck) why += why.empty() ? "Halfling Luck rerolled a 1" : "; Halfling Luck rerolled a 1";
+    Log("initiative: 0x%08X d20 %d%s%s -> %d (%s)", id, first, second ? " / " : "",
+        second ? std::to_string(second).c_str() : "", kept, why.c_str());
   }
   return kept;
 }

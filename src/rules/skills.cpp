@@ -352,6 +352,13 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
 
 int PerceptionDie(bool searching, int d20) { return searching ? d20 : 10; }
 
+int PassiveCheckBase(bool disadvantage) { return disadvantage ? 5 : 10; }
+
+int KeptCheckD20(int first, int second, int advantage, int disadvantage) {
+  if (second == 0 || (advantage > 0) == (disadvantage > 0)) return first;
+  return advantage > 0 ? (first > second ? first : second) : (first < second ? first : second);
+}
+
 int InitiativeModifier2024(int dexterity_modifier, int proficiency_bonus, bool alert) {
   return dexterity_modifier + (alert ? proficiency_bonus : 0);
 }

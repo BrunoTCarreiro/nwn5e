@@ -36,6 +36,10 @@ struct ConditionSave {
 };
 ConditionSave ConditionsForSave(void* creature, rules::Ability ability);
 
+// SK11 (faithful): why a creature has disadvantage on ability checks (poisoned;
+// frightened with its fear's source in sight) — "" when it has none.
+std::string CheckDisadvantage(void* creature);
+
 // CN2 (faithful): after ResolveAttackRoll, a hit on a paralysed or sleeping
 // creature from within 5 ft becomes a critical hit (crit immunity respected).
 void ConditionsAfterAttackRoll(void* attacker, void* target_object);

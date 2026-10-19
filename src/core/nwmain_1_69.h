@@ -1243,4 +1243,12 @@ constexpr uint8_t kInitiativeFeatBonusesBytes[] = {0x68, 0xf1, 0x02, 0x00, 0x00,
 constexpr uint8_t kInitiativeFeatBonusesSkip[] = {0x89, 0x44, 0x24, 0x10,         // mov [esp+0x10], eax
                                                   0xe9, 0x67, 0x00, 0x00, 0x00};  // jmp 0x655BBC
 
+// SK11: conditions on checks. Deafness is effect type 21 (OnApplyDeaf
+// 0x66D770); GetIsSkillSuccessful's d20 is RollDice(1, 20) at 0x70CD73.
+constexpr uint16_t kEffectTypeDeaf = 21;
+constexpr int kSkillListen = 6;
+constexpr int kSkillSearch = 14;
+constexpr int kSkillSpot = 17;
+constexpr uintptr_t kSkillCheckD20Call = 0x0070CD73;
+
 }  // namespace nwmain

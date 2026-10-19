@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "condition_effects.h"
 #include "config.h"
 #include "creature.h"
 #include "engine_effects.h"
@@ -69,6 +70,19 @@ bool LogSlot() {
 int D20() {
   void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
   return rules_object ? (g_roll_dice(rules_object, nullptr, 1, 20) & 0xFF) : 10;
+}
+
+using GetBlindFn = int(__fastcall*)(void* creature, void* edx);
+const auto g_get_blind = reinterpret_cast<GetBlindFn>(nwmain::kGetBlind);
+
+// SK11 (faithful conditions): a deafened creature fails checks that need
+// hearing, a blinded one those that need sight.
+bool Deafened(const void* creature) {
+  return g_config.conditions == rules::RuleVariant::kFaithful &&
+         engine::HasEffectType(creature, nwmain::kEffectTypeDeaf);
+}
+bool Blinded(void* creature) {
+  return g_config.conditions == rules::RuleVariant::kFaithful && g_get_blind(creature, nullptr) != 0;
 }
 
 void RollStealth(void* creature, const char* when) {
@@ -127,7 +141,11 @@ __declspec(naked) void StealthReadStub() {
 // Search's die (SK5 for traps): a d20 when the searcher searches (detect
 // mode), else passive Perception's 10.
 int __stdcall SearchDie(void* searcher) {
-  return rules::PerceptionDie(Field<uint8_t>(searcher, nwmain::kCreatureDetectMode) != 0, D20());
+  if (Blinded(searcher)) return 0;  // SK11: finding traps needs sight
+  const bool worse = !CheckDisadvantage(searcher).empty();
+  if (Field<uint8_t>(searcher, nwmain::kCreatureDetectMode) == 0) return rules::PassiveCheckBase(worse);
+  const int first = D20();
+  return rules::KeptCheckD20(first, worse ? D20() : 0, 0, worse ? 1 : 0);
 }
 
 // Called in place of Search's RollDice(1, 10 / 20) (ecx = rules object, two
@@ -189,7 +207,14 @@ void __stdcall PerceptionRolls(void* creature) {
   // combat searches too (SK5 C).
   const bool searching = Field<uint8_t>(creature, nwmain::kCreatureDetectMode) != 0 ||
                          (g_config.alert_creatures_search && Field<int32_t>(creature, nwmain::kCreatureInCombat) != 0);
-  const int die = rules::PerceptionDie(searching, searching ? D20() : 0);
+  // SK11: poisoned or frightened — disadvantage: the lower of two d20s when
+  // searching, passive 5 instead of 10.
+  const bool worse = !CheckDisadvantage(creature).empty();
+  int die = rules::PassiveCheckBase(worse);
+  if (searching) {
+    const int first = D20();
+    die = rules::KeptCheckD20(first, worse ? D20() : 0, 0, worse ? 1 : 0);
+  }
   SetField<uint8_t>(creature, nwmain::kCreatureSpotRoll, static_cast<uint8_t>(die));
   SetField<uint8_t>(creature, nwmain::kCreatureListenRoll, static_cast<uint8_t>(die));
 }
@@ -254,6 +279,9 @@ int Detection(DetectionFn original, const char* sense, void* observer, void* edx
   g_last_score = kNoScore;
   int result = original(observer, edx, target, flag);
   const int score = g_last_score;
+  // SK11: hearing needs ears, sight needs eyes.
+  if (result && sense[0] == 'L' && Deafened(observer)) result = 0;
+  if (result && sense[0] == 'S' && Blinded(observer)) result = 0;
   if (!target || Field<uint8_t>(target, nwmain::kCreatureStealthMode) != 1) return result;
   char up_close[64] = "";
   float metres = 0.0f;

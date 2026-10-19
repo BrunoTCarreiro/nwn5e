@@ -148,3 +148,14 @@ TEST(InitiativeIs2024) {
   CHECK_EQ(InitiativeModifier2024(2, 2, true), 4);
   CHECK_EQ(InitiativeModifier2024(-1, 5, true), 4);
 }
+
+// SK11. Breaks caught: a passive check with disadvantage left at 10 (2024: -5);
+// advantage and disadvantage not cancelling; the wrong die kept.
+TEST(ChecksWithConditions) {
+  CHECK_EQ(PassiveCheckBase(false), 10);
+  CHECK_EQ(PassiveCheckBase(true), 5);
+  CHECK_EQ(KeptCheckD20(7, 15, 0, 1), 7);   // disadvantage: the lower
+  CHECK_EQ(KeptCheckD20(7, 15, 1, 0), 15);  // advantage: the higher
+  CHECK_EQ(KeptCheckD20(7, 15, 1, 1), 7);   // both: they cancel, the first die
+  CHECK_EQ(KeptCheckD20(12, 0, 0, 1), 12);  // one die rolled
+}

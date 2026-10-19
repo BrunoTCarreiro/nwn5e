@@ -25,7 +25,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+
 #include "config.h"
+#include "creature.h"
+#include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
@@ -264,4 +268,74 @@ void InstallSkillDcRules() {
   apply(nwmain::kNoRogueTrapPatches, sizeof(nwmain::kNoRogueTrapPatches) / sizeof(nwmain::kNoRogueTrapPatches[0]));
   Log("skills: %d of %d patches applied (no take 20, no trap synergy, no Rogue-only traps)", rules_applied,
       rules_count);
+  void InstallSkillCheckConditions();
+  InstallSkillCheckConditions();
+}
+
+// SK11 (faithful): the d20 of a script's GetIsSkillSuccessful (0x70CD73) —
+// disadvantage when the creature is poisoned or frightened; a deafened one
+// listening or a blinded one spotting / searching rolls the lowest die.
+#include "condition_effects.h"
+using GetBlindForCheckFn = int(__fastcall*)(void* creature, void* edx);
+using RollDiceForCheckFn = int(__fastcall*)(void* rules_object, void* edx, int count, int sides);
+int g_check_lines = 0;
+
+int __stdcall SkillCheckD20(void* creature, int skill) {
+  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+  const auto roll = reinterpret_cast<RollDiceForCheckFn>(nwmain::kRollDice);
+  if (!rules_object) return 10;
+  const int first = roll(rules_object, nullptr, 1, 20) & 0xFFFF;
+  if (!creature || g_config.conditions != rules::RuleVariant::kFaithful) return first;
+  const bool blind = reinterpret_cast<GetBlindForCheckFn>(nwmain::kGetBlind)(creature, nullptr) != 0;
+  const bool deaf = engine::HasEffectType(creature, nwmain::kEffectTypeDeaf);
+  const char* sense = (skill == nwmain::kSkillListen && deaf) ? "deafened"
+                      : ((skill == nwmain::kSkillSpot || skill == nwmain::kSkillSearch) && blind) ? "blinded"
+                                                                                                  : nullptr;
+  const std::string worse = CheckDisadvantage(creature);
+  int kept = first;
+  int second = 0;
+  if (sense) {
+    kept = 1;
+  } else if (!worse.empty()) {
+    second = roll(rules_object, nullptr, 1, 20) & 0xFFFF;
+    kept = rules::KeptCheckD20(first, second, 0, 1);
+  }
+  if ((sense || second) && g_config.log_attacks && g_check_lines < 200) {
+    ++g_check_lines;
+    Log("skill check: 0x%08X skill %d: d20 %d%s%s -> %d (%s)", Field<uint32_t>(creature, nwmain::kCreatureObjectId),
+        skill, first, second ? " / " : "", second ? std::to_string(second).c_str() : "", kept,
+        sense ? (std::string(sense) + ": fails what needs that sense").c_str() : ("disadvantage: " + worse).c_str());
+  }
+  return kept;
+}
+
+// In place of RollDice(1, 20) at 0x70CD73: the creature is at [esp+0x24] and
+// the skill at [esp+0x1C] on entry (the handler's [esp+0x14] / [esp+0x0C],
+// + ebp pushed, + the two arguments, + our return address).
+__declspec(naked) void SkillCheckD20Stub() {
+  __asm {
+    push dword ptr [esp + 0x1C]
+    push dword ptr [esp + 0x28]
+    call SkillCheckD20
+    ret 8
+  }
+}
+
+void InstallSkillCheckConditions() {
+  if (g_config.skills != rules::RuleVariant::kFaithful || g_config.conditions != rules::RuleVariant::kFaithful) return;
+  const auto* code = reinterpret_cast<const uint8_t*>(nwmain::kSkillCheckD20Call);
+  int32_t rel = 0;
+  memcpy(&rel, code + 1, sizeof(rel));
+  if (code[0] != 0xe8 || nwmain::kSkillCheckD20Call + nwmain::kCallLength + rel != nwmain::kRollDice) {
+    Log("SKIP skill checks: 0x%08X is not the mapped RollDice call", nwmain::kSkillCheckD20Call);
+    return;
+  }
+  uint8_t expected[5];
+  memcpy(expected, code, sizeof(expected));
+  uint8_t call[5] = {0xe8};
+  const int32_t new_rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&SkillCheckD20Stub) -
+                                               (nwmain::kSkillCheckD20Call + nwmain::kCallLength));
+  memcpy(call + 1, &new_rel, sizeof(new_rel));
+  PatchBytes("skill checks: GetIsSkillSuccessful d20 with conditions (faithful)", nwmain::kSkillCheckD20Call, expected,
+             call, sizeof(call));
 }

@@ -263,3 +263,13 @@ void InstallConditionRules() {
     Log("conditions: concealment keeps NWN's miss chance (advantage_disadvantage=0)");
   }
 }
+
+// SK11 (faithful): why a creature has disadvantage on ability checks — "" when
+// it has none: poisoned, or frightened while it can see the source of its fear.
+std::string CheckDisadvantage(void* creature) {
+  if (!creature || g_config.conditions != rules::RuleVariant::kFaithful) return std::string();
+  if (ReadConditions(creature).poisoned) return "poisoned";
+  const uint32_t source = FearSource(creature);
+  if (source != nwmain::kObjectInvalid && engine::Sees(creature, source)) return "frightened";
+  return std::string();
+}

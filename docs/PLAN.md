@@ -511,6 +511,16 @@ need hearing (Listen)** and blinded those that need sight (SK2) (rev.: was
 missing); exhaustion later on d20 tests. Recommendation: all, once the check
 rolls are hooked (rev.: the d20 sites of SK3 / SK5 / SK9, not SK2's rank
 hook).
+*Built 0.9.43 (with `conditions` faithful):* initiative (disadvantage cancels
+the hidden / invisible advantage), perception (a searching observer's d20
+with disadvantage, a passive one 10 - 5 = 5; a deafened one hears nothing, a
+blinded one sees nothing), Search for traps (the same; blinded: the lowest
+die) and the scripts' GetIsSkillSuccessful (disadvantage; Listen while
+deafened, Spot / Search while blinded roll the lowest die — the d20 can't
+force a failure, the rank still counts). Poisoned = an NWN poison effect;
+frightened = nwn5e's fear with its source in sight. Not yet: the engine's own
+actions (locks, traps, Heal kits, Animal Empathy, Tumble, Pick Pocket) — their
+d20s are CRT rand calls without the creature at hand; a later pass.
 
 Build order if accepted: SK2 + SK1 (GetSkillRank hook, `!skills`, proficiency
 storage, labels) → SK3 (DC conversion at GetIsSkillSuccessful and the engine

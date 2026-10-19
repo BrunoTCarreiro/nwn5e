@@ -107,6 +107,13 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
 // searches (detect mode: the Search action), else 10 (passive Perception).
 int PerceptionDie(bool searching, int d20);
 
+// SK11 (faithful): a passive check's base — 10, or 5 with disadvantage (2024:
+// disadvantage subtracts 5 from a passive score).
+int PassiveCheckBase(bool disadvantage);
+// SK11: the d20 kept from a check's dice — `second` is 0 when only one was
+// rolled; advantage and disadvantage cancel.
+int KeptCheckD20(int first, int second, int advantage, int disadvantage);
+
 // SK9 (faithful): the 2024 initiative modifier — Dexterity, + the proficiency
 // bonus with Alert (NWN's Improved Initiative).
 int InitiativeModifier2024(int dexterity_modifier, int proficiency_bonus, bool alert);
