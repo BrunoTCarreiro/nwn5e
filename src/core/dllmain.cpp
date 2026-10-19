@@ -35,6 +35,9 @@ void InstallNwnOnlySkillRules();
 void InstallCreatureUpdate();
 void InstallRetargetRules();
 void InstallSheetRules();
+#ifdef NWN5E_PRIVATE
+void InstallPrivateRules();  // private/src (docs/PRIVATE-LAYER.md)
+#endif
 
 namespace {
 
@@ -56,6 +59,9 @@ void Start(HMODULE self) {
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
   Log("nwn5e 0.9.45 loaded");
+#ifdef NWN5E_PRIVATE
+  Log("private layer: compiled in (personal use only; never share this DLL)");
+#endif
   if (!HostIsMappedBuild()) {
     Log("host is not the mapped nwmain.exe 1.69 build; no hooks installed");
     return;
@@ -88,6 +94,9 @@ void Start(HMODULE self) {
   InstallCreatureUpdate();
   InstallRetargetRules();
   InstallSheetRules();
+#ifdef NWN5E_PRIVATE
+  InstallPrivateRules();
+#endif
   Log(HooksCommit() ? "hooks active" : "hooks NOT active");
 }
 

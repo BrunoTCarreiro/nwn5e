@@ -155,4 +155,6 @@ Portable, under `X:\tools` (Node 24.21, Ghidra 12.1.4, REA 6.5.0). Use
 ## Legal
 
 Personal-use modification of a legally owned copy. No game code or data is
-distributed. 2024 rules text comes from SRD 5.2 (CC-BY-4.0); see PLAN.md.
+distributed. 2024 rules text comes from SRD 5.2 (CC-BY-4.0); see PLAN.md. This
+repo implements the SRD only; non-SRD material lives in a private layer that is
+not published (docs/PRIVATE-LAYER.md).

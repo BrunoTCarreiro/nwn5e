@@ -7,8 +7,15 @@ call "%VCVARS%" >nul || exit /b 1
 cd /d "%~dp0"
 if not exist build\obj\rules mkdir build\obj\rules
 
-cl /nologo /O2 /MT /W3 /EHsc /std:c++17 /Isrc /Itests /Fobuild\obj\rules\ ^
-  tests\rules_main.cpp tests\rules\*.cpp src\rules\*.cpp ^
+rem The private layer's rules and tests (docs/PRIVATE-LAYER.md), when present.
+set PRIVATE_SRC=
+set PRIVATE_DEF=
+if exist private\rules\*.cpp set PRIVATE_SRC=private\rules\*.cpp
+if exist private\tests\*.cpp set PRIVATE_SRC=%PRIVATE_SRC% private\tests\*.cpp
+if defined PRIVATE_SRC set PRIVATE_DEF=/DNWN5E_PRIVATE /Iprivate
+
+cl /nologo /O2 /MT /W3 /EHsc /std:c++17 /Isrc /Itests %PRIVATE_DEF% /Fobuild\obj\rules\ ^
+  tests\rules_main.cpp tests\rules\*.cpp src\rules\*.cpp %PRIVATE_SRC% ^
   /Fe:build\rules_test.exe >build\obj\rules\compile.log || goto :compile_failed
 
 build\rules_test.exe

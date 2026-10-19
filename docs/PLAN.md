@@ -6,6 +6,13 @@ Rules: **2024 rules as published in SRD 5.2** (CC-BY-4.0). Non-SRD 2024 material
 (extra subclasses, backgrounds, feats) is personal-use only and must not ship in
 anything shared.
 
+**Public ruleset = SRD 5.2 only (owner, 2026-10-19).** Player's Handbook
+material is added and tested reworded, in the **private layer**
+(docs/PRIVATE-LAYER.md): a git-ignored `private/` folder with its own repo,
+compiled in only on the owner's machine. This repo holds the mechanism, never
+the content, until PHB material is released under an open license (OGL /
+CC); then it may move here.
+
 Goal: a **full conversion** — the game plays by 2024 rules end to end, not a
 "5e-flavoured" 3e.
 
@@ -266,7 +273,8 @@ decoded offsets); (B) **served rows**: new rows (Warlock, SRD feats,
 species) come from nwn5e's own 2da files that the DLL hands the resource
 manager (vanilla launches stay vanilla), present in both modes and hidden by
 the overlay in the mode that lacks them; names and descriptions through the
-label hook (private string ids, as the saves' labels). RE needed for B (the
+label hook (private string ids, as the saves' labels); the private layer
+adds its own rows the same way. RE needed for B (the
 resource manager) and for how the level-up screen filters its feat lists.
 1.69-only: the offsets and the serving hook; the rows and rules port.
 
@@ -377,7 +385,8 @@ feats to everyone. Recommendation, faithful: **the 17 only**; an NWN feat
 that is one of them is reused under the 2024 name (Improved Initiative →
 Alert, built in SK9), the rest do nothing and are hidden. The PHB
 counterparts (Tough, Mobile, Great Weapon Master, War Caster, Dual Wielder,
-Sharpshooter, Mounted Combatant) are PHB-only: not in the public repo.
+Sharpshooter, Mounted Combatant) are PHB-only: not in the public repo — the
+private layer can add them reworded (owner, 2026-10-19).
 Build-able now: the Fighting Styles, Savage Attacker, Alert, Skilled;
 Grappler waits for grappling, Magic Initiate / Spell Recall for Phase 4.
 NWN mode: NWN's feats. Consequences: faithful builds choose through class
