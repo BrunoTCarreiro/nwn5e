@@ -118,6 +118,10 @@ monster AC by CR.
 - Character sheet: six saves, proficiency bonus, spell DC/attack.
 - Spellbook: prepared list + slots instead of memorised slots.
 - Combat log strings (custom `.tlk`): advantage/disadvantage, saves, mastery.
+- Recon 2026-10-19: docs/UI-RECON.md — panels are models + `.gui` layouts +
+  hardcoded client code; every sheet number is a server value; routes A–F
+  (2da, tlk, art, NWScript, server hooks, client hooks) with EE portability,
+  and the cheapest route per item above.
 
 ### Phase 8 — Creatures and campaign balance
 - Bounded accuracy breaks against 3e stat blocks (HotU creatures with AC 30+).
