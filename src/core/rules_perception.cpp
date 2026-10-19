@@ -220,6 +220,8 @@ bool rules_still(void* creature) {
 // not blind, in range) finds a hider in front of it within kUpCloseMetres
 // when nothing stands between them.
 constexpr float kUpCloseMetres = 2.0f;
+constexpr float kUpCloseLogMetres = 3.0f;
+std::unordered_map<uint64_t, int> g_up_close_logged;  // (observer, hider) -> last logged outcome
 bool FoundUpClose(void* observer, void* hider, float* metres) {
   const float* at = reinterpret_cast<const float*>(static_cast<const uint8_t*>(observer) + nwmain::kObjectPosition);
   const float* to = reinterpret_cast<const float*>(static_cast<const uint8_t*>(hider) + nwmain::kObjectPosition);
@@ -227,8 +229,23 @@ bool FoundUpClose(void* observer, void* hider, float* metres) {
   const float dx = to[0] - at[0];
   const float dy = to[1] - at[1];
   *metres = sqrtf(dx * dx + dy * dy);
-  if (!rules::InFrontWithin(dx, dy, facing[0], facing[1], kUpCloseMetres)) return false;
-  return engine::ClearLineBetween(observer, hider);
+  const bool near = *metres <= kUpCloseMetres;
+  const bool in_front = facing[0] * dx + facing[1] * dy > 0.0f;
+  const bool clear = near && in_front && engine::ClearLineBetween(observer, hider);
+  // Test log (0.9.34): each change of outcome within 3 m for a player's pair.
+  if (g_config.log_attacks && *metres <= kUpCloseLogMetres &&
+      (IsPlayerControlled(IdOf(hider)) || IsPlayerControlled(IdOf(observer)))) {
+    const int outcome = (near ? 1 : 0) | (in_front ? 2 : 0) | (clear ? 4 : 0);
+    const uint64_t key = static_cast<uint64_t>(IdOf(observer)) << 32 | IdOf(hider);
+    const auto it = g_up_close_logged.find(key);
+    if ((it == g_up_close_logged.end() || it->second != outcome) && LogSlot()) {
+      g_up_close_logged[key] = outcome;
+      Log("perception: up close 0x%08X -> 0x%08X: %.1f m, %s, %s", IdOf(observer), IdOf(hider), *metres,
+          in_front ? "in front" : "behind / beside",
+          !near || !in_front ? "line not checked" : clear ? "clear line - found" : "line blocked");
+    }
+  }
+  return near && in_front && clear && rules::InFrontWithin(dx, dy, facing[0], facing[1], kUpCloseMetres);
 }
 
 // Logs when an observer starts or stops noticing a hiding creature, if either
