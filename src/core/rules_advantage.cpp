@@ -304,3 +304,33 @@ void InstallAdvantageRules() {
                sizeof(nwmain::kResolveAttackRollPrologue), reinterpret_cast<void*>(&ResolveAttackRoll),
                reinterpret_cast<void**>(&g_resolve_attack_roll)});
 }
+
+// SK10 (rules_spell_attack.cpp): the d20 of a touch attack, with the roll mode
+// an attack would have (NWN's situational terms as advantage / disadvantage —
+// the touch bonus never had them, so nothing is taken out —, the 2024
+// close-combat check for ranged, conditions) and Halfling Luck.
+int RollSpellAttackD20(void* caster, void* target, bool ranged) {
+  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+  const PendingAttack outer = g_pending;
+  g_pending = PendingAttack();
+  void* stats = caster ? Field<void*>(caster, nwmain::kCreatureStats) : nullptr;
+  if (caster && target && stats && g_config.advantage_disadvantage) {
+    g_pending.terms = ReadNwnTerms(caster, target, ranged);
+    g_pending.nwn_total = 0;
+    g_pending.point_blank_shot = HasFeat(caster, nwmain::kFeatPointBlankShot);
+    g_pending.threats = ranged ? CountCloseCombatThreats(caster) : 0;
+    const ConditionRollSources conditions = ConditionAttackRollSources(caster, target, ranged);
+    g_pending.conditions = conditions.note;
+    g_pending.mode = rules::SituationalRollMode(
+        g_pending.terms, rules::RangedCloseCombat(ranged, g_pending.point_blank_shot, g_pending.threats),
+        conditions.advantage, conditions.disadvantage);
+    g_pending.attacker_stats = stats;
+    g_pending.target = target;
+    g_pending.attacker_id = Field<uint32_t>(caster, nwmain::kCreatureObjectId);
+    g_pending.target_id = Field<uint32_t>(target, nwmain::kCreatureObjectId);
+    g_pending.active = true;
+  }
+  const int d20 = rules_object ? RollAttackD20(rules_object, nullptr, 1, 20) & 0xFFFF : 10;
+  g_pending = outer;
+  return d20;
+}

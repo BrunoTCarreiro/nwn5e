@@ -33,6 +33,10 @@ struct Config {
   // passive Perception (10 + modifier) unless searching, no size / in-combat /
   // Favored Enemy terms; nwn / off = NWN's.
   rules::RuleVariant perception = rules::RuleVariant::kFaithful;
+  // SK10: spell attacks (touch attacks). faithful = PB + casting ability
+  // against full AC, advantage / disadvantage, a natural 20 crits without
+  // confirmation; nwn / off = NWN's.
+  rules::RuleVariant spell_attacks = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

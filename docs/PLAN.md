@@ -469,6 +469,17 @@ doubling everything — "dice only" comes with the Phase 4 spell rewrite);
 against full AC (2024 has no touch AC). NWN mode: NWN's (with the global
 attack conversion). Consequences: rays and touch spells hit by the caster's
 casting ability; armoured targets become harder to hit with rays (full AC).
+*Built 0.9.37 (key `spell_attacks`):* the handler 0x6F1170's bonus calls
+return PB + the casting modifier of the slot / item the spell is cast from (as
+C5 reads it; Charisma for innate abilities; a scroll's attack bonus, DC - 8,
+for items) + the touch-attack effect bonuses (type 6, as the engine asks);
+full AC; the d20 with the attack roll mode (situational terms, close combat,
+conditions, Halfling Luck); a natural 20 crits without confirmation. Only a
+creature caster on a creature (traps / placeables keep NWN's bare d20). In
+1.69 the wizard rays (Ray of Frost, ...) make no touch attack at all; the
+touch attacks are Ghoul / Vampiric Touch, Harm, Slay Living, Heal / Mass Heal
+and Lay on Hands on undead, monster Bolt abilities, mephit breath, beholder
+rays and Arcane Archer arrows (59 scripts).
 
 **SK11. Conditions on checks** (completes CN4 / CN5 / CN8): poisoned and
 frightened give disadvantage on ability checks; **deafened fails checks that

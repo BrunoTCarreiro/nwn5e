@@ -1157,4 +1157,24 @@ constexpr uintptr_t kListenScoreSite = 0x00653731;
 constexpr uintptr_t kSpotScoreSite = 0x00653CB2;
 constexpr uint8_t kScoreSiteBytes[] = {0x8b, 0xb6, 0x64, 0x0c, 0x00, 0x00};
 
+// SK10: TouchAttackMelee / TouchAttackRanged (commands 146 = 0x92 / 147)
+// share the handler 0x6F1170 (RE-NOTES "Touch attacks"). Creature caster on a
+// creature target: bonus ebx = GetMeleeAttackBonus(0, 1, 1) at 0x6F1293 (for
+// 0x92) or GetRangedAttackBonus(1, 1) at 0x6F12AB; AC esi = the target's
+// GetArmorClassVersus(caster, touch) with `push 1` (the touch flag) at
+// 0x6F12C7; d20 edi = RollDice(1, 20) at 0x6F12E1 (frame: caster object
+// [esp+0x10], target object [esp+0x14], command [esp+0x3C]); concealment
+// 0x746EF0; natural 1 misses, total >= AC hits; a natural 20 rolls a
+// confirmation (0x6F1385) whose `setge cl` at 0x6F1395 makes ebp 2 (crit) or 1.
+// Objects become creatures through vtable +0x30. A non-creature caster takes
+// 0x6F1442: a bare d20 against 0x65A490 (left as NWN's).
+constexpr uintptr_t kVtableAsCreature = 0x30;
+constexpr int kCommandTouchAttackMelee = 0x92;
+constexpr int kEffectBonusTypeTouchAttack = 6;  // GetMeleeAttackBonus with its touch flag asks for this type
+constexpr uintptr_t kTouchMeleeBonusCall = 0x006F1293;
+constexpr uintptr_t kTouchRangedBonusCall = 0x006F12AB;
+constexpr uintptr_t kTouchAcFlagPush = 0x006F12C7;  // 6a 01
+constexpr uintptr_t kTouchD20Call = 0x006F12E1;
+constexpr uintptr_t kTouchConfirmSetge = 0x006F1395;  // 0f 9d c1
+
 }  // namespace nwmain

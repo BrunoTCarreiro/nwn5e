@@ -436,3 +436,33 @@ void InstallSaveRollRules() {
         static_cast<unsigned>(sizeof(nwmain::kSaveRollFeatBonusCalls) / sizeof(nwmain::kSaveRollFeatBonusCalls[0])));
   }
 }
+
+// SK10 (rules_spell_attack.cpp): the casting part of a creature's 2024 spell
+// attack bonus for the spell it is casting, read as CalculateSpellSaveDc reads
+// it: PB + the casting modifier of the class slot it casts from (Charisma for
+// innate abilities), or a scroll's attack bonus when it casts from an item.
+bool SpellAttackCasting(void* creature, int* bonus, const char** source) {
+  void* stats = creature ? Field<void*>(creature, nwmain::kCreatureStats) : nullptr;
+  if (!stats) return false;
+  const CreatureFacts facts = ReadCreatureFacts(stats);
+  if (!facts.plausible) return false;
+  const int pb = rules::ProficiencyBonusForCreature(CountsAsCharacter(stats, facts), facts.level,
+                                                    facts.challenge_rating);
+  const int slot = Field<uint8_t>(creature, nwmain::kCreatureCastingSlot);
+  if (Field<int32_t>(creature, nwmain::kCreatureCastingFromItem) != 0) {
+    void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+    void* spells = rules_object ? Field<void*>(rules_object, nwmain::kRulesSpells) : nullptr;
+    const int spell_id = SpellOfObject(Field<uint32_t>(creature, nwmain::kCreatureObjectId));
+    const void* spell = spells && spell_id >= 0 ? g_get_spell(spells, nullptr, spell_id) : nullptr;
+    if (!spell) return false;
+    *bonus = rules::SpellScrollAttackBonus(Field<uint8_t>(spell, nwmain::kSpellInnateLevel));
+    *source = "item";
+  } else if (slot == 0xFF || slot == 0xFE) {
+    *bonus = rules::SpellAttackBonus2024(pb, Field<int8_t>(stats, nwmain::kStatsChaModifier));
+    *source = "ability: PB + Cha";
+  } else {
+    *bonus = rules::SpellAttackBonus2024(pb, static_cast<int8_t>(g_get_casting_modifier(stats, nullptr, slot) & 0xFF));
+    *source = "class: PB + casting ability";
+  }
+  return true;
+}

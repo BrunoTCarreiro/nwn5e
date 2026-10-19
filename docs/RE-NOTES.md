@@ -868,3 +868,26 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   0x648A49 / 0x648C7D / 0x648CE7 / 0x648F3A. Search (this = esi throughout)
   rolls at 0x648A20 / 0x648A76 (trigger d10 / d20), 0x648CAD / 0x648D17
   (door), 0x648F6D / 0x648FD1 (placeable).
+
+## Touch attacks (decoded 2026-10-19, SK10)
+
+- TouchAttackMelee / TouchAttackRanged (commands 146 / 147) share 0x6F1170
+  (ret 8). Frame: caster object [esp+0x10], target object [esp+0x14], command
+  [esp+0x3C]; objects become creatures through vtable +0x30.
+- Creature caster on a creature: ebx = GetMeleeAttackBonus(0, 1, 1) (0x6F1293)
+  for 146, else GetRangedAttackBonus(1, 1) (0x6F12AB); esi = target
+  GetArmorClassVersus(caster, touch) (push 1 at 0x6F12C7, call 0x6F12CF); edi
+  = RollDice(1, 20) at 0x6F12E1; concealment 0x746EF0; d20 1 misses; total >=
+  AC hits; a natural 20 rolls a confirmation (0x6F1385; setge at 0x6F1395)
+  -> ebp 2 (critical) or 1; total < AC and not 20 -> 0. A door / placeable
+  target is hit (ebp 1). The combat log line uses edi / ebx / esi.
+- Non-creature caster (vtable +0x10 object, a trap or placeable): 0x6F1442 —
+  AC from 0x65A490 on the target, a bare d20 (0x6F1481), same 20 / 1 logic
+  (confirmation 0x6F14B9).
+- GetMeleeAttackBonus with its touch flag (arg 3) uses Strength only (no
+  Weapon Finesse) and asks GetTotalEffectBonus for type 6 (touch attack)
+  instead of 1.
+- In 1.69 only 59 scripts call them: Ghoul / Vampiric Touch, Harm, Heal and
+  Mass Heal and Lay on Hands on undead, Slay Living, monster Bolt abilities
+  (nw_s1_blt*), mephit breath, smoke claw, beholder rays, Arcane Archer
+  arrows, rod of wonder; the wizard rays make no attack roll.

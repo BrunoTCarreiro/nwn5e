@@ -45,6 +45,11 @@ int ConvertNwnFixedDc(int dc);
 
 // C5: the 2024 spell scroll DC for a spell level (13 / 15 / 17 / 18 / 19).
 int SpellScrollDc(int spell_level);
+// SK10: a spell scroll's 2024 attack bonus (its DC - 8: +5 for levels 0-2 ... +11
+// for level 9).
+int SpellScrollAttackBonus(int spell_level);
+// SK10: a 2024 spell attack bonus: proficiency bonus + spellcasting modifier.
+int SpellAttackBonus2024(int proficiency_bonus, int casting_modifier);
 
 // C5 NWN mode: NWN's Spell Focus DC bonus (+2 / +4 / +6) as +1 / +2 / +3.
 int NwnModeSpellFocusDcBonus(int nwn_focus_bonus);

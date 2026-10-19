@@ -254,3 +254,16 @@ TEST(SaveFeedbackNamesTheSpellsAbility) {
   CHECK_EQ(SaveLabelForStrref(519) == nullptr, true);
   CHECK_EQ(SaveLabelForStrref(kSaveLabelStrrefFirst + 6) == nullptr, true);
 }
+
+// SK10. Breaks caught: a scroll's attack bonus off the 2024 table (+5 / +7 / +9
+// / +10 / +11); the spell attack bonus not PB + casting modifier.
+TEST(SpellAttacksAre2024) {
+  CHECK_EQ(SpellScrollAttackBonus(0), 5);
+  CHECK_EQ(SpellScrollAttackBonus(2), 5);
+  CHECK_EQ(SpellScrollAttackBonus(3), 7);
+  CHECK_EQ(SpellScrollAttackBonus(5), 9);
+  CHECK_EQ(SpellScrollAttackBonus(7), 10);
+  CHECK_EQ(SpellScrollAttackBonus(9), 11);
+  CHECK_EQ(SpellAttackBonus2024(2, 3), 5);
+  CHECK_EQ(SpellAttackBonus2024(6, -1), 5);
+}
