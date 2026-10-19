@@ -26,6 +26,7 @@
 #include "nwmain_1_69.h"
 #include "rules/saves.h"
 
+bool IsPlayerControlled(uint32_t object_id);                                // rules_chat.cpp
 bool SpellAttackCasting(void* creature, int* bonus, const char** source);  // rules_save_roll.cpp
 int RollSpellAttackD20(void* caster, void* target, bool ranged);          // rules_advantage.cpp
 
@@ -78,22 +79,44 @@ int __fastcall TouchRangedBonus(void* stats, void* edx, int a, int b) {
   return SpellAttackBonus(stats, g_ranged_attack_bonus(stats, edx, a, b), "ranged");
 }
 
-int __stdcall TouchAttackD20(void* caster_object, void* target_object, int command) {
-  return RollSpellAttackD20(AsCreature(caster_object), AsCreature(target_object),
-                            command != nwmain::kCommandTouchAttackMelee);
+int g_roll_lines = 0;
+
+// The d20 (with the attack roll mode), and a log line with what the handler
+// will compare: spells cast from items often hide the touch attack's own
+// feedback (bDisplayFeedback = FALSE).
+int __stdcall TouchAttackD20(void* caster_object, void* target_object, int command, int bonus, int armor_class) {
+  void* caster = AsCreature(caster_object);
+  void* target = AsCreature(target_object);
+  const bool ranged = command != nwmain::kCommandTouchAttackMelee;
+  const int d20 = RollSpellAttackD20(caster, target, ranged);
+  if (g_config.log_attacks && caster && target && g_roll_lines < 300) {
+    const uint32_t caster_id = Field<uint32_t>(caster, nwmain::kCreatureObjectId);
+    const uint32_t target_id = Field<uint32_t>(target, nwmain::kCreatureObjectId);
+    if (IsPlayerControlled(caster_id) || IsPlayerControlled(target_id)) {
+      ++g_roll_lines;
+      const int total = d20 + bonus;
+      Log("spell attack roll: 0x%08X vs 0x%08X (%s touch): d20 %d %+d = %d vs AC %d -> %s", caster_id, target_id,
+          ranged ? "ranged" : "melee", d20, bonus, total, armor_class,
+          d20 == 20 ? "critical hit (natural 20)" : d20 == 1 ? "miss (natural 1)" : total >= armor_class ? "hit" : "miss");
+    }
+  }
+  return d20;
 }
 
 // In place of the handler's RollDice(1, 20) at 0x6F12E1 (ecx = rules object, two
-// stack arguments, ret 8). The handler's frame there: caster object [esp+0x10],
-// target object [esp+0x14], command [esp+0x3C], +8 for the two arguments and
-// +4 for our return address.
+// stack arguments, ret 8). There ebx = the attack bonus and esi = the AC; the
+// handler's frame: caster object [esp+0x10], target object [esp+0x14], command
+// [esp+0x3C], +8 for the two arguments and +4 for our return address (on entry:
+// 0x1C / 0x20 / 0x48).
 __declspec(naked) void TouchAttackD20Stub() {
   __asm {
-    mov eax, dword ptr [esp + 0x48]
+    push esi
+    push ebx
+    mov eax, dword ptr [esp + 0x50]
     push eax
-    mov eax, dword ptr [esp + 0x24]
+    mov eax, dword ptr [esp + 0x2C]
     push eax
-    mov eax, dword ptr [esp + 0x24]
+    mov eax, dword ptr [esp + 0x2C]
     push eax
     call TouchAttackD20
     ret 8
