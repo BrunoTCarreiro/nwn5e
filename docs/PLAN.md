@@ -503,6 +503,12 @@ and the PC walked after the pushed one (drawing AoOs from the other goblin).
 Now the switch is decided at the roll from the attack's own target (round
 target set, as after a kill), the order is rewritten again when the hit lands
 (by then it names the pushed one), and the round-end check stays.
+*0.9.20:* the 0.9.19 logs show the switches held, but twice the PC stood idle
+after a push (once following with no switch, once after a switch) while the
+goblin attacked it: its attack order was dropped. For 8 s after a push the
+attacker is watched: its order changes are logged, and if it is left with no
+order at all while its intended target stands, the attack is reissued (as a
+click). Corpses are never chosen (the scan skips the dead).
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

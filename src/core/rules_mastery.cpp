@@ -359,6 +359,19 @@ struct PushRetarget {
   DWORD tick;
 };
 std::unordered_map<uint32_t, PushRetarget> g_push_retargets;
+// For a few seconds after a push the attacker is watched (attacker id ->):
+// each change of its orders is logged, and if it is left with no order at
+// all while the creature it should fight (the closer enemy, or the pushed
+// one) still stands, the attack is reissued as a click would (owner's test of
+// 0.9.19: the PC stood idle after pushes).
+struct PushWatch {
+  uint32_t intended;
+  DWORD until;
+  std::string state;
+  bool reissued;
+};
+std::unordered_map<uint32_t, PushWatch> g_push_watch;
+constexpr DWORD kPushWatchMs = 8000;
 uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance);
 using GetNearestEnemyFn = uint32_t(__fastcall*)(void* creature, void* edx, float range, uint32_t exclude, int seen,
                                                 int path);
@@ -439,7 +452,7 @@ bool RecentlyApplied(std::unordered_map<uint32_t, DWORD>* applied, uint32_t targ
 // Rounds only end in combat; a mark from an old fight also lapses after this.
 constexpr DWORD kMarkMaxAgeMs = 30000;
 int g_effect_log_lines = 0;
-constexpr int kEffectLogLimit = 400;
+constexpr int kEffectLogLimit = 1000;
 
 bool EffectLogSlot() { return g_config.log_attacks && g_effect_log_lines < kEffectLogLimit && ++g_effect_log_lines; }
 
@@ -498,11 +511,58 @@ void __fastcall EndCombatRound(void* round, void* edx) {
   if (owner && !g_push_retargets.empty()) KeepPushRetarget(owner);
 }
 
+// The creature's orders, for the push watch: the head of its action queue
+// (id and first parameter), its current action, attack target and round
+// target.
+std::string OrderState(void* creature) {
+  void* list = Field<void*>(creature, nwmain::kObjectActionQueue);
+  void* head = list ? Field<void*>(list, nwmain::kListHead) : nullptr;
+  void* data = head ? Field<void*>(head, nwmain::kListNodeData) : nullptr;
+  void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
+  char text[200];
+  sprintf_s(text, "queue %s%d at 0x%08X, current %d at 0x%08X, attack target 0x%08X, round target 0x%08X",
+            data ? "" : "empty ", data ? Field<int32_t>(data, nwmain::kActionId) : -1,
+            data ? Field<uint32_t>(data, nwmain::kActionFirstParam) : nwmain::kObjectInvalid,
+            Field<int16_t>(creature, nwmain::kObjectCurrentAction),
+            Field<uint32_t>(creature, nwmain::kObjectCurrentActionTarget),
+            Field<uint32_t>(creature, nwmain::kCreatureAttackTarget),
+            round ? Field<uint32_t>(round, nwmain::kRoundTarget) : nwmain::kObjectInvalid);
+  return text;
+}
+
+bool HasNoOrders(void* creature) {
+  void* list = Field<void*>(creature, nwmain::kObjectActionQueue);
+  const bool queue_empty = !list || !Field<void*>(list, nwmain::kListHead);
+  return queue_empty && Field<int16_t>(creature, nwmain::kObjectCurrentAction) == -1;
+}
+
+void WatchAfterPush(void* creature, uint32_t id) {
+  const auto it = g_push_watch.find(id);
+  if (it == g_push_watch.end()) return;
+  PushWatch& watch = it->second;
+  if (GetTickCount() > watch.until || engine::IsDeadOrDying(creature)) {
+    g_push_watch.erase(it);
+    return;
+  }
+  const std::string state = OrderState(creature);
+  if (state != watch.state) {
+    watch.state = state;
+    if (EffectLogSlot()) Log("mastery: 0x%08X after Push: %s", id, state.c_str());
+  }
+  if (watch.reissued || !HasNoOrders(creature)) return;
+  void* intended = engine::GetCreature(watch.intended);
+  if (!intended || engine::IsDeadOrDying(intended) || !engine::IsEnemy(creature, watch.intended)) return;
+  watch.reissued = true;
+  g_add_attack_actions(creature, nullptr, watch.intended, 0, 1, 0);
+  if (EffectLogSlot()) Log("mastery: 0x%08X after Push: left with no orders; attack on 0x%08X reissued", id, watch.intended);
+}
+
 // Push v2: a pushed creature slides along its line during the fall, a step
 // each AI update (after the engine's own, so its walking can't pull it off
 // the line).
 void __fastcall AIUpdate(void* creature, void* edx) {
   g_ai_update(creature, edx);
+  if (!g_push_watch.empty() && creature) WatchAfterPush(creature, IdOf(creature));
   if (g_push_moves.empty() || !creature) return;
   const auto it = g_push_moves.find(IdOf(creature));
   if (it == g_push_moves.end()) return;
@@ -652,6 +712,8 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
           sprintf_s(text, "; attacker now attacks the closer 0x%08X", next);
           what += text;
         }
+        g_push_watch[attacker_id] =
+            PushWatch{next != nwmain::kObjectInvalid ? next : target_id, now + kPushWatchMs, std::string(), false};
       }
       break;
     }
