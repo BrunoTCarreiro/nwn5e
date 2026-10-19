@@ -678,7 +678,13 @@ not confirmed.
   0x6F9FAF, poison and disease saves). GetReflexAdjustedDamage is command 299,
   handler 0x6F9DC0 (table slot +0x4AC, written at 0x6E198C), separate from the
   Fortitude/Reflex/WillSave handler 0x6EE070; Evasion 0xCE / Improved Evasion
-  0xD4 adjust its damage after the roll whatever the save ability. Order: bonus, d20 (0x7499C9), immunity
+  0xD4 adjust its damage after the roll whatever the save ability.
+- Save feedback ("Weak Goblin : Reflex Save vs. Cold : *failure* : (12 + 0 =
+  12 vs. DC: 17)"): 0x749230 fills a CNWCCMessageData with ints DC, bonus,
+  d20, save kind (1/2/3), vs type, feat; the writer at 0x62FDDA sends them in
+  7/8/5/.../8 bits (the kind in 8). The client reads the kind at 0x45E8E9 and
+  picks the label at 0x45E9ED (1 -> 520, 2 -> 519, 3 -> 745, else none), so the
+  label is looked up when the line is shown, after the roll has returned. Order: bonus, d20 (0x7499C9), immunity
   by save type (returns 2 before feedback), feedback (DC, total, roll), then
   natural 1 / 20 / total >= DC.
 - Poison (0x670590): poison.2da, Fortitude save (save 1, type 2) at 0x67095C;

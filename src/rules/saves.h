@@ -85,6 +85,20 @@ std::optional<Ability> SaveAbilityForNwnSpell(int spell_id);
 // Fortitude", "Epic Will") are names, not labels, and are left alone.
 const char* Faithful2024SaveLabel(uint32_t strref);
 
+// C1 + C8 (faithful): the combat log names a save by the kind the server sends
+// with it (1 Fortitude, 2 Reflex, 3 Will), so Cone of Cold read "Reflex Save"
+// even when the goblin rolled Constitution. A save on a spell's own ability is
+// sent as kind 0x11 + ability instead (fits the message's 8-bit field); the
+// client shows that kind as a private string id, which the label hook names
+// "<Ability> Save".
+constexpr int kFeedbackSaveKindFirst = 0x11;
+constexpr uint32_t kSaveLabelStrrefFirst = 0x00FE0000;  // no dialog.tlk row, no custom-table flag (0x1000000)
+int FeedbackSaveKind(Ability ability);
+// The private string id for a feedback kind; 0 for NWN's kinds and any other.
+uint32_t SaveLabelStrrefForFeedbackKind(int kind);
+// "<Ability> Save" for a private string id; nullptr for every other string.
+const char* SaveLabelForStrref(uint32_t strref);
+
 // C4: whether a save succeeds. A natural 20 succeeds automatically only with
 // `natural_20_succeeds`, a natural 1 fails automatically only with
 // `natural_1_fails` (faithful: neither).

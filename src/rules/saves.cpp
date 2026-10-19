@@ -161,4 +161,18 @@ const char* Faithful2024SaveLabel(uint32_t strref) {
   }
 }
 
+int FeedbackSaveKind(Ability ability) { return kFeedbackSaveKindFirst + static_cast<int>(ability); }
+
+uint32_t SaveLabelStrrefForFeedbackKind(int kind) {
+  const int index = kind - kFeedbackSaveKindFirst;
+  return index >= 0 && index < 6 ? kSaveLabelStrrefFirst + static_cast<uint32_t>(index) : 0;
+}
+
+const char* SaveLabelForStrref(uint32_t strref) {
+  static const char* const kLabels[] = {"Strength Save",     "Dexterity Save", "Constitution Save",
+                                        "Intelligence Save", "Wisdom Save",    "Charisma Save"};
+  if (strref < kSaveLabelStrrefFirst || strref >= kSaveLabelStrrefFirst + 6) return nullptr;
+  return kLabels[strref - kSaveLabelStrrefFirst];
+}
+
 }  // namespace rules

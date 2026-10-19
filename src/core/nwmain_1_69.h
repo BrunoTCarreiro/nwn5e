@@ -422,6 +422,21 @@ constexpr uintptr_t kVmCommandsObjectSelf = 0x08;
 // the roll it applies Evasion (feat 0xCE) / Improved Evasion (0xD4) to the
 // damage whatever the save ability.
 constexpr uintptr_t kVmReflexDamageCommand = 0x006F9DC0;
+// C1 + C8: the save roll's feedback (CNWCCMessageData, ints DC, bonus, d20,
+// save kind, vs type, feat; written in 7/8/5/.../8/... bits from 0x62FDDA)
+// takes the save kind (1/2/3, [esp+0x24] from the first argument at 0x749263)
+// at 0x749BB8: `mov edx,[esp+0x24]; push edx`, then push 3; SetInteger
+// 0x4FA320; eax/ecx/edx are dead there. The client reads it (8 bits,
+// 0x45E8E9) into [esp+0x4F] and names it at 0x45E9ED: `mov al,[esp+0x4F];
+// cmp al,1; jne 0x45EA0C` — 1 -> string 520 (0x45E9F5), 2 -> 519, 3 -> 745,
+// anything else no label (0x45EA4D). Each case pushes the gender byte
+// [0x8B15AC], the result [esp+0x3E0] and the strref, then 0x45EA42 calls
+// 0x41DBB0, which passes them to GetSimpleString 0x5C9C80. Only 0x45E9ED
+// itself is a jump target (0x45E9B8, 0x45E9CC).
+constexpr uintptr_t kSaveFeedbackKindPush = 0x00749BB8;
+constexpr uint8_t kSaveFeedbackKindPushBytes[] = {0x8b, 0x54, 0x24, 0x24, 0x52};
+constexpr uintptr_t kClientSaveKindSwitch = 0x0045E9ED;
+constexpr uint8_t kClientSaveKindSwitchBytes[] = {0x8a, 0x44, 0x24, 0x4f, 0x3c, 0x01, 0x75, 0x17};
 constexpr uint8_t kVmReflexDamageCommandPrologue[] = {0x64, 0xa1, 0x00, 0x00, 0x00, 0x00, 0x6a, 0xff};
 constexpr uintptr_t kGetObjectArray = 0x005FFA90;
 constexpr uintptr_t kGetGameObject = 0x0042E730;

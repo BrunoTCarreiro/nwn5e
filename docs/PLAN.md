@@ -754,6 +754,11 @@ through GetReflexAdjustedDamage (Cone of Cold, Sunbeam, Sunburst) go through
 their own command handler (299), which 0.9.8 did not hook; now hooked too.
 Follow-up: that handler still applies Evasion to the damage when the save is no
 longer Dexterity (2024 Evasion covers Dexterity saves only) — class features.
+*Verified in game 2026-10-19 (0.9.27: Cone of Cold, goblins rolled
+Constitution). 0.9.28:* the combat log still read "Dexterity Save vs. Cold" —
+the client names the save from the kind (1/2/3) the server sends, so a save on
+a spell's own ability is now sent as its own kind and shown as "Constitution
+Save" (and Strength / Intelligence / Charisma Save for the others).
 
 ### Build order
 

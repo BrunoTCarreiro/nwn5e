@@ -22,8 +22,20 @@ using ExoStringAssignFn = void*(__fastcall*)(void* exo_string, void* edx, const 
 GetSimpleStringFn g_get_simple_string = nullptr;
 const auto g_exo_string_assign = reinterpret_cast<ExoStringAssignFn>(nwmain::kExoStringAssign);
 int g_logged = 0;
+constexpr uint32_t kReflexSaveStrref = 519;
 
 int __fastcall GetSimpleString(void* table, void* edx, uint32_t strref, void* result, int gender) {
+  if (const char* ability_label = rules::SaveLabelForStrref(strref)) {
+    // A private id from the client's save-kind patch (rules_save_roll.cpp):
+    // filled as "Reflex Save" is, then named for the spell's own ability.
+    const int found = g_get_simple_string(table, edx, kReflexSaveStrref, result, gender);
+    if (found && result) g_exo_string_assign(result, nullptr, ability_label);
+    if (g_config.log_attacks && g_logged < 30) {
+      ++g_logged;
+      Log("label: save on the spell's ability shown as \"%s\"", ability_label);
+    }
+    return found;
+  }
   const int found = g_get_simple_string(table, edx, strref, result, gender);
   if (!found || !result) return found;
   const char* label = g_config.saves == rules::RuleVariant::kFaithful ? rules::Faithful2024SaveLabel(strref) : nullptr;

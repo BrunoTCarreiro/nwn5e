@@ -315,6 +315,80 @@ bool PatchCallSite(const char* name, uintptr_t site, uintptr_t expected_target, 
   return PatchBytes(name, site, expected, call, sizeof(call));
 }
 
+// C1 + C8: the save kind the save-roll feedback sends — NWN's 1/2/3, or the
+// kind of the spell's own ability when it replaced the save's (faithful).
+int __stdcall SentSaveKind(int kind) {
+  return g_save.active && g_save.ability ? rules::FeedbackSaveKind(*g_save.ability) : kind;
+}
+
+// Called from 0x749BB8 in place of `mov edx,[esp+0x24]; push edx` (+4 on esp
+// for the return address); leaves the kind pushed as that code did.
+__declspec(naked) void FeedbackSaveKindStub() {
+  __asm {
+    mov edx, dword ptr [esp + 0x28]
+    push edx
+    call SentSaveKind
+    pop edx
+    push eax
+    jmp edx
+  }
+}
+
+// Jumped to from the client's save-kind switch (0x45E9ED): kinds 0x11-0x16
+// push their private string id the way the engine's cases push 520/519/745 and
+// go to its GetSimpleString call (0x45EA42), where the label hook names it;
+// every other kind goes on to the engine's cases as before.
+__declspec(naked) void ClientSaveKindStub() {
+  __asm {
+    mov al, byte ptr [esp + 0x4F]
+    cmp al, 0x11
+    jb engine_kinds
+    cmp al, 0x16
+    ja engine_kinds
+    movzx eax, al
+    add eax, 0x00FDFFEF
+    xor ecx, ecx
+    mov cl, byte ptr ds:[0x008B15AC]
+    lea edx, [esp + 0x3E0]
+    push ecx
+    push edx
+    push eax
+    push 0x0045EA42
+    ret
+  engine_kinds:
+    cmp al, 1
+    jne other_kinds
+    push 0x0045E9F5
+    ret
+  other_kinds:
+    push 0x0045EA0C
+    ret
+  }
+}
+static_assert(rules::kFeedbackSaveKindFirst == 0x11 && rules::kFeedbackSaveKindFirst + 5 == 0x16 &&
+                  rules::kSaveLabelStrrefFirst - rules::kFeedbackSaveKindFirst == 0x00FDFFEF,
+              "ClientSaveKindStub's literals");
+
+// The combat log names a save on a spell's own ability by that ability. The
+// client switch is patched first, so the server never sends a kind the client
+// cannot name.
+void InstallSaveFeedbackLabel() {
+  uint8_t jump[8] = {0xe9, 0, 0, 0, 0, 0x90, 0x90, 0x90};  // jmp rel32 (as long as a call) + 3 nops
+  const int32_t jump_rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&ClientSaveKindStub) -
+                                                (nwmain::kClientSaveKindSwitch + nwmain::kCallLength));
+  memcpy(jump + 1, &jump_rel, sizeof(jump_rel));
+  if (!PatchBytes("combat log save label: client names the spell's ability (C1)", nwmain::kClientSaveKindSwitch,
+                  nwmain::kClientSaveKindSwitchBytes, jump, sizeof(jump))) {
+    return;
+  }
+  uint8_t call[5] = {0xe8};
+  const int32_t call_rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&FeedbackSaveKindStub) -
+                                                (nwmain::kSaveFeedbackKindPush + nwmain::kCallLength));
+  memcpy(call + 1, &call_rel, sizeof(call_rel));
+  PatchBytes("combat log save label: server sends the spell's ability (C1)", nwmain::kSaveFeedbackKindPush,
+             nwmain::kSaveFeedbackKindPushBytes, call, sizeof(call));
+}
+
 }  // namespace
 
 // A DC that is already on the 2024 scale (D4 Topple), so the save roll does not
@@ -350,6 +424,7 @@ void InstallSaveRollRules() {
                nwmain::kSaveNatural1CheckBytes, nwmain::kSaveNatural1CheckSkip, sizeof(nwmain::kSaveNatural1CheckSkip));
     PatchBytes("save roll: natural 20 not automatic (faithful)", nwmain::kSaveNatural20Check,
                nwmain::kSaveNatural20CheckBytes, kNops, sizeof(kNops));
+    InstallSaveFeedbackLabel();
     int dropped = 0;
     for (uintptr_t site : nwmain::kSaveRollFeatBonusCalls) {
       dropped += PatchCallSite("save roll feat bonus (C7)", site, nwmain::kHasFeat,

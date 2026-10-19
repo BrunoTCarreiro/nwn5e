@@ -234,3 +234,23 @@ TEST(SaveLabelsAre2024) {
   CHECK_EQ(Faithful2024SaveLabel(44902) == nullptr, true);
   CHECK_EQ(Faithful2024SaveLabel(0x1000000 | 317) == nullptr, true);
 }
+
+// C1 + C8: a save on a spell's own ability is named by that ability in the
+// combat log (the owner saw "Dexterity Save vs. Cold" for a Constitution save,
+// 2026-10-19). Breaks caught: a kind that collides with NWN's 1-3 or does not
+// fit the 8-bit message field; a private string id on a dialog.tlk row or with
+// the custom-table flag; the wrong ability's label; NWN's kinds relabelled.
+TEST(SaveFeedbackNamesTheSpellsAbility) {
+  CHECK_EQ(FeedbackSaveKind(Ability::kStrength), 0x11);
+  CHECK_EQ(FeedbackSaveKind(Ability::kCharisma), 0x16);
+  CHECK_EQ(SaveLabelStrrefForFeedbackKind(1) == 0, true);
+  CHECK_EQ(SaveLabelStrrefForFeedbackKind(3) == 0, true);
+  CHECK_EQ(SaveLabelStrrefForFeedbackKind(0x17) == 0, true);
+  CHECK_EQ((kSaveLabelStrrefFirst & 0x1000000) == 0 && kSaveLabelStrrefFirst > 0x100000, true);
+  const uint32_t con = SaveLabelStrrefForFeedbackKind(FeedbackSaveKind(Ability::kConstitution));
+  CHECK_EQ(std::string(SaveLabelForStrref(con)) == "Constitution Save", true);
+  CHECK_EQ(std::string(SaveLabelForStrref(SaveLabelStrrefForFeedbackKind(0x11))) == "Strength Save", true);
+  CHECK_EQ(std::string(SaveLabelForStrref(SaveLabelStrrefForFeedbackKind(0x16))) == "Charisma Save", true);
+  CHECK_EQ(SaveLabelForStrref(519) == nullptr, true);
+  CHECK_EQ(SaveLabelForStrref(kSaveLabelStrrefFirst + 6) == nullptr, true);
+}
