@@ -231,58 +231,81 @@ Key fact: one function, **GetSkillRank (0x6A2C00)**, builds every skill total
 the engine and the scripts use — one hook converts them all; each use then
 rolls its own d20 (no shared roll), and **no skill check has a natural 1/20
 rule** (already 2024). Each item: faithful (2024) and NWN mode;
-recommendation first.
+recommendation first. "2024" means SRD 5.2 (the project's rule source);
+Player's Handbook-only material is named as such.
+
+*Revised 2026-10-19 after an owner-requested consistency review (marked
+"rev.")*: one point applies to every item — **data files (2da, dialog.tlk)
+can't be switched per mode**, so anything faithful-only is done in hooks (as
+C8 relabels the saves), never by editing a shared table.
 
 **SK1. The skill list.** NWN 1.69 has 28 skills (27 + Ride); 2024 has 18 plus
 tool proficiencies. Recommendation (faithful): keep NWN's rows (the engine
 and the official campaigns use them) but make them the 2024 skills —
-Hide + Move Silently = **Stealth** and Spot + Listen = **Perception** (one
-proficiency, both rows get it); Search → Investigation; Lore and Spellcraft →
-Arcana; Heal → Medicine; Pick Pocket → Sleight of Hand; Tumble → Acrobatics;
-Persuade → Persuasion; Bluff → Deception; Intimidate → Intimidation; Perform →
-Performance; Animal Empathy and Ride → Animal Handling; Open Lock, Disable
-Trap, Set Trap, Craft Trap → **Thieves' Tools**; Craft Armor and Craft Weapon
-→ **Smith's Tools**; names changed through the tlk. Concentration,
-Discipline, Parry, Taunt, Appraise and Use Magic Device have no 2024
-counterpart (SK6–SK8). 2024's Athletics, History, Insight, Nature, Religion
-and Survival have no NWN use (nothing in the engine or campaign scripts
-checks them); add them only when content needs them (adding skills.2da rows
-needs RE first: the per-creature rank arrays may be fixed-size). NWN mode:
-NWN's 28 skills. Consequences: faithful's sheet lists fewer, merged skills;
-nothing in the campaign loses a check.
+Hide + Move Silently = **Stealth**; Spot + Listen + Search = **Perception**
+(rev.: 2024 finds hidden things, traps included, with the Search action —
+Wisdom (Perception); Investigation is the Study action); one proficiency, all
+its rows get it; Lore and Spellcraft → Arcana; Heal → Medicine; Pick Pocket →
+Sleight of Hand; Tumble → Acrobatics; Persuade → Persuasion; Bluff →
+Deception; Intimidate → Intimidation; Perform → Performance; Animal Empathy
+and Ride → Animal Handling; Open Lock, Disable Trap, Set Trap → **Thieves'
+Tools**; Craft Trap → (2024 has no trap crafting; Tinker's Tools at most —
+decide with crafting in Phase 3); Craft Armor and Craft Weapon → **Smith's
+Tools**. Names changed in faithful through the label hook (rev.: not the tlk,
+which would rename them in NWN mode too). Concentration, Discipline, Parry,
+Taunt, Appraise and Use Magic Device have no 2024 counterpart (SK6–SK8).
+2024's Athletics, History, Insight, Investigation, Nature, Religion and
+Survival have no NWN use (nothing in the engine or campaign scripts checks
+them); add them only when content needs them (adding skills.2da rows needs RE
+first: the per-creature rank arrays may be fixed-size). NWN mode: NWN's 28
+skills. Consequences: faithful's sheet lists fewer, merged skills; nothing in
+the campaign loses a check.
 
 **SK2. Proficiency instead of ranks.** NWN: ranks bought with skill points
 each level (up to level + 3), plus Skill Focus (+3), Epic Skill Focus (+10),
-racial affinities (+2), Alertness (+2), armour check penalty, −4 blind, item
-and spell bonuses — totals reach +40. 2024: ability modifier + proficiency
-bonus if proficient (+PB again with Expertise); a few items. Recommendation
-(faithful): the GetSkillRank hook returns ability modifier + PB (proficient)
-+ PB (expertise) + item and spell effects (kept, as for saves in C7); feat and
-racial bonuses dropped; armour check penalty becomes 2024's **disadvantage on
-Stealth** in the armours that have it (2024 armour table); blind keeps "fails
-checks that need sight". Proficiency comes from class choices at level 1 (2024
-counts: most classes 2, Bard / Ranger 3, Rogue 4), background (2), species
-(e.g. Elf: Perception) and feats (Skilled); Expertise from Rogue 1 / 6, Bard 2
-/ 9, Ranger 2 / 9. Until Phase 7 builds the level-up screens, they are chosen
-with a chat command (`!skills`, like `!mastery`) and kept as local variables;
-existing characters start proficient in the skills they have ranks in (then
-can re-pick once). Skill points become 0 in faithful (classes.2da). NWN mode:
-NWN's ranks. Consequences: faithful skill totals drop from up to +40 to at
-most +17 (Expertise) — which is why SK3 is needed; Skill Focus and similar
-feats stop doing anything in faithful (Phase 3 retires them).
+racial affinities (+2), Alertness (+2), armour check penalty, −4 to Str / Dex
+skills when blind, item and spell bonuses — totals reach +40. 2024: ability
+modifier + proficiency bonus if proficient (+PB again with Expertise); a few
+items. Recommendation (faithful): the GetSkillRank hook returns ability
+modifier + PB (proficient) + PB (Expertise) + item and spell effects (kept, as
+for saves in C7); feat and racial bonuses dropped; ranks ignored (rev.: the
+skill points stay in classes.2da for NWN mode; Phase 7 hides the step in
+faithful); armour check penalty becomes 2024's **disadvantage on Stealth** in
+the armours that have it (2024 armour table); blindness (rev.): NWN's −4 to
+Str / Dex skills dropped, checks that need sight (Spot, Search) fail. Proficiency
+comes from class choices at level 1 (2024 counts: most classes 2, Bard /
+Ranger 3, Rogue 4), background (2), species (e.g. Elf: Insight, Perception or
+Survival; Human: one skill) and the Skilled feat; Expertise from Rogue 1 / 6,
+Bard 2 / 9, Ranger 2 / 9 and **Wizard 2 (Scholar)** (rev.: was missing). Until
+Phase 7 builds the level-up screens they are chosen with a chat command
+(`!skills`, like `!mastery`) and kept as local variables; existing characters
+pick theirs with `!skills`, **up to their 2024 count** (rev.: not "every skill
+they have ranks in", which could give a rogue 15). NWN mode: NWN's ranks.
+Consequences: faithful skill totals drop from up to +40 to at most +17
+(Expertise) — which is why SK3 is needed; Skill Focus and similar feats stop
+doing anything in faithful (Phase 3 retires them).
 
 **SK3. DCs on the 2024 scale.** NWN's fixed DCs (locks, traps, Search,
-Concentration, scripted checks) are set for 3e totals; 2024 DCs run 5–30.
-Recommendation (faithful): convert fixed DCs where the engine and
-GetIsSkillSuccessful compare them, as C6 converts save DCs — **DC 10 + (3e DC −
-10) / 2**, rounded (3e 20 → 15, 30 → 20, 40 → 25, 50 → 30); opposed checks
-(Hide vs Spot, Pick Pocket vs Spot, Taunt) need no conversion (both sides
-change). The campaign's AutoDC (levelled Persuade / Bluff / Intimidate DCs in
-59 scripts) goes through the same conversion. Lore and Use Magic Device's
-identify table (SkillVsItemCost.2da, by rank) gets compressed to the new
-totals (data). NWN mode: NWN's DCs. Consequences: locks and traps stay
-openable by trained characters; untrained ones fail much more often (2024's
-intent).
+scripted checks) are set for 3e totals; 2024 DCs run 5–30. Recommendation
+(faithful): convert fixed DCs where the engine and GetIsSkillSuccessful compare
+them, as C6 converts save DCs — **DC 10 + (3e DC − 10) / 2**, rounded (3e 20 →
+15, 30 → 20, 40 → 25, 50 → 30); opposed checks (Hide / Move Silently against
+Spot / Listen, Pick Pocket's notice roll) need no conversion (both sides
+change) (rev.: Concentration and Taunt checks are removed in faithful by SK7 /
+SK8, so they are not converted). Identification (Lore → Arcana) compares the
+2024 value with SkillVsItemCost.2da's rank thresholds; in faithful the hook
+converts at that comparison (rev.: the table is shared, so it isn't edited; Use
+Magic Device's use of it goes with SK8). **The campaign's AutoDC (rev.):** 59
+compiled scripts — including the Persuade checks in about 300 conversations —
+do their own `GetSkillRank + d20() >= DC` with DCs from the NPC's level; our
+DC conversion can't reach them, and with 2024 totals most would fail. Options:
+(a) when a *script* asks for a skill rank (command 315), faithful returns the
+2024 total scaled to the 3e range (about 2 × the bonus), so conversation
+checks stay as passable as in NWN — 1.69-only hook; (b) recompile those
+scripts with 2024 DCs — most faithful, ports to EE, heavy; (c) accept harder
+conversation checks. Recommendation: (a) now, (b) if the project moves to EE.
+NWN mode: NWN's DCs. Consequences: locks and traps stay openable by trained
+characters; untrained ones fail much more often (2024's intent).
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).
@@ -290,35 +313,40 @@ none on ability checks. Nothing to change (both modes).
 **SK5. Stealth against Perception.** NWN: every 6 s each creature caches a
 Hide d20, a Move Silently d20, and a Spot / Listen roll — d20 in detect mode,
 **d10** otherwise — compared with distance, area, size (−8 tiny … +8 huge) and
-"in combat −10" modifiers. 2024: the hider rolls Stealth; others notice it with
-**passive Perception (10 + modifier)** or an active Perception check (a
-search). Recommendation (faithful): keep the hider's cached roll; observers
+"in combat −10" modifiers. 2024: the hider rolls Stealth once when it hides
+(the Hide action) and stays hidden until found or it gives itself away;
+others notice it with **passive Perception (10 + modifier)** or an active
+Perception check (the Search action). Recommendation (faithful): observers
 not in detect mode use 10 instead of a d10 roll (passive Perception), detect
 mode keeps the d20 (searching); drop the size modifier (not 2024); keep
 distance and area modifiers (needed for NWN's real-time perception; 2024 uses
-light and cover instead). NWN mode: NWN's. Consequences: watchful guards
-become more consistent (no lucky d10 of 1); small creatures lose their hiding
-bonus.
+light and cover instead); the hider's roll (rev.): keep NWN's re-roll every
+6 s (simpler) or roll once per hide (2024) — decide; "in combat −10" (rev.):
+not 2024 (you can hide in combat if obscured) — drop. NWN mode: NWN's.
+Consequences: watchful guards become more consistent (no lucky d10 of 1);
+small creatures lose their hiding bonus; hiding in combat gets easier.
 
 **SK6. Knockdown and Disarm (Discipline).** NWN: after a Knockdown / Improved
-Knockdown hit the defender (Large or smaller) rolls d20 + Discipline against
-the attacker's attack total, and is knocked down on a loss; Disarm works the
-same way. 2024: **Shove** (an Unarmed Strike option) — the target makes a
-Strength or Dexterity saving throw (its choice) against DC 8 + the attacker's
-Strength modifier + PB, or is pushed 5 ft or knocked prone. **SRD 5.2 has no
-Disarm at all** (the only disarming is the Battle Master's Disarming Attack,
-a Player's Handbook subclass outside the SRD). Recommendation (faithful): the
-Knockdown feats keep their attack roll; on a hit the target makes the better
-of a Strength or Dexterity save (with our 2024 save values) against 8 +
-Strength modifier + PB instead of the Discipline check; **Disarm does nothing
-in faithful** (option A; B = keep it as a house rule with a Strength save
-against the same DC; C, NWN's Discipline check, is not possible once SK1
-removes the skill) — a PC who took it gets the choice back in Phase 3. NWN
-mode: Discipline for both. Consequences: knockdown works on high-Discipline
-monsters by their saves instead; Topple and Shove become one rule; NPCs with
-Disarm stop disarming in faithful. *(Corrected 2026-10-19: the first draft
-recommended a Strength save for Disarm, which is the Battle Master maneuver,
-not SRD 2024.)*
+Knockdown hit the defender (Large or smaller; one size more with Improved)
+rolls d20 + Discipline against the attacker's attack total, and is knocked
+down on a loss; Disarm works the same way. 2024: **Shove** (an Unarmed Strike
+option) — **no attack roll** (rev.); the target makes a Strength or Dexterity
+saving throw (its choice) against DC 8 + the attacker's Strength modifier +
+PB, or is pushed 5 ft or knocked prone; the target can be at most one size
+larger than the shover (rev.). **SRD 5.2 has no Disarm at all** (the only
+disarming is the Battle Master's Disarming Attack, a Player's Handbook
+subclass outside the SRD). Recommendation (faithful): using a Knockdown feat
+is a Shove — no attack roll, the target's better of Strength or Dexterity
+save against 8 + Strength modifier + PB, target at most one size larger
+(rev.: the first draft kept the attack roll, which made it weaker than 2024);
+**Disarm does nothing in faithful** (option A; B = keep it as a house rule
+with a Strength save against the same DC; C, NWN's Discipline check, is not
+possible once SK1 removes the skill) — a PC who took it gets the choice back
+in Phase 3. NWN mode: Discipline for both. Consequences: knockdown lands more
+often (no attack roll), but strong or nimble targets resist by their saves;
+both Topple (Constitution save) and Shove (Strength or Dexterity save) are
+2024 saves (rev.: not "one rule"); NPCs with Disarm stop disarming in
+faithful.
 
 **SK7. Concentration (the skill).** NWN: a Concentration check on damage
 while casting (DC from the damage), for defensive casting, when entangled (DC
@@ -332,22 +360,26 @@ in melee are no longer interrupted — a big buff to casters in melee, as in
 2024 (balanced in 2024 by concentration and by spells being actions).
 
 **SK8. The 3e-only skills.** Parry (parry mode), Taunt, Appraise, Use Magic
-Device. 2024 has none of them. Recommendation (faithful): parry mode does
-nothing until Phase 3 adds the Defensive Duelist feat (2024's Parry
-reaction: +PB AC with a finesse weapon); Taunt has no 2024 equivalent and
-is left out of faithful (it stays in NWN mode); Appraise dropped (stores use list
-prices); Use Magic Device dropped (items usable by class as in 2024; Phase 4
-decides scrolls). NWN mode: NWN's. These touch few campaign scripts (Appraise 4,
-UMD 1, Taunt 3, Parry 4).
+Device. 2024 has none of them as skills. Recommendation (faithful): **parry
+mode does nothing** (rev.: the first draft pointed to the Defensive Duelist
+feat, which is Player's Handbook-only, not SRD); Taunt is left out of faithful
+(it stays in NWN mode); Appraise dropped (stores use list prices); Use Magic
+Device dropped — in faithful, NWN's item use limitations (class, race,
+alignment properties) simply apply, with no skill to get around them (rev.:
+2024 items are mostly unrestricted except some attunements — decide with
+items in Phase 8); the SRD Thief's **Use Magic Device at level 13** brings
+the bypass back in Phase 3 (rev.: was missing); scrolls are Phase 4. NWN
+mode: NWN's. These touch few campaign scripts (Appraise 4, UMD 1, Taunt 3,
+Parry 4).
 
 **SK9. Initiative and ability checks.** NWN: initiative = d20 + Dex + 4
 (Improved Initiative) + 8 (Epic Superior Initiative); no other raw ability
 checks in the engine; dialogs gate on ability *scores* (about 1,000
 Int-gated lines), not rolls. 2024: initiative is a Dexterity check (+PB with
-the Alert feat); advantage / disadvantage apply. Recommendation (faithful):
-initiative = d20 + Dex modifier, Improved Initiative → Alert (+PB), Epic
-Superior Initiative → dropped until Phase 3 sorts epic feats; leave the
-score-gated dialog lines alone. NWN mode: NWN's.
+the Alert feat, SRD); advantage / disadvantage apply. Recommendation
+(faithful): initiative = d20 + Dex modifier, Improved Initiative → Alert
+(+PB), Epic Superior Initiative → dropped until Phase 3 sorts epic feats;
+leave the score-gated dialog lines alone. NWN mode: NWN's.
 
 **SK10. Spell attacks.** NWN: TouchAttackMelee / Ranged (in 59 spell
 scripts) roll their own d20 with the melee / ranged attack bonus (today PB +
@@ -356,21 +388,26 @@ confirmation. 2024: spell attack = d20 + PB + spellcasting modifier against
 AC; natural-20 crit, no confirmation; advantage and disadvantage apply.
 Recommendation (faithful): the touch attack uses PB + the casting ability
 (the same ability C5 uses for DCs), our roll mode (advantage / disadvantage,
-conditions) and our crit rules; against normal AC or touch AC is SK10b — 2024
-has no touch AC (spell attacks go against full AC; recommendation: full AC).
-NWN mode: NWN's (with the global attack conversion). Consequences: rays and
-touch spells hit by the caster's casting ability; armoured targets become
-harder to hit with rays (full AC).
+conditions) and our crit determination (natural 20, no confirmation); the
+crit's damage stays the spell script's (rev.: the scripts compute it, mostly
+doubling everything — "dice only" comes with the Phase 4 spell rewrite);
+against full AC (2024 has no touch AC). NWN mode: NWN's (with the global
+attack conversion). Consequences: rays and touch spells hit by the caster's
+casting ability; armoured targets become harder to hit with rays (full AC).
 
-**SK11. Conditions on checks** (completes CN4 / CN5): poisoned and frightened
-give disadvantage on ability checks, exhaustion later on d20 tests.
-Recommendation: both, once the check rolls are hooked (SK2 / SK5 / SK9).
+**SK11. Conditions on checks** (completes CN4 / CN5 / CN8): poisoned and
+frightened give disadvantage on ability checks; **deafened fails checks that
+need hearing (Listen)** and blinded those that need sight (SK2) (rev.: was
+missing); exhaustion later on d20 tests. Recommendation: all, once the check
+rolls are hooked (rev.: the d20 sites of SK3 / SK5 / SK9, not SK2's rank
+hook).
 
 Build order if accepted: SK2 + SK1 (GetSkillRank hook, `!skills`, proficiency
-storage) → SK3 (DC conversion at GetIsSkillSuccessful and the engine sites) →
-SK10 (touch attacks) → SK6 / SK7 → SK5 → SK9 → SK8 / SK11. Rough size: SK2+SK1
-two sessions, SK3 one, SK10 one, SK6+SK7 one, SK5 one, SK9+SK8+SK11 one. Ports
-to EE: the rules (src/rules) and the data / tlk parts; the hooks are 1.69-only.
+storage, labels) → SK3 (DC conversion at GetIsSkillSuccessful and the engine
+sites, AutoDC option) → SK10 (touch attacks) → SK6 / SK7 → SK5 → SK9 → SK8 /
+SK11. Rough size: SK2+SK1 two sessions, SK3 one and a half, SK10 one, SK6+SK7
+one, SK5 one, SK9+SK8+SK11 one. Ports to EE: the rules (src/rules); the hooks
+are 1.69-only.
 
 ## Conditions — decided by the owner (2026-10-19)
 
