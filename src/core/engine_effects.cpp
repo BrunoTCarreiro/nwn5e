@@ -62,20 +62,27 @@ bool LyingDown(int animation) {
 
 namespace engine {
 
-bool PlayPushFall(void* target, uint32_t attacker_id, const Vector3& away, int ms) {
-  if (LyingDown(Field<int32_t>(target, nwmain::kCreatureAnimation))) return false;
+FallResult PlayPushFall(void* target, uint32_t attacker_id, const Vector3& away, int ms, uint32_t* paused_by) {
+  *paused_by = nwmain::kObjectInvalid;
+  if (LyingDown(Field<int32_t>(target, nwmain::kCreatureAnimation))) return FallResult::kLyingDown;
   void* round = Field<void*>(target, nwmain::kCreatureCombatRound);
-  if (!round || g_action_response_possible(round, nullptr, attacker_id, ms) == 0) return false;
-  if (Field<int32_t>(round, nwmain::kRoundPaused) == 1 && Field<uint32_t>(round, nwmain::kRoundPausedBy) == attacker_id) {
-    const int running = Field<int32_t>(round, nwmain::kRoundPauseTimer);
-    if (running < ms) {
-      g_decrement_round_length(round, nullptr, ms - running, 0);
-      SetField<int32_t>(round, nwmain::kRoundPauseTimer, ms);
+  bool paused = false;
+  if (round) {
+    if (Field<int32_t>(round, nwmain::kRoundPaused) == 1) *paused_by = Field<uint32_t>(round, nwmain::kRoundPausedBy);
+    if (g_action_response_possible(round, nullptr, attacker_id, ms) != 0) {
+      if (*paused_by == attacker_id) {
+        const int running = Field<int32_t>(round, nwmain::kRoundPauseTimer);
+        if (running < ms) {
+          g_decrement_round_length(round, nullptr, ms - running, 0);
+          SetField<int32_t>(round, nwmain::kRoundPauseTimer, ms);
+        }
+      } else {
+        g_set_round_paused(round, nullptr, 1, attacker_id);
+        g_set_pause_timer(round, nullptr, ms, 0);
+        g_decrement_round_length(round, nullptr, ms, 0);
+      }
+      paused = true;
     }
-  } else {
-    g_set_round_paused(round, nullptr, 1, attacker_id);
-    g_set_pause_timer(round, nullptr, ms, 0);
-    g_decrement_round_length(round, nullptr, ms, 0);
   }
   // As the knockdown picks it: facing the attacker (away from the push) -> 7.
   const Vector facing = Field<Vector>(target, nwmain::kObjectFacing);
@@ -85,7 +92,7 @@ bool PlayPushFall(void* target, uint32_t attacker_id, const Vector3& away, int m
   const auto set_animation =
       (*reinterpret_cast<SetAnimationFn* const*>(target))[nwmain::kVtableSetAnimation / sizeof(void*)];
   set_animation(target, nullptr, animation);
-  return true;
+  return paused ? FallResult::kFell : FallResult::kFellUnpaused;
 }
 
 }  // namespace engine
@@ -157,6 +164,13 @@ void ApplyMovementSpeedDecrease(void* target, uint32_t creator, int percent, flo
       NewEffect(nwmain::kEffectTypeMovementSpeedDecrease, nwmain::kEffectDurationTemporary, seconds, creator);
   if (!effect) return;
   g_set_integer(effect, nullptr, 0, percent);
+  Apply(target, effect, creator, delay_ms);
+}
+
+void ApplyCantMove(void* target, uint32_t creator, float seconds, uint32_t delay_ms) {
+  void* effect = NewEffect(nwmain::kEffectTypeSetAiState, nwmain::kEffectDurationTemporary, seconds, creator);
+  if (!effect) return;
+  g_set_integer(effect, nullptr, 0, static_cast<int>(~static_cast<uint32_t>(nwmain::kAiStateCanMove)));
   Apply(target, effect, creator, delay_ms);
 }
 

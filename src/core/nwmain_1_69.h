@@ -638,6 +638,11 @@ constexpr uintptr_t kCreatureUpdateMs = 0xA8;  // int32
 constexpr uintptr_t kAddAttackActions = 0x00646D80;
 constexpr uintptr_t kCreatureAttackTarget = 0x4E4;
 constexpr uintptr_t kCreatureAttemptedAttackTarget = 0x4E0;
+// SET_AI_STATE (type 23): apply 0x66D680 ANDs the creature's AI-state word
+// +0xB08 with integer 0; remove 0x66D6D0 rebuilds it from the base and the
+// remaining SET_AI_STATE effects. Bit 0x2 = can move (entangle clears it).
+constexpr uint16_t kEffectTypeSetAiState = 23;
+constexpr uint16_t kAiStateCanMove = 0x2;
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
 // before the hit decision) is entered only past this gate (eax = attacker miss
 // chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;

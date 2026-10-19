@@ -482,6 +482,12 @@ objects (placeables), and — owner request — when another enemy is then
 closer than the pushed one, the attacker switches to the nearest (in place
 for the round, made to stick at its end). Known gap: closed doors are not
 checked.
+*0.9.15 after the second test (2026-10-19):* the fall sometimes did not
+play (the round could not pause), the slide was cut short (the target walked
+back toward the attacker) and retargeting never fired. Now the target cannot
+move for the fall (an AI-state effect, as entangle uses), the fall plays even
+without a round pause, and the retarget is a logged scan of the enemies (each
+decision and the round-end check are in nwn5e.log).
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

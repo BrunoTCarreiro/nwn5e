@@ -469,13 +469,24 @@ void KeepPushRetarget(void* creature) {
   g_push_retargets.erase(it);
   if (GetTickCount() - retarget.tick > 15000) return;
   const void* action = HeadAttackAction(creature);
-  if (!action || Field<uint32_t>(action, nwmain::kActionFirstParam) != retarget.pushed) return;  // holds, or a new order
-  void* next = engine::GetCreature(retarget.next);
-  if (!next || engine::IsDeadOrDying(next) || !engine::IsEnemy(creature, retarget.next)) return;
-  g_add_attack_actions(creature, nullptr, retarget.next, 0, 1, 0);
+  const uint32_t ordered = action ? Field<uint32_t>(action, nwmain::kActionFirstParam) : nwmain::kObjectInvalid;
+  void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);
+  const uint32_t round_target = round ? Field<uint32_t>(round, nwmain::kRoundTarget) : nwmain::kObjectInvalid;
+  const char* outcome = "kept";
+  if (ordered == retarget.pushed) {
+    void* next = engine::GetCreature(retarget.next);
+    if (!next || engine::IsDeadOrDying(next) || !engine::IsEnemy(creature, retarget.next)) {
+      outcome = "went back to the pushed one; the closer enemy is gone";
+    } else {
+      g_add_attack_actions(creature, nullptr, retarget.next, 0, 1, 0);
+      outcome = "went back to the pushed one; attack order switched (as a click)";
+    }
+  } else if (ordered != retarget.next) {
+    outcome = action ? "another attack order since" : "no attack order";
+  }
   if (EffectLogSlot()) {
-    Log("mastery: 0x%08X after Push: attacks 0x%08X from the next round (attack order switched)", IdOf(creature),
-        retarget.next);
+    Log("mastery: 0x%08X round end after Push: attack order 0x%08X, round target 0x%08X, wanted 0x%08X: %s",
+        IdOf(creature), ordered, round_target, retarget.next, outcome);
   }
 }
 
@@ -665,13 +676,39 @@ namespace {
 
 // After a push: when an enemy is now closer to the attacker than the pushed
 // one, the attacker goes for the nearest such enemy instead of chasing (owner,
-// 2026-10-19). Switched in place for the rest of this round (round target,
-// queued attack action, attack targets); KeepPushRetarget makes it stick.
+// 2026-10-19): a living, hostile enemy it sees, edge to edge nearer than the
+// pushed one will be. Switched in place for the rest of this round (round
+// target, queued attack action, attack targets); KeepPushRetarget makes it
+// stick. Every decision is logged with the candidates.
 uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance) {
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
-  if (!round || Field<uint32_t>(round, nwmain::kRoundTarget) != pushed) return nwmain::kObjectInvalid;
-  const uint32_t next = g_get_nearest_enemy(attacker, nullptr, pushed_distance, pushed, 1, 0);
-  if (next == nwmain::kObjectInvalid || next == pushed || !engine::GetCreature(next)) return nwmain::kObjectInvalid;
+  const uint32_t round_target = round ? Field<uint32_t>(round, nwmain::kRoundTarget) : nwmain::kObjectInvalid;
+  const void* head = HeadAttackAction(attacker);
+  const uint32_t ordered = head ? Field<uint32_t>(head, nwmain::kActionFirstParam) : nwmain::kObjectInvalid;
+  uint32_t next = nwmain::kObjectInvalid;
+  float best = pushed_distance;
+  std::string candidates;
+  engine::ForEachOtherCreatureInArea(attacker, [&](uint32_t id, void* creature) {
+    if (id == pushed || !engine::IsEnemy(attacker, id) || engine::IsDeadOrDying(creature)) return;
+    const float distance = engine::EdgeDistance(attacker, creature);
+    const bool seen = engine::Sees(attacker, id);
+    char text[48];
+    sprintf_s(text, "%s0x%08X %.1f m%s", candidates.empty() ? "" : ", ", id, distance, seen ? "" : " unseen");
+    candidates += text;
+    if (seen && distance < best) {
+      best = distance;
+      next = id;
+    }
+  });
+  const bool attacking_pushed = round_target == pushed || ordered == pushed;
+  if (EffectLogSlot()) {
+    Log("mastery: 0x%08X Push retarget: round target 0x%08X, attack order 0x%08X; pushed 0x%08X ends %.1f m away; "
+        "enemies: %s -> %s",
+        attacker_id, round_target, ordered, pushed, pushed_distance, candidates.empty() ? "none" : candidates.c_str(),
+        !round ? "no round" : !attacking_pushed ? "not attacking the pushed one" :
+        next == nwmain::kObjectInvalid ? "none closer, keeps the pushed one" : "switch");
+  }
+  if (!round || !attacking_pushed || next == nwmain::kObjectInvalid) return nwmain::kObjectInvalid;
   SetField<uint32_t>(round, nwmain::kRoundTarget, next);
   SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
   if (void* action = HeadAttackAction(attacker)) {
@@ -707,7 +744,11 @@ void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id
     return;
   }
   const float pushed_distance = engine::EdgeDistance(attacker, target) + plan.metres;
-  const bool fell = engine::PlayPushFall(target, attacker_id, plan.away, kPushFallMs);
+  // It can't walk while it falls and slides (its own attack order would pull
+  // it back toward the attacker); its orders stay queued.
+  engine::ApplyCantMove(target, attacker_id, static_cast<float>(kPushFallMs) / 1000.0f, 0);
+  uint32_t paused_by = nwmain::kObjectInvalid;
+  const engine::FallResult fall = engine::PlayPushFall(target, attacker_id, plan.away, kPushFallMs, &paused_by);
   g_push_moves[target_id] = PushMove{plan.from, plan.to, plan.metres, 0.0f, engine::GetArea(target), GetTickCount()};
   const uint32_t next = RetargetAfterPush(attacker, attacker_id, target_id, pushed_distance);
   if (EffectLogSlot()) {
@@ -715,8 +756,18 @@ void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id
     if (plan.blocker != nwmain::kObjectInvalid) sprintf_s(blocker, " (cut short by placeable 0x%08X)", plan.blocker);
     char retarget[64] = "";
     if (next != nwmain::kObjectInvalid) sprintf_s(retarget, "; attacker now attacks the closer 0x%08X", next);
+    char fall_note[96];
+    if (fall == engine::FallResult::kFell) {
+      sprintf_s(fall_note, ", falls and gets up");
+    } else if (fall == engine::FallResult::kFellUnpaused && paused_by != nwmain::kObjectInvalid) {
+      sprintf_s(fall_note, ", falls without a round pause (its round is paused by 0x%08X)", paused_by);
+    } else if (fall == engine::FallResult::kFellUnpaused) {
+      sprintf_s(fall_note, ", falls without a round pause (its round has no time left)");
+    } else {
+      sprintf_s(fall_note, " (no fall: already lying down)");
+    }
     Log("mastery: 0x%08X Push on 0x%08X: slides %.1f m away%s%s%s", attacker_id, target_id, plan.metres, blocker,
-        fell ? ", falls and gets up" : " (no fall: its round can't pause or it is lying down)", retarget);
+        fall_note, retarget);
   }
 }
 
