@@ -61,7 +61,8 @@ struct Profile {
   rules::SkillSet expertise = 0;
 };
 std::unordered_map<uint32_t, Profile> g_profiles;  // characters, by object id (the local variables, cached)
-LogOnce g_logged(400);
+LogOnce g_logged(400);           // other creatures
+LogOnce g_logged_players(1000);  // player characters
 
 bool Faithful() { return g_config.skills == rules::RuleVariant::kFaithful; }
 
@@ -184,8 +185,17 @@ Profile CharacterProfile(void* creature, void* stats) {
   return profile;
 }
 
+// What a 2024 skill value is made of, for the log.
+struct SkillParts {
+  int ability = 0;
+  int proficiency_bonus = 0;
+  bool proficient = false;
+  bool expertise = false;
+  int effects = 0;
+};
+
 // The 2024 value of `skill` for `stats`, or false when NWN's stands.
-bool SkillValue2024(void* stats, uint8_t skill, void* vs, int* value) {
+bool SkillValue2024(void* stats, uint8_t skill, void* vs, int* value, SkillParts* parts) {
   if (!stats || Field<int32_t>(stats, nwmain::kStatsDungeonMaster) != 0) return false;
   const auto mapped = rules::Skill2024ForNwnSkill(skill);
   void* creature = Field<void*>(stats, nwmain::kStatsCreature);
@@ -202,21 +212,38 @@ bool SkillValue2024(void* stats, uint8_t skill, void* vs, int* value) {
   const int pb = rules::ProficiencyBonusForCreature(character, facts.level, facts.challenge_rating);
   const int effects = g_total_effect_bonus(creature, nullptr, nwmain::kEffectBonusTypeSkill, vs, 0, 0, 0, 0, skill,
                                            0xFF, 0);
-  *value = std::clamp(rules::SkillBonus2024(AbilityModifier(stats, rules::AbilityFor(*mapped)), pb,
-                                            rules::Has(profile.proficient, *mapped),
-                                            rules::Has(profile.expertise, *mapped), effects),
-                      -127, 127);
+  parts->ability = AbilityModifier(stats, rules::AbilityFor(*mapped));
+  parts->proficiency_bonus = pb;
+  parts->proficient = rules::Has(profile.proficient, *mapped);
+  parts->expertise = rules::Has(profile.expertise, *mapped);
+  parts->effects = effects;
+  *value = std::clamp(rules::SkillBonus2024(parts->ability, pb, parts->proficient, parts->expertise, effects), -127,
+                      127);
   return true;
+}
+
+const char* AbilityShort(rules::Ability ability) {
+  static const char* const kNames[] = {"Str", "Dex", "Con", "Int", "Wis", "Cha"};
+  return kNames[static_cast<int>(ability)];
 }
 
 char __fastcall GetSkillRank(void* stats, void* edx, uint8_t skill, void* vs, int base_only) {
   const char engine = g_get_skill_rank(stats, edx, skill, vs, base_only);
   int value = 0;
-  if (base_only || !SkillValue2024(stats, skill, vs, &value)) return engine;
+  SkillParts parts;
+  if (base_only || !SkillValue2024(stats, skill, vs, &value, &parts)) return engine;
   if (g_config.log_attacks) {
     const uint32_t id = ObjectIdOf(stats);
-    if (g_logged.First(LogOnce::Key(id, skill, value))) {
-      Log("skills: 0x%08X %s: 3e %+d -> 2024 %+d", id, rules::Faithful2024SkillLabel(skill), engine, value);
+    // Player characters have their own budget, so a town full of NPCs can't
+    // use it up before the player's values are logged.
+    LogOnce& logged = IsPlayerControlled(id) ? g_logged_players : g_logged;
+    if (logged.First(LogOnce::Key(id, skill, value))) {
+      const auto mapped = rules::Skill2024ForNwnSkill(skill);
+      Log("skills: 0x%08X %s: 3e %+d -> 2024 %+d (%s %+d, PB %+d %s, effects %+d, vs 0x%08X)", id,
+          rules::Faithful2024SkillLabel(skill), engine, value, AbilityShort(rules::AbilityFor(*mapped)), parts.ability,
+          parts.proficiency_bonus,
+          parts.expertise ? "x2 (Expertise)" : parts.proficient ? "(proficient)" : "(not proficient)", parts.effects,
+          vs ? Field<uint32_t>(vs, nwmain::kCreatureObjectId) : nwmain::kObjectInvalid);
     }
   }
   return static_cast<char>(value);
