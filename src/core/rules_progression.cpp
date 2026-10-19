@@ -43,8 +43,9 @@ uint32_t* XpTable(void* rules_object) {
   return reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(rules_object) + nwmain::kRulesXpTable);
 }
 
-// In place of the rules constructor's last loader call (0x47A6F8): the XP
-// table (filled from exptable.2da just before) becomes faithful's.
+// In place of the last loader call of the rules constructor (0x47A6F8) and of
+// ReloadAll (0x47AD4C): the XP table (filled from exptable.2da just before)
+// becomes faithful's.
 void __fastcall AfterRulesLoaded(void* rules_object, void* edx) {
   g_rules_last_loader(rules_object, edx);
   uint32_t* table = XpTable(rules_object);
@@ -128,6 +129,11 @@ void InstallProgressionRules() {
                             nwmain::kRulesLastLoader, reinterpret_cast<void*>(&AfterRulesLoaded))
                    ? 1
                    : 0;
+    applied += RedirectCall("progression: 2024 XP table again after ReloadAll (faithful)",
+                            nwmain::kRulesReloadedCall, nwmain::kRulesLastLoader,
+                            reinterpret_cast<void*>(&AfterRulesLoaded))
+                   ? 1
+                   : 0;
     const uint8_t cap_20 = 20;
     applied += PatchBytes("progression: level cap 20, also with HotU (faithful)", nwmain::kLevelCapHotU,
                           &nwmain::kLevelCapHotUByte, &cap_20, 1)
@@ -137,7 +143,7 @@ void InstallProgressionRules() {
                             nwmain::kSetExperience, reinterpret_cast<void*>(&ScriptSetExperience))
                    ? 1
                    : 0;
-    Log("progression: %d of 3 faithful patches applied", applied);
+    Log("progression: %d of 4 faithful patches applied", applied);
   }
   if (g_config.multiclass == rules::RuleVariant::kFaithful) {
     int applied = PatchBytes("multiclass: no XP penalty (faithful)", nwmain::kMulticlassXpPenalty,

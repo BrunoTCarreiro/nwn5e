@@ -992,6 +992,10 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   0x6A84BB); then below MaxCharLevel (server options +0xB4); then a PC
   (+0x74) needs XP >= XP[total level] (0x6A8636). All 15 HasExpansionPack
   calls are server code: the client has no cap of its own.
+- CNWRules::ReloadAll 0x47AAC0 (11 callers, client and server: module load /
+  unload with haks among them) re-reads exptable.2da into +0x1C (0x47ACD6) and
+  ends with the same five loaders (last at 0x47AD4C, ecx = ebx = rules): every
+  in-memory rules edit must be re-applied after it as well.
 - AddExperience 0x6A2030 (ret 4): associates get nothing (0x6A237D); one
   class -> 0x6A236A: SetExperience(XP + xp, 1); more -> the penalty (favored
   class from race +0x1F, XPPenalty classes 2+ levels behind, x (1 − 0.2·n),

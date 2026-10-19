@@ -1289,6 +1289,11 @@ constexpr uintptr_t kRulesXpTable = 0x1C;
 // arguments), after the XP table is filled.
 constexpr uintptr_t kRulesLoadedCall = 0x0047A6F8;
 constexpr uintptr_t kRulesLastLoader = 0x0047E280;
+// CNWRules::ReloadAll 0x47AAC0 (11 callers: module load / unload with haks,
+// and client paths) re-reads exptable.2da into +0x1C and ends with the same
+// five loaders — the last at 0x47AD4C (ecx = ebx = rules). Every in-memory
+// rules edit must be re-applied there too.
+constexpr uintptr_t kRulesReloadedCall = 0x0047AD4C;
 // CanLevelUp 0x6A8440 (no arguments, ret): the level cap is a local byte, 20,
 // set to 40 when HotU is installed (mov byte [esp+0x13], 0x28 at 0x6A84B7 —
 // its immediate). The 15 HasExpansionPack calls are all server-side.

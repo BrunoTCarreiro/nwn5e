@@ -142,5 +142,74 @@ GetHitDice 227, GiveXP / SetXP 110.
   validator. Max 3 classes is structural (client check).
 - **Queries:** GetLevel 0x692520, GetClassLevel 0x699560, GetNumLevelsOfClass
   0x6B3D50, GetLevelStats 0x6995E0, GetIsClass 0x697CB0.
-- **Not decoded yet:** where racial ability adjustments are applied; the
-  resource manager (serving per-mode 2da / tlk).
+- **Decoded later (step 1, 2026-10-19):** see section 3.
+
+## 3. Engine, step 1 (resource serving, feat lists, abilities, feats, point buy, alignment)
+
+All thiscall; none of these functions is reached through a pointer or a
+vtable; no jump lands inside the patch ranges (jumps_into).
+
+- **Start-up (D):** WinMain 0x401EF0 → client init 0x40E600: CExoResMan at
+  [0x92DC3C] (0x40E7DA), directories (OVERRIDE: at 0x40EBB9), key files
+  (0x40EBEA), the tlk (CTlkTable::SetTlkFile 0x5CA0D0 — a raw file, not a
+  resource; text through GetSimpleString 0x5C9C80); then 0x409D50 builds
+  CNWRules (constructor 0x47A440, prologue 6A FF 68 37 0E 87 00): feats
+  0x47AD70, the XP table inline (0x47A65A), classes 0x47C280 (cls_* through
+  CNWClass 0x53BA20 / 0x53C270), races 0x47D170. Single player's server uses
+  the same resman and rules ([0x92DC30] = 0).
+- **ReloadAll 0x47AAC0** re-reads everything (11 callers: module load /
+  unload with haks, client paths): in-memory rules edits must be re-applied
+  after it (its last loader call 0x47AD4C, as CM1 does).
+- **Resource lookup (D):** GetKeyEntry 0x5CC470 — encrypted haks, then
+  modules / haks, then directories (newest first), then BIFs; Demand
+  0x5CC010. No official .nwm / .mod holds a 2da. **Serving our files:** at the
+  rules constructor's entry, add an alias (CExoAliasList::Add 0x5BE170, ecx =
+  [[0x92DC34]+0xC], two CExoStrings by value, ret 0x10) and
+  AddResourceDirectory("NWN5E:") 0x5CBBE0 (ecx = [0x92DC3C], ret 4): the
+  folder outranks override and the BIFs, survives reloads and can hold new
+  resrefs (listed once, when added — write generated files first). The mode
+  is read at start-up, so the folder can differ per mode. UNSURE: trailing
+  backslash on the alias path. Byte-level alternative: the getter calls in
+  C2DA::Load2DArray 0x5CEFA0 (0x5CEFD9 data, 0x5CEFE5 size; existing resrefs
+  only).
+- **Feats (D):** CNWFeat array at rules +0xC4, stride 0x70: AllClassesCanUse
+  +0x24, prerequisites +0x30..+0x4C, MinLevel / MaxLevel / MinLevelClass
+  +0x55 / +0x56 / +0x57. Class feat table CNWClass +0x1E8 (pointer) / +0x1EC
+  (count), 0x10-byte entries: feat +0, GrantedOnLevel +2, list bits +3
+  (cls_feat List 0→1, 1→3, 2→2, 3→0); IsBonusFeat 0x53CC00, IsNormalFeat
+  0x53CC50 (falls back to AllClassesCanUse), IsGrantedFeat 0x53CCC0. Client
+  "can choose this feat" 0x4F3270 (ret 0x10; prologue 83 EC 24 53 55), its
+  prerequisite check 0x4F2290 (also MinLevel / MaxLevel / MinLevelClass /
+  GrantedOnLevel). Server: ValidateLevelUp never checks class lists nor
+  general vs bonus slots; its prerequisite check 0x6B1710 skips the level
+  fields; henchmen use 0x6AB840 (LevelUpAutomatic). Hiding a feat in memory:
+  MinLevel 0xFF; adding one to a bonus list: the list bits.
+- **Ability scores (D):** base at stats +0x3F8 / +0x3FA / +0x3FC / +0x3FE /
+  +0x400 / +0x402 (Str..Cha) — without the racial adjustment, with the
+  level-up bumps (LevelUp increments them from history +0x102); a cached
+  modifier byte follows each. The getters (Str 0x6A0FF0, Con 0x6A10A0, Int
+  0x6A1150, Wis 0x6A1200, Cha 0x6A12B0, Dex 0x6A1360; no arguments, ret) add
+  race +0x18..+0x1D and effects; they feed the sheet (0x62BD30) and scripts
+  (0x6F8460). Bypassing them: the prerequisite check 0x6B1710,
+  ValidateCharacter, every reader of the modifier bytes (refresh through
+  SetXXXBase, e.g. 0x6A1510).
+- **HasFeat 0x6A3630** (ret 4, prologue 51 53 56 57 8B F9): 779 direct
+  callers, all server; GetHasFeat 0x6F94F0 needs it plus remaining uses
+  (0x6A3850); feat uses 0x6A3760 / 0x6A4200 / 0x6A4B10 / 0x6A4B40 / 0x6A4B80;
+  AddFeat 0x6A3500, RemoveFeat 0x6A4BC0. No client HasFeat: the UI shows the
+  stored lists the server sends (0x62BD30) — one hook covers rules and
+  scripts, not the screens.
+- **Point buy (D, patchable immediates):** 30 points at client 0x4F0074,
+  0x531A6E, 0x537F05 (last byte 0x1E) and server 0x617136 (B3 1E); 18 maximum
+  at client 0x52F7E5, 0x52FAB5, 0x52FD85, 0x530075, 0x530345, 0x530675 and
+  server 0x61728D; cost tiers: 30 compares on 0x0E and 30 on 0x10 in the 12
+  button handlers. The server side runs only with Enforce Legal Characters
+  (off in single player). 2024 (27, max 15, 13→14 costs 2) = 0x0E → 0x0D.
+- **Class alignment limits (D):** CNWClass +0x21D AlignRestrict, +0x21E
+  AlignRstrctType, +0x220 InvertRestrict, read by GetIsAlignmentAllowed
+  0x53CD80 (ret 8) from CanLevelUpInClass (0x6A8736) and 14 times by the
+  alignment-shift code near 0x6996E0; also +0x21E at 0x69A253. Lifting: clear
+  AlignRestrict *and* InvertRestrict (Druid inverts). The creation panel
+  ignores them and hard-codes class ids (0x52B0B0: Barbarian, Bard, Monk,
+  Paladin, Druid): one patch at 0x52B2CD (3B C1 0F 84 3A 02 00 00 → E9 B8 02
+  00 00 90 90 90); that its buttons then start enabled is I.

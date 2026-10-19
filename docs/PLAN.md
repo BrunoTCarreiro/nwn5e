@@ -315,6 +315,8 @@ anything else (crafting and Harper costs, the Deck's −10,000, a negative plot
 award) is kept but never below the current level. An XP cost landing exactly
 on an NWN threshold would be read as a level-set (rare: exact multiples of
 500·L·(L−1)).
+*0.9.47:* ReloadAll (module load / unload with haks, 11 callers) re-reads
+exptable.2da; the 2024 table is now written after it too.
 
 **CM2. Multiclassing.** 2024: 13 in the primary ability of every current
 class and the new one (Barbarian Str; Bard Cha; Cleric Wis; Druid Wis;
