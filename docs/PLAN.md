@@ -493,6 +493,10 @@ decision and the round-end check are in nwn5e.log).
 0.25 s. The "AoO from the push" was the pushed goblin running back: NWN
 provokes from every enemy a runner passes, also when running toward them;
 D2's faithful rule ("only moving away provokes") now holds for that too.
+*0.9.17-0.9.18:* slide 0.15 s (owner). The remaining "swing at the pushed one"
+was not an AoO (none logged, no AoO text) but the round's next swing, aimed
+before the hit landed; the retarget now happens at the attack roll (the
+landing still moves the target).
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

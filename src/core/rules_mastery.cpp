@@ -359,6 +359,7 @@ struct PushRetarget {
   DWORD tick;
 };
 std::unordered_map<uint32_t, PushRetarget> g_push_retargets;
+uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance);
 using GetNearestEnemyFn = uint32_t(__fastcall*)(void* creature, void* edx, float range, uint32_t exclude, int seen,
                                                 int path);
 using AddAttackActionsFn = int(__fastcall*)(void* creature, void* edx, uint32_t target, int passive, int clear_first,
@@ -636,10 +637,24 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
              (save == 0 ? " failed, knocked down for a round" : save == 2 ? " - immune" : " made");
       break;
     }
-    case rules::Mastery::kPush:
-      g_push_awaiting[attacker_id] = AwaitDamage{target_id, now};  // moved when the hit lands
+    case rules::Mastery::kPush: {
+      // Moved when the hit lands; but the attacker turns to a closer enemy
+      // now, at the roll — at the landing its round has already aimed the
+      // next swing at the pushed one (owner's test of 0.9.16).
+      g_push_awaiting[attacker_id] = AwaitDamage{target_id, now};
       what = "Push: when the hit lands";
+      const engine::PushPlan plan = engine::PlanPush(target, attacker, kPushMetres);
+      if (!plan.refused) {
+        const uint32_t next =
+            RetargetAfterPush(attacker, attacker_id, target_id, engine::EdgeDistance(attacker, target) + plan.metres);
+        if (next != nwmain::kObjectInvalid) {
+          char text[64];
+          sprintf_s(text, "; attacker now attacks the closer 0x%08X", next);
+          what += text;
+        }
+      }
       break;
+    }
     case rules::Mastery::kCleave: {
       if (Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return;  // melee attack rolls only
       const auto used = g_cleave_used.find(attacker_id);
@@ -731,8 +746,8 @@ uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed
 }
 
 // D4 Push, on the hit's landing: plan the line (walls, placeables), start the
-// fall, slide the target along the line in the AI updates, and retarget the
-// attacker if an enemy is now closer.
+// fall and slide the target along the line in the AI updates. (The attacker
+// was already turned to a closer enemy at the roll, MasteryAfterAttackRoll.)
 void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id) {
   const engine::PushPlan plan = engine::PlanPush(target, attacker, kPushMetres);
   if (plan.refused) {
@@ -743,19 +758,16 @@ void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id
     }
     return;
   }
-  const float pushed_distance = engine::EdgeDistance(attacker, target) + plan.metres;
   // It can't walk while it falls and slides (its own attack order would pull
   // it back toward the attacker); its orders stay queued.
   engine::ApplyCantMove(target, attacker_id, static_cast<float>(kPushFallMs) / 1000.0f, 0);
   uint32_t paused_by = nwmain::kObjectInvalid;
   const engine::FallResult fall = engine::PlayPushFall(target, attacker_id, plan.away, kPushFallMs, &paused_by);
   g_push_moves[target_id] = PushMove{plan.from, plan.to, plan.metres, 0.0f, engine::GetArea(target), GetTickCount()};
-  const uint32_t next = RetargetAfterPush(attacker, attacker_id, target_id, pushed_distance);
   if (EffectLogSlot()) {
     char blocker[48] = "";
     if (plan.blocker != nwmain::kObjectInvalid) sprintf_s(blocker, " (cut short by placeable 0x%08X)", plan.blocker);
-    char retarget[64] = "";
-    if (next != nwmain::kObjectInvalid) sprintf_s(retarget, "; attacker now attacks the closer 0x%08X", next);
+    const char* retarget = "";
     char fall_note[96];
     if (fall == engine::FallResult::kFell) {
       sprintf_s(fall_note, ", falls and gets up");
