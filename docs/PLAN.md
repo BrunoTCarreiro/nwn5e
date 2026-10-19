@@ -9,6 +9,12 @@ anything shared.
 Goal: a **full conversion** — the game plays by 2024 rules end to end, not a
 "5e-flavoured" 3e.
 
+**Possible later move to NWN: Enhanced Edition (owner, 2026-10-19; not now).**
+Diamond 1.69 stays the target. When routes cost about the same, prefer the
+one that would carry over: the rules in `src/rules`, 2da / tlk / texture data
+and NWScript port; `nwmain_1_69.h` addresses and hooks into 1.69 client panels
+do not (EE has NUI for custom windows). Mark 1.69-only work as such.
+
 ## How it works
 
 NWN keeps its rules in three places. Each 5e rule lands in the one that owns it:
