@@ -349,6 +349,12 @@ sites); Search's six dice redirected (d20 in detect mode, else 10);
 `hiding_needs_15` (default on): the Stealth total (d20 + Hide) is told to the
 player when hiding starts, and below 15 Spot / Listen read the hider as not
 in stealth mode (noticed once in range) until it hides again.
+*0.9.32 (owner test 2026-10-19):* a loaded game restores stealth mode while
+the character is being placed (no area yet), when the skills hook still gives
+NWN's value — the first roll used +2 instead of +4 and said "not hidden". No
+roll then; the first 6 s update rolls. The perception log now shows each
+check's score (> 0 = noticed) and whether the observer stands still (+5);
+four goblins saw a Stealth 16 at melee range — to be read from the score.
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).

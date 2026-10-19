@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include "creature.h"
+#include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
 #include "nwmain_1_69.h"
@@ -52,6 +53,8 @@ std::unordered_set<uint32_t> g_rolled;  // hiding creatures whose Stealth roll f
 std::unordered_set<uint32_t> g_not_hidden;  // ... whose Stealth total missed 15 (hiding_needs_15)
 std::unordered_map<uint64_t, int> g_noticed;  // (observer, hider, Spot / Listen) -> last result, for the log
 int g_log_lines = 0;
+constexpr int kNoScore = -100000;
+volatile int g_last_score = kNoScore;  // the last detection score (score stubs), for the log
 
 uint32_t IdOf(const void* creature) { return Field<uint32_t>(creature, nwmain::kCreatureObjectId); }
 
@@ -158,8 +161,13 @@ bool RedirectCall(const char* name, uintptr_t site, uintptr_t expected_target, c
 void __fastcall SetStealthMode(void* creature, void* edx, uint8_t mode) {
   const bool starts = mode == 1 && Field<uint8_t>(creature, nwmain::kCreatureStealthMode) != 1;
   g_set_stealth_mode(creature, edx, mode);
-  if (starts) {
+  if (starts && engine::GetArea(creature)) {
     RollStealth(creature, "starts hiding");
+  } else if (starts) {
+    // Being placed (a loaded game restores stealth mode before the creature is
+    // in its area, when its skills are not the 2024 ones yet): the first 6 s
+    // update rolls instead.
+    g_rolled.erase(IdOf(creature));
   } else if (mode != 1) {
     g_rolled.erase(IdOf(creature));
     g_not_hidden.erase(IdOf(creature));
@@ -197,10 +205,18 @@ __declspec(naked) void PerceptionRollsStub() {
   }
 }
 
+using AnimationStillFn = int(__fastcall*)(void* object, void* edx, int animation);
+const auto g_animation_still = reinterpret_cast<AnimationStillFn>(0x0063A600);
+bool rules_still(void* creature) {
+  return g_animation_still(creature, nullptr, Field<int32_t>(creature, nwmain::kCreatureAnimation)) != 0;
+}
+
 // Logs when an observer starts or stops noticing a hiding creature, if either
 // is a player's (owner tests; the engine has no log of its own for this).
 int Detection(DetectionFn original, const char* sense, void* observer, void* edx, void* target, int flag) {
+  g_last_score = kNoScore;
   const int result = original(observer, edx, target, flag);
+  const int score = g_last_score;
   if (!g_config.log_attacks || !target || Field<uint8_t>(target, nwmain::kCreatureStealthMode) != 1) return result;
   const uint64_t key = (static_cast<uint64_t>(IdOf(observer)) << 32 | IdOf(target)) ^ (sense[0] == 'S' ? 1ull << 63 : 0);
   const auto it = g_noticed.find(key);
@@ -208,12 +224,29 @@ int Detection(DetectionFn original, const char* sense, void* observer, void* edx
   g_noticed[key] = result;
   if ((IsPlayerControlled(IdOf(target)) || IsPlayerControlled(IdOf(observer))) && LogSlot()) {
     const bool searching = Field<uint8_t>(observer, nwmain::kCreatureDetectMode) != 0;
-    Log("perception: 0x%08X %s 0x%08X (%s; its Stealth d20 %d; observer %s, die %d)", IdOf(observer),
+    char score_text[48];
+    if (score == kNoScore) {
+      sprintf_s(score_text, "decided before the score");
+    } else {
+      sprintf_s(score_text, "score %+d", score);
+    }
+    Log("perception: 0x%08X %s 0x%08X (%s, %s; its Stealth d20 %d; observer %s, die %d, %s)", IdOf(observer),
         result ? (sense[0] == 'S' ? "sees" : "hears") : (sense[0] == 'S' ? "does not see" : "does not hear"),
-        IdOf(target), sense, Field<uint8_t>(target, nwmain::kCreatureHideRoll), searching ? "searching" : "passive",
-        Field<uint8_t>(observer, sense[0] == 'S' ? nwmain::kCreatureSpotRoll : nwmain::kCreatureListenRoll));
+        IdOf(target), sense, score_text, Field<uint8_t>(target, nwmain::kCreatureHideRoll),
+        searching ? "searching" : "passive",
+        Field<uint8_t>(observer, sense[0] == 'S' ? nwmain::kCreatureSpotRoll : nwmain::kCreatureListenRoll),
+        rules_still(observer) ? "still" : "moving");
   }
   return result;
+}
+
+// Called in place of `mov esi,[esi+0xC64]` at the score sites: notes ebx.
+__declspec(naked) void ScoreStub() {
+  __asm {
+    mov dword ptr [g_last_score], ebx
+    mov esi, dword ptr [esi + 0xC64]
+    ret
+  }
 }
 
 int __fastcall ListenDetection(void* observer, void* edx, void* target, int flag) {
@@ -265,6 +298,15 @@ void InstallPerceptionRules() {
       PatchBytes(site == nwmain::kSpotStealthRead ? "perception: Spot - a hide below Stealth 15 is no hide (faithful)"
                                                    : "perception: Listen - a hide below Stealth 15 is no hide (faithful)",
                  site, nwmain::kStealthReadBytes, call, sizeof(call));
+    }
+  }
+  if (g_config.log_attacks) {
+    for (const uintptr_t site : {nwmain::kListenScoreSite, nwmain::kSpotScoreSite}) {
+      uint8_t call[6] = {0xe8, 0, 0, 0, 0, 0x90};
+      const int32_t rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&ScoreStub) - (site + nwmain::kCallLength));
+      memcpy(call + 1, &rel, sizeof(rel));
+      PatchBytes(site == nwmain::kSpotScoreSite ? "perception: Spot score (log)" : "perception: Listen score (log)", site,
+                 nwmain::kScoreSiteBytes, call, sizeof(call));
     }
   }
   InstallHook({"Listen detection (log)", nwmain::kListenDetection, nwmain::kListenDetectionPrologue,

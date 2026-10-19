@@ -1147,5 +1147,13 @@ constexpr uintptr_t kSearchDieCalls[] = {0x00648A20, 0x00648A76, 0x00648CAD, 0x0
 constexpr uintptr_t kSpotStealthRead = 0x00653A05;
 constexpr uintptr_t kListenStealthRead = 0x006535AB;
 constexpr uint8_t kStealthReadBytes[] = {0x8a, 0x87, 0xa9, 0x04, 0x00, 0x00};
+// The detection score just before the Favored Enemy term (zeroed in faithful):
+// ebx at Listen 0x653731 / Spot 0x653CB2, both `mov esi,[esi+0xC64]` (jump
+// targets at their first byte only). Score > 0 = noticed. The animation test
+// 0x63A600 returns 1 when the creature is NOT walking or running (2, 3, 4,
+// 0x4E, 0x4F, 0x54-0x57): a still hider -5, a still observer +5.
+constexpr uintptr_t kListenScoreSite = 0x00653731;
+constexpr uintptr_t kSpotScoreSite = 0x00653CB2;
+constexpr uint8_t kScoreSiteBytes[] = {0x8b, 0xb6, 0x64, 0x0c, 0x00, 0x00};
 
 }  // namespace nwmain
