@@ -891,3 +891,18 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   Mass Heal and Lay on Hands on undead, Slay Living, monster Bolt abilities
   (nw_s1_blt*), mephit breath, smoke claw, beholder rays, Arcane Archer
   arrows, rod of wonder; the wizard rays make no attack roll.
+
+## Concentration (decoded 2026-10-19, SK7)
+
+- OnApplyDamage 0x6686C0: if the damaged creature's animation (+0xAC) is a
+  casting one (0xF or 0x10), it reads its last spell (+0x188, spells table
+  0x4F85F0), and for spells with +0x134 == 1 rolls d20 (0x66897E) +
+  Concentration against a DC from the damage; a failure interrupts the spell.
+  Not casting: straight to 0x668BED.
+- Cast action 0x67C070: defensive casting (block entered with [esp+0x74] ==
+  1) — DC 15 + spell level (0x67D290), d20 at 0x67D24E + Concentration, +4
+  with Combat Casting (feat 7), only with an enemy within 4 m (0x658C00 with
+  4.0); total >= DC (0x67D2B5) casts, else the spell is lost (0x67D2C6, an
+  effect from 0x666680). While an effect of type 18 (entangle) is on the
+  caster (loop at 0x67D41C over +0xE8): d20 (0x67D50F) + Concentration >= 15
+  (0x67D51B) casts, else the spell fails (message 0x41).

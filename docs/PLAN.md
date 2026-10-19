@@ -433,6 +433,9 @@ entangled casting checks; defensive casting has nothing left to do; the
 concentration save comes with Phase 4. NWN mode: NWN's. Consequences: casters
 in melee are no longer interrupted — a big buff to casters in melee, as in
 2024 (balanced in 2024 by concentration and by spells being actions).
+*Built 0.9.39 (key `concentration`):* the OnApplyDamage check is skipped (the
+path a non-casting creature takes), the defensive-casting and entangled checks
+always pass; the d20s still roll. Taunt's opposed Concentration goes with SK8.
 
 **SK8. The 3e-only skills.** Parry (parry mode), Taunt, Appraise, Use Magic
 Device. 2024 has none of them as skills. Recommendation (faithful): **parry

@@ -1177,4 +1177,23 @@ constexpr uintptr_t kTouchAcFlagPush = 0x006F12C7;  // 6a 01
 constexpr uintptr_t kTouchD20Call = 0x006F12E1;
 constexpr uintptr_t kTouchConfirmSetge = 0x006F1395;  // 0f 9d c1
 
+// SK7: the Concentration checks on casting (RE-NOTES "Concentration").
+// - OnApplyDamage 0x6686C0: when the damaged creature's animation (+0xAC) is
+//   a casting one (0xF / 0x10), 0x668945.. rolls d20 + Concentration against a
+//   DC from the damage and interrupts the spell on a failure; otherwise it goes
+//   on at 0x668BED (`cmp eax,0xF; je 0x668945; cmp eax,0x10; jne 0x668BED`).
+// - Cast action 0x67C070, defensive casting (with an enemy within 4 m, DC 15 +
+//   spell level; Combat Casting, feat 7, +4): total >= DC at 0x67D2B5, `jl`
+//   0x67D2C6 = the spell is lost.
+// - Same action, casting while an effect of type 18 (entangle) is on the
+//   caster (the effect list loop, 0x67D41C): d20 + Concentration >= 15 at
+//   0x67D51B, `jge 0x67D5D8` = cast.
+constexpr MediumPatch kFaithfulConcentrationPatches[] = {
+    {"damage does not interrupt casting", 0x00668937, 5, {0x83, 0xf8, 0x0f, 0x74, 0x09},
+     {0xe9, 0xb1, 0x02, 0x00, 0x00}},  // cmp eax,0xF; je -> jmp 0x668BED
+    {"no defensive casting check", 0x0067D2B7, 2, {0x7c, 0x0d}, {0x90, 0x90}},  // jl (spell lost) -> nops
+    {"no check to cast while entangled", 0x0067D51E, 6, {0x0f, 0x8d, 0xb4, 0x00, 0x00, 0x00},
+     {0xe9, 0xb5, 0x00, 0x00, 0x00, 0x90}},  // jge 0x67D5D8 -> jmp 0x67D5D8
+};
+
 }  // namespace nwmain

@@ -37,6 +37,10 @@ struct Config {
   // against full AC, advantage / disadvantage, a natural 20 crits without
   // confirmation; nwn / off = NWN's.
   rules::RuleVariant spell_attacks = rules::RuleVariant::kFaithful;
+  // SK7: faithful = casting is not interrupted by damage, no Concentration
+  // check for defensive casting or for casting while entangled; nwn / off =
+  // NWN's.
+  rules::RuleVariant concentration = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

@@ -28,6 +28,7 @@ void InstallSkillRules();
 void InstallPerceptionRules();
 void InstallSkillDcRules();
 void InstallSpellAttackRules();
+void InstallCastingRules();
 void InstallCreatureUpdate();
 void InstallRetargetRules();
 void InstallSheetRules();
@@ -51,7 +52,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.9.38 loaded");
+  Log("nwn5e 0.9.39 loaded");
   if (!HostIsMappedBuild()) {
     Log("host is not the mapped nwmain.exe 1.69 build; no hooks installed");
     return;
@@ -77,6 +78,7 @@ void Start(HMODULE self) {
   InstallPerceptionRules();
   InstallSkillDcRules();
   InstallSpellAttackRules();
+  InstallCastingRules();
   InstallCreatureUpdate();
   InstallRetargetRules();
   InstallSheetRules();
