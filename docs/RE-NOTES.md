@@ -948,3 +948,33 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   Blooded (379), + 2 with Thug (402); the total (byte) at +0x4B4; the combat
   log's "Initiative Roll : total : (d20 + modifier = total)" takes ints 0 / 1 =
   d20 / modifier (0x655C01..).
+
+## Parry, Taunt, Appraise, Use Magic Device (decoded 2026-10-19, SK8)
+
+- Parry: ResolveAttackRoll's parry block (0x7445C7..0x7446C5) runs when the
+  target is a creature in parry mode (+0x4AB == 1) with ParryActions left
+  (round +0x2150), not on a natural 20 or a ranged attack: GetSkillRank(10) +
+  RollDice d20 (0x74465E) >= the attack total -> result 2 (parried), a
+  riposte (0x73D120, action 9) when it beats it by 10; else a parry animation
+  (0x73D3D0). StartCombatRound 0x73C110: a creature in parry mode schedules
+  no attacks (0x73C161 -> 0x73C576, ParryActions = its attack count); the AoO
+  broadcast skips parrying creatures (0x655FA6, 0x65647C). No AC change.
+- Taunt: action 0x688BC0 (from the dispatcher at 0x72CA8C; PHASE2-SKILLS-RECON's
+  0x688787 is another action). Second pass at 0x688EAC: d20 + Taunt (+ Favored
+  Enemy) vs d20 + Concentration (+2 feat 380); success -> AC decrease
+  clamp(margin, 1, 6) for 30 s; always a reputation hit, skill-check feedback
+  (strref 342), SetCombatMode(0, 1) and a 6 s cooldown (0x689104 on).
+- Stores: OpenStore is command 378 (handler 0x6FEB20, table slot +0x5E8 at
+  0x6E1D68); markup / markdown clamped to +/-100 go through 0x612100 to
+  CNWSStore::AddCustomer 0x717A10 (customer +0x14 / +0x15), added to the
+  store's own markup (+0x20C) when pricing (0x71734D, 0x717BC0 / 0x717266,
+  0x717C37). No engine code reads Appraise (skill 20); nw_i0_plot's
+  gplotAppraiseOpenStore does an opposed Appraise + d10 roll (+/-30%).
+- Use Magic Device: CanUseItemViaUMD 0x68EDA0 (item, 0 class / 1 race / 2
+  alignment; ret 8): UMD rank >= SkillVsItemCost.2da's column for the first
+  row whose DeviceCostMax covers the item's value; called from the class
+  (0x68E98A), alignment (0x68EAA3) and race (0x68ED0A) limit checks. Holy
+  Avenger (IP 36, 0x766210): a non-paladin with enough UMD gets the paladin
+  path (0x766673) instead of +2 (0x766376). Scrolls: 279 of 287 stock ones
+  carry Use Limitation: Class; x2_pc_umdcheck adds a script check (UMD vs 25 +
+  level) when X2_SWITCH_ENABLE_UMD_SCROLLS is set.

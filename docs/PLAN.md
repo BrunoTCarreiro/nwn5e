@@ -464,6 +464,18 @@ items in Phase 8); the SRD Thief's **Use Magic Device at level 13** brings
 the bypass back in Phase 3 (rev.: was missing); scrolls are Phase 4. NWN
 mode: NWN's. These touch few campaign scripts (Appraise 4, UMD 1, Taunt 3,
 Parry 4).
+*Built 0.9.45 (key `nwn_only_skills`):* parry mode is cosmetic (no parry
+rolls / ripostes, the creature schedules its attacks and makes AoOs — with
+only the first, a parrying NPC would just stand there); Taunt plays its
+animation and stops (no roll, effect, hostility or log line); stores record
+every OpenStore markup / markdown as 0 (Appraise is script-only — nw_i0_plot's
+opposed d10 roll — so this is the one place; quest discounts passed the same
+way go too, and the script's "merchant's reaction" text still shows);
+CanUseItemViaUMD returns 0 (class / race / alignment limits hold — 279 of 287
+stock scrolls carry a class limit, so non-casters can't read them, as in
+2024) and Holy Avenger gives a non-paladin +2. The scripts' AutoDC dialog
+checks on these skills (x0_d2_skparr*, x0_d2_sktaun*, x2_appraise_*) still
+read NWN's ranks.
 
 **SK9. Initiative and ability checks.** NWN: initiative = d20 + Dex + 4
 (Improved Initiative) + 8 (Epic Superior Initiative); no other raw ability

@@ -48,6 +48,9 @@ struct Config {
   // SK9: faithful = initiative d20 + Dex (+ PB with Improved Initiative = Alert),
   // advantage when invisible or hidden; nwn / off = NWN's.
   rules::RuleVariant initiative = rules::RuleVariant::kFaithful;
+  // SK8: faithful = Parry, Taunt, Appraise and Use Magic Device do nothing
+  // (2024 has no such skills); nwn / off = NWN's.
+  rules::RuleVariant nwn_only_skills = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

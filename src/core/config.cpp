@@ -50,6 +50,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.concentration = ReadVariant(ini, L"concentration", g_config.mode);
   g_config.knockdown = ReadVariant(ini, L"knockdown", g_config.mode);
   g_config.initiative = ReadVariant(ini, L"initiative", g_config.mode);
+  g_config.nwn_only_skills = ReadVariant(ini, L"nwn_only_skills", g_config.mode);
+  Log("config: nwn_only_skills=%s", VariantName(g_config.nwn_only_skills));
   Log("config: knockdown=%s initiative=%s", VariantName(g_config.knockdown), VariantName(g_config.initiative));
   Log("config: spell_attacks=%s concentration=%s", VariantName(g_config.spell_attacks),
       VariantName(g_config.concentration));

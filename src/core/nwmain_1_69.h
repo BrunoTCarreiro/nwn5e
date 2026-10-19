@@ -1251,4 +1251,33 @@ constexpr int kSkillSearch = 14;
 constexpr int kSkillSpot = 17;
 constexpr uintptr_t kSkillCheckD20Call = 0x0070CD73;
 
+// SK8: the 3e-only skills (RE-NOTES "Parry, Taunt, Appraise, Use Magic
+// Device"). Parry: ResolveAttackRoll's parry block 0x7445C7..0x7446C5 (skipped
+// for a non-creature target at 0x7445D2, the same exit), StartCombatRound's
+// parry-mode branch (0x73C161: schedules no attacks), the AoO broadcast's
+// parry-mode skips (0x655FA6, 0x65647C; the two "jumps" into them decode from
+// inside `mov reg,[esi+0x74]`). Taunt: action 0x688BC0, second pass at 0x688EAC
+// -> its normal end 0x689104 (SetCombatMode, cooldown; same stack depth).
+// Stores: CNWSStore::AddCustomer 0x717A10 records the OpenStore (command 378)
+// markup / markdown at +0x14 / +0x15 (0x717A5E / 0x717A61); ebx is 0 there.
+// UMD: CanUseItemViaUMD 0x68EDA0 (item, restriction; ret 8) and the Holy
+// Avenger handler's UMD branch (0x76628C).
+constexpr MediumPatch kFaithfulNwnOnlySkillPatches[] = {
+    {"Parry: no parry rolls or ripostes", 0x007445D2, 6, {0x0f, 0x84, 0xee, 0x00, 0x00, 0x00},
+     {0x90, 0xe9, 0xee, 0x00, 0x00, 0x00}},  // je -> jmp 0x7446C6
+    {"Parry: a creature in parry mode attacks as usual", 0x0073C161, 6, {0x0f, 0x84, 0x0f, 0x04, 0x00, 0x00},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},
+    {"Parry: parry mode makes opportunity attacks (1/2)", 0x00655FA6, 6, {0x0f, 0x84, 0x14, 0x04, 0x00, 0x00},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},
+    {"Parry: parry mode makes opportunity attacks (2/2)", 0x0065647C, 6, {0x0f, 0x84, 0x9f, 0x02, 0x00, 0x00},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},
+    {"Taunt does nothing", 0x00688EAC, 5, {0x8b, 0x17, 0x8b, 0xae, 0x64}, {0xe9, 0x53, 0x02, 0x00, 0x00}},
+    {"Appraise: stores keep their own prices (markup)", 0x00717A5F, 1, {0x4d}, {0x5d}},    // mov [ebp+0x14], bl
+    {"Appraise: stores keep their own prices (markdown)", 0x00717A62, 1, {0x55}, {0x5d}},  // mov [ebp+0x15], bl
+    {"Use Magic Device never lifts an item's limits", 0x0068EDA0, 5, {0x6a, 0xff, 0x68, 0x00, 0x77},
+     {0x33, 0xc0, 0xc2, 0x08, 0x00}},  // xor eax,eax; ret 8
+    {"Holy Avenger: no paladin powers through Use Magic Device", 0x0076628C, 6, {0x0f, 0x85, 0xce, 0x00, 0x00, 0x00},
+     {0x90, 0xe9, 0xce, 0x00, 0x00, 0x00}},  // jne -> jmp 0x766360
+};
+
 }  // namespace nwmain
