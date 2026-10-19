@@ -178,7 +178,7 @@ Profile CharacterProfile(void* creature, void* stats) {
   Log("skills: 0x%08X 2024 proficiencies taken from its ranks: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
       Names(profile.expertise).c_str());
   if (IsPlayerControlled(id)) {
-    TellPlayer(id, "nwn5e: your 2024 skills were taken from your ranks — proficient: " + Names(profile.proficient) +
+    TellPlayer(id, "nwn5e: your 2024 skills were taken from your ranks - proficient: " + Names(profile.proficient) +
                        "; Expertise: " + Names(profile.expertise) + ". Change them with !skills.");
   }
   return profile;
@@ -274,7 +274,7 @@ std::vector<std::string> SkillsCommand(void* creature, const std::string& args) 
                       ". Set with !skills expertise <skill> ...");
       return lines;
     }
-    lines.push_back("nwn5e: 2024 skills — proficient: " + Names(profile.proficient) + "; Expertise: " +
+    lines.push_back("nwn5e: 2024 skills - proficient: " + Names(profile.proficient) + "; Expertise: " +
                     Names(profile.expertise) + ".");
     lines.push_back("nwn5e: you choose " + std::to_string(allowance.class_skills) + " from your class (" +
                     Names(allowance.class_list) + ")" +
@@ -304,7 +304,7 @@ std::vector<std::string> SkillsCommand(void* creature, const std::string& args) 
   if (expertise) {
     const std::string problem = rules::CheckExpertiseChoice(allowance, profile.proficient, set);
     if (!problem.empty()) {
-      lines.push_back("nwn5e: Expertise not changed — " + problem + ".");
+      lines.push_back("nwn5e: Expertise not changed - " + problem + ".");
       return lines;
     }
     profile.expertise = set;
@@ -312,16 +312,16 @@ std::vector<std::string> SkillsCommand(void* creature, const std::string& args) 
     set |= allowance.granted;
     const std::string problem = rules::CheckSkillChoice(allowance, set);
     if (!problem.empty()) {
-      lines.push_back("nwn5e: skills not changed — " + problem + ".");
+      lines.push_back("nwn5e: skills not changed - " + problem + ".");
       return lines;
     }
     profile.proficient = set;
     profile.expertise &= set;
   }
   StoreProfile(creature, id, profile, 1);
-  Log("skills: 0x%08X chose — proficient: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
+  Log("skills: 0x%08X chose - proficient: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
       Names(profile.expertise).c_str());
-  lines.push_back("nwn5e: 2024 skills — proficient: " + Names(profile.proficient) + "; Expertise: " +
+  lines.push_back("nwn5e: 2024 skills - proficient: " + Names(profile.proficient) + "; Expertise: " +
                   Names(profile.expertise) + ".");
   return lines;
 }

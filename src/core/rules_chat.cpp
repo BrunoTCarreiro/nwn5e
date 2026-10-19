@@ -18,6 +18,7 @@
 #include "hooks.h"
 #include "log.h"
 #include "nwmain_1_69.h"
+#include "rules/text.h"
 
 std::string DescribeSaves(void* stats);                                            // rules_saves.cpp
 std::vector<std::string> MasteryCommand(void* creature, const std::string& args);  // rules_mastery.cpp
@@ -72,7 +73,8 @@ Command ParseCommand(const ExoString& text, std::string* args) {
 
 void Reply(void* message, uint32_t player, const std::string& line) {
   ExoString text = {nullptr, 0};
-  g_exo_string_from_text(&text, nullptr, line.c_str());  // engine-allocated: ServerTell destroys it
+  const std::string game_text = rules::ToWindows1252(line);  // the game shows Windows-1252, our strings are UTF-8
+  g_exo_string_from_text(&text, nullptr, game_text.c_str());  // engine-allocated: ServerTell destroys it
   g_server_tell(message, nullptr, player, text);
 }
 
