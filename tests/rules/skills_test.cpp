@@ -129,3 +129,14 @@ TEST(SkillDcsAre2024) {
   CHECK_EQ(ConvertNwnSkillDc(50), 30);
   CHECK_EQ(ConvertNwnSkillDc(100), 55);
 }
+
+// SK5 B. Breaks caught: a hider behind or beside the observer found (sneaking
+// up from behind must work); one 3 m away found; the 2 m edge left out.
+TEST(FoundOnlyInFrontUpClose) {
+  CHECK_EQ(InFrontWithin(1.0f, 0.0f, 1.0f, 0.0f, 2.0f), true);    // ahead, 1 m
+  CHECK_EQ(InFrontWithin(2.0f, 0.0f, 1.0f, 0.0f, 2.0f), true);    // ahead, exactly 2 m
+  CHECK_EQ(InFrontWithin(3.0f, 0.0f, 1.0f, 0.0f, 2.0f), false);   // too far
+  CHECK_EQ(InFrontWithin(-1.0f, 0.0f, 1.0f, 0.0f, 2.0f), false);  // behind
+  CHECK_EQ(InFrontWithin(0.0f, 1.0f, 1.0f, 0.0f, 2.0f), false);   // beside
+  CHECK_EQ(InFrontWithin(1.0f, 1.0f, 1.0f, 0.0f, 2.0f), true);    // ahead and to the side, 1.4 m
+}

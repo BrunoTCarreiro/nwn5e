@@ -56,4 +56,9 @@ void ApplyCantMove(void* target, uint32_t creator, float seconds, uint32_t delay
 // update, as the engine's jump does); false off the walkmesh.
 bool PlaceOnGround(void* creature, float x, float y);
 
+// Is the straight line between two creatures in the same area clear of walls
+// (non-walkable faces) and placeables (the area's static-object test, as
+// PlanPush uses)? The line-of-sight stand-in for SK5's "found up close".
+bool ClearLineBetween(void* from, void* to);
+
 }  // namespace engine

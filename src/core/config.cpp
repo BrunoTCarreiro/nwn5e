@@ -66,6 +66,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.resume_attack_after_potion =
       ReadBool(ini, L"resume_attack_after_potion", g_config.resume_attack_after_potion);
   g_config.hiding_needs_15 = ReadBool(ini, L"hiding_needs_15", g_config.hiding_needs_15);
+  g_config.found_up_close = ReadBool(ini, L"found_up_close", g_config.found_up_close);
+  g_config.alert_creatures_search = ReadBool(ini, L"alert_creatures_search", g_config.alert_creatures_search);
   Log("config: resume_attack_after_potion=%d", g_config.resume_attack_after_potion);
   g_config.ranged_retarget_range = GetPrivateProfileIntW(L"rules", L"ranged_retarget_range", 40, ini);
   Log("config: retarget_remaining_attacks=%d ranged_retarget_range=%d m", g_config.retarget_remaining_attacks,

@@ -15,6 +15,7 @@
 // Distance, area, movement, facing and light terms stay (NWN's real-time
 // stealth needs them). NWN mode: NWN's.
 
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +26,7 @@
 
 #include "config.h"
 #include "creature.h"
+#include "engine_effects.h"
 #include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
@@ -183,7 +185,10 @@ void __stdcall PerceptionRolls(void* creature) {
     g_rolled.erase(id);
     g_not_hidden.erase(id);
   }
-  const bool searching = Field<uint8_t>(creature, nwmain::kCreatureDetectMode) != 0;
+  // Detect mode is the Search action; with alert_creatures_search a creature in
+  // combat searches too (SK5 C).
+  const bool searching = Field<uint8_t>(creature, nwmain::kCreatureDetectMode) != 0 ||
+                         (g_config.alert_creatures_search && Field<int32_t>(creature, nwmain::kCreatureInCombat) != 0);
   const int die = rules::PerceptionDie(searching, searching ? D20() : 0);
   SetField<uint8_t>(creature, nwmain::kCreatureSpotRoll, static_cast<uint8_t>(die));
   SetField<uint8_t>(creature, nwmain::kCreatureListenRoll, static_cast<uint8_t>(die));
@@ -211,31 +216,56 @@ bool rules_still(void* creature) {
   return g_animation_still(creature, nullptr, Field<int32_t>(creature, nwmain::kCreatureAnimation)) != 0;
 }
 
+// SK5 B: an observer whose Spot check got as far as its score (it can see:
+// not blind, in range) finds a hider in front of it within kUpCloseMetres
+// when nothing stands between them.
+constexpr float kUpCloseMetres = 2.0f;
+bool FoundUpClose(void* observer, void* hider, float* metres) {
+  const float* at = reinterpret_cast<const float*>(static_cast<const uint8_t*>(observer) + nwmain::kObjectPosition);
+  const float* to = reinterpret_cast<const float*>(static_cast<const uint8_t*>(hider) + nwmain::kObjectPosition);
+  const float* facing = reinterpret_cast<const float*>(static_cast<const uint8_t*>(observer) + nwmain::kObjectFacing);
+  const float dx = to[0] - at[0];
+  const float dy = to[1] - at[1];
+  *metres = sqrtf(dx * dx + dy * dy);
+  if (!rules::InFrontWithin(dx, dy, facing[0], facing[1], kUpCloseMetres)) return false;
+  return engine::ClearLineBetween(observer, hider);
+}
+
 // Logs when an observer starts or stops noticing a hiding creature, if either
 // is a player's (owner tests; the engine has no log of its own for this).
 int Detection(DetectionFn original, const char* sense, void* observer, void* edx, void* target, int flag) {
   g_last_score = kNoScore;
-  const int result = original(observer, edx, target, flag);
+  int result = original(observer, edx, target, flag);
   const int score = g_last_score;
-  if (!g_config.log_attacks || !target || Field<uint8_t>(target, nwmain::kCreatureStealthMode) != 1) return result;
+  if (!target || Field<uint8_t>(target, nwmain::kCreatureStealthMode) != 1) return result;
+  char up_close[64] = "";
+  float metres = 0.0f;
+  if (sense[0] == 'S' && !result && score != kNoScore && g_config.found_up_close &&
+      FoundUpClose(observer, target, &metres)) {
+    result = 1;
+    sprintf_s(up_close, "; found up close: %.1f m in front, clear line", metres);
+  }
+  if (!g_config.log_attacks) return result;
   const uint64_t key = (static_cast<uint64_t>(IdOf(observer)) << 32 | IdOf(target)) ^ (sense[0] == 'S' ? 1ull << 63 : 0);
   const auto it = g_noticed.find(key);
   if (it != g_noticed.end() && it->second == result) return result;
   g_noticed[key] = result;
   if ((IsPlayerControlled(IdOf(target)) || IsPlayerControlled(IdOf(observer))) && LogSlot()) {
-    const bool searching = Field<uint8_t>(observer, nwmain::kCreatureDetectMode) != 0;
+    const bool searching = Field<uint8_t>(observer, nwmain::kCreatureDetectMode) != 0 ||
+                           (g_config.alert_creatures_search &&
+                            Field<int32_t>(observer, nwmain::kCreatureInCombat) != 0);
     char score_text[48];
     if (score == kNoScore) {
       sprintf_s(score_text, "decided before the score");
     } else {
       sprintf_s(score_text, "score %+d", score);
     }
-    Log("perception: 0x%08X %s 0x%08X (%s, %s; its Stealth d20 %d; observer %s, die %d, %s)", IdOf(observer),
+    Log("perception: 0x%08X %s 0x%08X (%s, %s; its Stealth d20 %d; observer %s, die %d, %s%s)", IdOf(observer),
         result ? (sense[0] == 'S' ? "sees" : "hears") : (sense[0] == 'S' ? "does not see" : "does not hear"),
         IdOf(target), sense, score_text, Field<uint8_t>(target, nwmain::kCreatureHideRoll),
         searching ? "searching" : "passive",
         Field<uint8_t>(observer, sense[0] == 'S' ? nwmain::kCreatureSpotRoll : nwmain::kCreatureListenRoll),
-        rules_still(observer) ? "still" : "moving");
+        rules_still(observer) ? "still" : "moving", up_close);
   }
   return result;
 }
@@ -300,12 +330,14 @@ void InstallPerceptionRules() {
                  site, nwmain::kStealthReadBytes, call, sizeof(call));
     }
   }
-  if (g_config.log_attacks) {
+  if (g_config.log_attacks || g_config.found_up_close) {  // B needs to know the check got to its score
     for (const uintptr_t site : {nwmain::kListenScoreSite, nwmain::kSpotScoreSite}) {
       uint8_t call[6] = {0xe8, 0, 0, 0, 0, 0x90};
       const int32_t rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&ScoreStub) - (site + nwmain::kCallLength));
       memcpy(call + 1, &rel, sizeof(rel));
-      PatchBytes(site == nwmain::kSpotScoreSite ? "perception: Spot score (log)" : "perception: Listen score (log)", site,
+      PatchBytes(site == nwmain::kSpotScoreSite ? "perception: Spot score (log, found up close)"
+                                                : "perception: Listen score (log)",
+                 site,
                  nwmain::kScoreSiteBytes, call, sizeof(call));
     }
   }

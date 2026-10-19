@@ -942,6 +942,7 @@ constexpr uintptr_t kCreatureMaster = 0xB30;  // uint32 master object id (commun
 // (seeded with a d10 by the constructor, 0x6431C4).
 constexpr uintptr_t kCreatureDetectMode = 0x4A8;
 constexpr uintptr_t kCreatureStealthMode = 0x4A9;
+constexpr uintptr_t kCreatureInCombat = 0x4BC;  // int32, non-zero in combat (perception, take 20)
 constexpr uintptr_t kCreatureHideRoll = 0xA28;
 constexpr uintptr_t kCreatureMoveSilentlyRoll = 0xA29;
 constexpr uintptr_t kCreatureSpotRoll = 0xA2A;

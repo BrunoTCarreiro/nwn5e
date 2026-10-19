@@ -263,4 +263,16 @@ bool PlaceOnGround(void* creature, float x, float y) {
   return true;
 }
 
+bool ClearLineBetween(void* from, void* to) {
+  if (!from || !to) return false;
+  void* area = GetArea(from);
+  if (!area || GetArea(to) != area) return false;
+  const Vector a = Field<Vector>(from, nwmain::kObjectPosition);
+  const Vector b = Field<Vector>(to, nwmain::kObjectPosition);
+  if (g_walkable_line(area, nullptr, a.x, a.y, b.x, b.y, -0.1f) != 1) return false;
+  uint32_t blocker = nwmain::kObjectInvalid;
+  return g_static_objects_on_line(area, nullptr, a.x, a.y, b.x, b.y, a.z + 0.5f, a.z + 1.6f, 0.05f,
+                                  nwmain::kObjectInvalid, &blocker, 1, 0, 0) == 1;
+}
+
 }  // namespace engine

@@ -107,4 +107,10 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
 // searches (detect mode: the Search action), else 10 (passive Perception).
 int PerceptionDie(bool searching, int d20);
 
+// SK5 B (faithful): is a hider at (dx, dy) from an observer facing (fx, fy)
+// in front of it (ahead of its shoulders) and within `metres`? Then, with a
+// clear line between them, the observer finds it (2024 hides you only out of
+// sight).
+bool InFrontWithin(float dx, float dy, float fx, float fy, float metres);
+
 }  // namespace rules

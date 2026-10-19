@@ -352,4 +352,8 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
 
 int PerceptionDie(bool searching, int d20) { return searching ? d20 : 10; }
 
+bool InFrontWithin(float dx, float dy, float fx, float fy, float metres) {
+  return dx * dx + dy * dy <= metres * metres && fx * dx + fy * dy > 0.0f;
+}
+
 }  // namespace rules

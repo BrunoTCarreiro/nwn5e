@@ -355,6 +355,17 @@ NWN's value — the first roll used +2 instead of +4 and said "not hidden". No
 roll then; the first 6 s update rolls. The perception log now shows each
 check's score (> 0 = noticed) and whether the observer stands still (+5);
 four goblins saw a Stealth 16 at melee range — to be read from the score.
+*Decided (owner, 2026-10-19), after a Stealth 24 walked around goblins
+unnoticed (scores -5 to -19: passive 10-13 never beats one high roll):* B —
+2024 hides you only out of sight; NWN has no cover data, so an enemy that has
+the hider in front of it within about 2 m (and can see it) finds it; behind
+still works. C — alert enemies search: a creature in combat uses an active
+d20 Perception each 6 s update instead of passive 10. Each behind its own
+switch. *Built 0.9.33:* B (`found_up_close`) — when a Spot check gets as far
+as its score (the observer can see: not blind, in range) but misses, a hider
+within 2 m in front of the observer (ahead of its shoulders) with a clear line
+(no wall faces or placeables, PlanPush's tests) is found; C
+(`alert_creatures_search`) — +0x4BC set counts as searching for the 6 s roll.
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).

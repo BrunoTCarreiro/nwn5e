@@ -56,6 +56,13 @@ struct Config {
   // SK5 (with perception=faithful): hiding needs a Stealth total of 15 (the
   // 2024 Hide action); below it the creature is not hidden.
   bool hiding_needs_15 = true;
+  // SK5 B (with perception=faithful): an enemy finds a hidden creature that is
+  // in front of it within 2 m with a clear line between them (2024 hides you
+  // only out of sight; NWN has no cover data).
+  bool found_up_close = true;
+  // SK5 C (with perception=faithful): a creature in combat searches (an active
+  // d20 Perception each 6 s update) instead of using passive Perception.
+  bool alert_creatures_search = true;
 
   // [debug] — test switches, not rules.
   bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored
