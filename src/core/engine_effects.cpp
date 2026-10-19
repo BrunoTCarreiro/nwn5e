@@ -5,6 +5,8 @@
 
 #include "engine_effects.h"
 
+#include <math.h>
+
 #include "creature.h"
 #include "engine_queries.h"
 #include "nwmain_1_69.h"
@@ -29,6 +31,60 @@ const auto g_set_creator = reinterpret_cast<SetCreatorFn>(nwmain::kGameEffectSet
 const auto g_apply_effect = reinterpret_cast<ApplyEffectFn>(nwmain::kObjectApplyEffect);
 const auto g_get_ai_master = reinterpret_cast<GetAiMasterFn>(nwmain::kGetServerAIMaster);
 const auto g_add_event = reinterpret_cast<AddEventFn>(nwmain::kAddEventDeltaTime);
+
+struct Vector {
+  float x, y, z;
+};
+using RoundCheckFn = int(__fastcall*)(void* round, void* edx, uint32_t attacker, int ms);
+using RoundPausedFn = void(__fastcall*)(void* round, void* edx, int paused, uint32_t attacker);
+using RoundTimeFn = void(__fastcall*)(void* round, void* edx, int ms, int flag);
+using SetAnimationFn = void(__fastcall*)(void* creature, void* edx, int animation);
+using ComputeHeightFn = float(__fastcall*)(void* area, void* edx, Vector position);
+using WalkableLineFn = int(__fastcall*)(void* area, void* edx, float x1, float y1, float x2, float y2, float tolerance);
+using SetPositionFn = void(__fastcall*)(void* object, void* edx, Vector position, int force);
+using UpdateSubAreasFn = void(__fastcall*)(void* creature, void* edx, Vector position, uint32_t area_id);
+
+const auto g_action_response_possible = reinterpret_cast<RoundCheckFn>(nwmain::kRoundGetActionResponsePossible);
+const auto g_set_round_paused = reinterpret_cast<RoundPausedFn>(nwmain::kRoundSetRoundPaused);
+const auto g_set_pause_timer = reinterpret_cast<RoundTimeFn>(nwmain::kRoundSetPauseTimer);
+const auto g_decrement_round_length = reinterpret_cast<RoundTimeFn>(nwmain::kRoundDecrementRoundLength);
+const auto g_compute_height = reinterpret_cast<ComputeHeightFn>(nwmain::kAreaComputeHeight);
+const auto g_walkable_line = reinterpret_cast<WalkableLineFn>(nwmain::kAreaNoNonWalkPolysOnLine);
+const auto g_set_position = reinterpret_cast<SetPositionFn>(nwmain::kObjectSetPosition);
+const auto g_update_sub_areas = reinterpret_cast<UpdateSubAreasFn>(nwmain::kCreatureUpdateSubAreas);
+
+bool LyingDown(int animation) {
+  return animation == 0x05 || animation == 0x07 || animation == 0x20 || animation == 0x21 || animation == 0x24;
+}
+
+// The engine's knockdown fall, as a visual: the round pauses for `ms` (one
+// already paused by the same attacker — its hit flinch — is extended) and is
+// shortened by as much, so no attack is lost; the AI update stands it up.
+bool PlayFall(void* target, uint32_t attacker_id, const Vector& away, int ms) {
+  if (LyingDown(Field<int32_t>(target, nwmain::kCreatureAnimation))) return false;
+  void* round = Field<void*>(target, nwmain::kCreatureCombatRound);
+  if (!round || g_action_response_possible(round, nullptr, attacker_id, ms) == 0) return false;
+  if (Field<int32_t>(round, nwmain::kRoundPaused) == 1 && Field<uint32_t>(round, nwmain::kRoundPausedBy) == attacker_id) {
+    const int running = Field<int32_t>(round, nwmain::kRoundPauseTimer);
+    if (running < ms) {
+      g_decrement_round_length(round, nullptr, ms - running, 0);
+      SetField<int32_t>(round, nwmain::kRoundPauseTimer, ms);
+    }
+  } else {
+    g_set_round_paused(round, nullptr, 1, attacker_id);
+    g_set_pause_timer(round, nullptr, ms, 0);
+    g_decrement_round_length(round, nullptr, ms, 0);
+  }
+  // As the knockdown picks it: facing the attacker (away from the push) -> 7.
+  const Vector facing = Field<Vector>(target, nwmain::kObjectFacing);
+  const float length = sqrtf(facing.x * facing.x + facing.y * facing.y);
+  const float dot = length > 0.0f ? (-away.x * facing.x - away.y * facing.y) / length : 0.0f;
+  const int animation = dot >= nwmain::kFallFacingDot ? nwmain::kAnimationFallFacing : nwmain::kAnimationFallTurned;
+  const auto set_animation =
+      (*reinterpret_cast<SetAnimationFn* const*>(target))[nwmain::kVtableSetAnimation / sizeof(void*)];
+  set_animation(target, nullptr, animation);
+  return true;
+}
 
 // A new effect of `type`, extraordinary (not dispellable, like a weapon's
 // own effect), with a duration type (0 instant, 1 temporary).
@@ -96,6 +152,63 @@ void ApplyMovementSpeedDecrease(void* target, uint32_t creator, int percent, flo
   if (!effect) return;
   g_set_integer(effect, nullptr, 0, percent);
   Apply(target, effect, creator, delay_ms);
+}
+
+void ApplyIcon(void* target, uint32_t creator, int icon, float seconds, uint32_t delay_ms) {
+  void* effect = NewEffect(nwmain::kEffectTypeIcon, nwmain::kEffectDurationTemporary, seconds, creator);
+  if (!effect) return;
+  g_set_integer(effect, nullptr, 0, icon);
+  Apply(target, effect, creator, delay_ms);
+}
+
+PushOutcome PushAway(void* target, void* attacker, float max_metres, int fall_ms) {
+  PushOutcome outcome;
+  if (!target || !attacker) return outcome;
+  if (IsDeadOrDying(target)) {
+    outcome.refused = "dead";
+    return outcome;
+  }
+  if (Field<uint32_t>(target, nwmain::kCreatureSize) > nwmain::kCreatureSizeLarge) {
+    outcome.refused = "larger than Large";
+    return outcome;
+  }
+  void* area = GetArea(target);
+  if (!area || GetArea(attacker) != area) {
+    outcome.refused = "not in the attacker's area";
+    return outcome;
+  }
+  const Vector from = Field<Vector>(target, nwmain::kObjectPosition);
+  const Vector attacker_at = Field<Vector>(attacker, nwmain::kObjectPosition);
+  Vector away = {from.x - attacker_at.x, from.y - attacker_at.y, 0.0f};
+  float length = sqrtf(away.x * away.x + away.y * away.y);
+  if (length < 0.01f) {  // on top of each other: along the attacker's facing
+    away = Field<Vector>(attacker, nwmain::kObjectFacing);
+    away.z = 0.0f;
+    length = sqrtf(away.x * away.x + away.y * away.y);
+    if (length < 0.01f) {
+      outcome.refused = "no direction";
+      return outcome;
+    }
+  }
+  away.x /= length;
+  away.y /= length;
+  constexpr float kBody = 0.5f;  // clearance behind the new spot
+  for (float metres = max_metres; metres >= 0.49f; metres -= 0.5f) {
+    Vector to = {from.x + away.x * metres, from.y + away.y * metres, from.z};
+    const float height = g_compute_height(area, nullptr, to);
+    if (height <= nwmain::kAreaOffWalkmeshHeight + 0.01f) continue;
+    if (g_walkable_line(area, nullptr, from.x, from.y, to.x + away.x * kBody, to.y + away.y * kBody, -0.1f) != 1) {
+      continue;
+    }
+    to.z = height;
+    g_set_position(target, nullptr, to, 0);
+    g_update_sub_areas(target, nullptr, to, Field<uint32_t>(area, nwmain::kAreaId));
+    outcome.metres = metres;
+    outcome.fell = PlayFall(target, Field<uint32_t>(attacker, nwmain::kCreatureObjectId), away, fall_ms);
+    return outcome;
+  }
+  outcome.refused = "no walkable ground behind it";
+  return outcome;
 }
 
 }  // namespace engine

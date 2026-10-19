@@ -553,7 +553,65 @@ constexpr SmallPatch kFaithfulConditionPatches[] = {
     {"Deafened adds no spell failure", 0x0066D942, 2, {0x6a, 0x14}, {0x6a, 0x00}},
     {"Entangled: no attack -2", 0x0066CD00, 2, {0x6a, 0x02}, {0x6a, 0x00}},
     {"Entangled: no Dexterity -4", 0x0066CD56, 2, {0x6a, 0x04}, {0x6a, 0x00}},
+    // Coup de grace (0x745560): `mov dword [eax+0x44], 1` at 0x745657 marks the
+    // attack an automatic hit and kill against a helpless creature of level 4
+    // or less; 2024 has none (a hit from within 5 ft is a critical instead).
+    {"no coup de grace", 0x0074565A, 1, {0x01}, {0x00}},
 };
+
+// CN5 (faithful): CNWSEffectListHandler::OnApplySetState(object, effect,
+// loading) 0x66DD30 (thiscall, ret 0xC; returns 1 when the effect is not
+// kept). It refuses for no creature, creature +0xD0, dead (not loading) and
+// creature +0xAF4 (all but states 20/21); fear (state 3) then checks
+// GetIsImmune(4) / HasFeat(300) and the mind-spell immunity GetIsImmune(1) /
+// HasFeat(0xD8) unless the effect is supernatural (flags & 0x18 == 0x10) with
+// integer 1 == 1 — each sending NWN's "immune" feedback.
+constexpr uintptr_t kOnApplySetState = 0x0066DD30;
+constexpr uint8_t kOnApplySetStatePrologue[] = {0x6a, 0xff, 0x68, 0xce, 0x63, 0x89, 0x00, 0x64};
+constexpr uintptr_t kCreatureDeadFlag = 0xD0;
+constexpr uintptr_t kCreatureRefusesStates = 0xAF4;
+constexpr int kImmunityMindSpells = 1;
+constexpr int kImmunityFear = 4;
+constexpr int kFeatMindImmunity = 0xD8;
+constexpr int kFeatFearImmunity = 300;
+constexpr uint16_t kEffectTypeIcon = 67;  // integer 0 = effecticons.2da row
+constexpr int kIconFrightened = 14;
+
+// Push (D4; RE-NOTES "Push: fall animation and short moves"):
+// - CNWSCombatRound (creature +0xAC8), as the hit flinch in OnApplyDamage
+//   (0x668C0C) uses it: GetActionResponsePossible(attacker id, ms) 0x73BC90,
+//   SetRoundPaused(1, attacker id) 0x73B9E0, SetPauseTimer(ms, 0) 0x73BA60
+//   (adds to a running timer), DecrementRoundLength(ms, 0) 0x73BAF0; paused
+//   +0x2104, paused by +0x2108, timer +0x210C. The AI update ends the pause and
+//   resets the animation (SetAnimation(1)).
+// - CNWSCreature::SetAnimation(int) = vtable +0x80 (0x649600, ret 4). The
+//   knockdown falls with 7 when dot(direction to the attacker, facing) >=
+//   0.707, else 5 (0x66D190); facing is a vector at object +0x84.
+// - CNWSArea::ComputeHeight(Vector) 0x6D9730 (ret 0xC; -6.0 off the walkmesh);
+//   NoNonWalkPolysOnLine(x1, y1, x2, y2, -0.1f) 0x6DF020 (ret 0x14; 1 = the
+//   line crosses only walkable faces).
+// - As AIActionJumpToPoint (0x680FDA) moves within an area: CNWSObject::
+//   SetPosition(Vector, 0) 0x63D2D0 (ret 0x10), then the creature's trigger
+//   update 0x6833F0(Vector, area +0xC8) (ret 0x10).
+constexpr uintptr_t kRoundGetActionResponsePossible = 0x0073BC90;
+constexpr uintptr_t kRoundSetRoundPaused = 0x0073B9E0;
+constexpr uintptr_t kRoundSetPauseTimer = 0x0073BA60;
+constexpr uintptr_t kRoundDecrementRoundLength = 0x0073BAF0;
+constexpr uintptr_t kRoundPaused = 0x2104;
+constexpr uintptr_t kRoundPausedBy = 0x2108;
+constexpr uintptr_t kRoundPauseTimer = 0x210C;
+constexpr uintptr_t kVtableSetAnimation = 0x80;
+constexpr int kAnimationFallFacing = 7;
+constexpr int kAnimationFallTurned = 5;
+constexpr float kFallFacingDot = 0.707f;
+constexpr uintptr_t kObjectFacing = 0x84;
+constexpr uintptr_t kAreaComputeHeight = 0x006D9730;
+constexpr uintptr_t kAreaNoNonWalkPolysOnLine = 0x006DF020;
+constexpr float kAreaOffWalkmeshHeight = -6.0f;
+constexpr uintptr_t kObjectSetPosition = 0x0063D2D0;
+constexpr uintptr_t kCreatureUpdateSubAreas = 0x006833F0;
+constexpr uintptr_t kAreaId = 0xC8;
+constexpr uint32_t kCreatureSizeLarge = 4;  // creature +0x4D4: 1 tiny .. 4 large, 5 huge
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
 // before the hit decision) is entered only past this gate (eax = attacker miss
 // chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;

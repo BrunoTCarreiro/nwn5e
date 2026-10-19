@@ -702,3 +702,26 @@ not confirmed.
 - Confusion (NW_G0_confuse), d10 per AI tick: 1 wander, 2-6 nothing, 7-10
   attack the nearest creature (any side); 2024 has 9-10 act normally. Charm
   (nw_g0_charm) runs DetermineCombatRound; reputation picks targets.
+
+## Push and fear: calls as used (0.9.13)
+
+- Knockdown fall direction (0x66D0CE-0x66D1E1): d = normalize(attacker
+  position - target position), f = normalize(target facing +0x84); dot(d, f)
+  >= 0.707 (double at 0x8A9668) -> posture 5 / animation 7, else posture 6 /
+  animation 5; no attacker object -> 5. Knockdown duration + 1.5 s (float at
+  0x8ADA34) for its AI-state effect.
+- Hit flinch (0x668BF9): only when the target's animation (+0xAC) is 0 or 1;
+  the round calls take the damage effect's creator id (+0x18) as "attacker".
+  Round: +0x2104 paused, +0x2108 paused by, +0x210C timer;
+  GetActionResponsePossible refuses when paused by someone else.
+- NoNonWalkPolysOnLine 0x6DF020 takes (x1, y1, x2, y2, tolerance): arguments
+  1/3 and 2/4 are compared pairwise, argument 2 picks the tile row (times the
+  area width, +0x8; height +0xC), tiles 10 m (float at 0x8ACC18).
+- Creature footprint check 0x6D9890 (area; Vector, pathfind info; ret 0x10)
+  returns nonzero when the creature fits (0x6635D3) — not used by Push, which
+  keeps 0.5 m of walkable line behind the new spot instead.
+- Same-area jump (0x680FDA): SetPosition(Vector, 0), then 0x6833F0(Vector,
+  [area + 0xC8]).
+- CN5: OnApplySetState 0x66DD30 is called (handler, object, effect, loading)
+  and returns 1 to drop the effect; nwn5e drops state 3 in faithful after
+  NWN's own refusals and applies an ICON effect (type 67, integer 0 = 14).

@@ -243,6 +243,18 @@ paralysed creatures of level 4 or less (automatic hit and kill; 2024 has
 none), and whether paralysed / sleeping targets keep NWN's flat-footed
 Dexterity loss on top of advantage (they do for now).
 
+*Decided (owner, 2026-10-19), after the recon:* **CN5** faithful replaces
+NWN's fear with nwn5e's own: the frightened state never takes hold (so no
+fleeing, no loss of control, no -2 saves, and NWN's monster AI keeps
+fighting); the creature gets the fear icon for the effect's duration, from
+its source, and attacks with disadvantage while it can see that source.
+Remove Fear and similar cures don't end it early (known gap). NWN mode keeps
+NWN's fear. **Coup de grace:** faithful drops it (the 5 ft critical hit
+replaces it); NWN mode keeps it. **Flat-footed Dexterity loss** on paralysed
+and sleeping targets stays in both modes until Sneak Attack is converted
+(Phase 3). **Push:** built as option A of the recon (RE-NOTES "Push").
+*Built 0.9.13:* CN5 (OnApplySetState hook), no coup de grace, Push.
+
 **CN1. Restrained** (Entangle, Web, Evard's Black Tentacles). NWN today: held
 in place, plus 3e's −2 to its attacks and −4 Dex *(confirm)*. 2024: speed 0;
 attacks against it have advantage, its attacks disadvantage, disadvantage on
@@ -455,6 +467,12 @@ the attacker, through the engine's own jump (the path scripts'
 JumpToLocation uses), onto walkable ground only and stopping short at walls.
 Recon needed: playing the fall animation without the knockdown state, and the
 jump / safe-location call.
+*Built 0.9.13 (2026-10-19), option A of the recon:* on the hit's landing
+(OnApplyDamage), the target moves up to 3 m (0.5 m steps) straight away onto
+walkable ground with 0.5 m clear behind it, then plays the knockdown fall as a
+visual through a 1.2 s round pause (shortened by as much, as the hit flinch
+does); warhammer and heavy crossbow. To check in game: whether NPCs slide or
+snap over the move, the fall's length and direction.
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

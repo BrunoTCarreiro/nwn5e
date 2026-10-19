@@ -11,7 +11,7 @@
 #include "rules/saves.h"
 
 // The creature's conditions (no frightened / concealed: those depend on the
-// other creature).
+// other creature; ConditionAttackRollSources adds them).
 rules::Conditions ReadConditions(void* creature);
 
 // A creature that can't act (2024 Incapacitated): dazed, stunned, paralysed,

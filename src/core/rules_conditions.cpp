@@ -16,6 +16,13 @@
 //   from within 5 ft is a critical hit (faithful).
 // - CN4 Poisoned (faithful): disadvantage on its attack rolls while an NWN
 //   poison effect is on it.
+// - CN5 Frightened (faithful): NWN's fear state never takes hold — it makes
+//   the creature flee, takes a player's control away and stops NWN's monster
+//   AI from fighting at all. Instead the creature gets the fear icon for the
+//   effect's duration, credited to the source, and attacks with disadvantage
+//   while it can see that source (2024). Immunities and their feedback stay
+//   NWN's. Remove Fear and the like don't end it early.
+// - Coup de grace (faithful): gone (2024 has none).
 // - CN6 Concealment (faithful, with advantage_disadvantage): NWN's
 //   concealment / miss-chance roll after a hit is skipped; a target with a
 //   concealment effect (Blur, Displacement, ...) or Epic Self-Concealment gives
@@ -30,7 +37,10 @@
 #include "engine_queries.h"
 #include "hooks.h"
 #include "log.h"
+#include "engine_effects.h"
 #include "nwmain_1_69.h"
+
+void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
 
 namespace {
 
@@ -41,6 +51,61 @@ using GetIsImmuneFn = int(__fastcall*)(void* stats, void* edx, int type, void* v
 const auto g_get_attack = reinterpret_cast<GetAttackFn>(nwmain::kGetAttack);
 const auto g_has_feat = reinterpret_cast<HasFeatFn>(nwmain::kHasFeat);
 const auto g_get_is_immune = reinterpret_cast<GetIsImmuneFn>(nwmain::kGetIsImmune);
+
+bool LogSlot();
+
+using OnApplySetStateFn = int(__fastcall*)(void* handler, void* edx, void* object, void* effect, int loading);
+OnApplySetStateFn g_on_apply_set_state = nullptr;
+constexpr float kPermanentFearSeconds = 60.0f;
+
+// CN5: the source of the fear nwn5e put on `creature` (its fear icon), or
+// kObjectInvalid.
+uint32_t FearSource(const void* creature) {
+  uint32_t source = nwmain::kObjectInvalid;
+  engine::ForEachEffectOfType(creature, nwmain::kEffectTypeIcon, [&](const void* effect) {
+    if (engine::EffectInteger(effect, 0) == nwmain::kIconFrightened) source = Field<uint32_t>(effect, nwmain::kEffectCreator);
+  });
+  return source;
+}
+
+// NWN's own refusals of a fear effect (the handler sends their feedback).
+bool NwnRefusesFear(void* creature, const void* effect) {
+  if (Field<int32_t>(creature, nwmain::kCreatureDeadFlag) != 0 || engine::IsDeadOrDying(creature) ||
+      Field<int32_t>(creature, nwmain::kCreatureRefusesStates) != 0) {
+    return true;
+  }
+  void* stats = Field<void*>(creature, nwmain::kCreatureStats);
+  if (!stats) return true;
+  void* versus = engine::GetCreature(Field<uint32_t>(effect, nwmain::kEffectCreator));
+  if (g_get_is_immune(stats, nullptr, nwmain::kImmunityFear, versus) == 1 ||
+      g_has_feat(stats, nullptr, nwmain::kFeatFearImmunity) == 1) {
+    return true;
+  }
+  const bool mind_immune = g_get_is_immune(stats, nullptr, nwmain::kImmunityMindSpells, versus) == 1 ||
+                           g_has_feat(stats, nullptr, nwmain::kFeatMindImmunity) == 1;
+  const bool bypass = (Field<uint16_t>(effect, nwmain::kEffectFlags) & 0x18) == 0x10 && engine::EffectInteger(effect, 1) == 1;
+  return mind_immune && !bypass;
+}
+
+int __fastcall OnApplySetState(void* handler, void* edx, void* object, void* effect, int loading) {
+  if (g_config.conditions != rules::RuleVariant::kFaithful || !object || !effect || loading ||
+      engine::EffectInteger(effect, 0) != nwmain::kStateFrightened) {
+    return g_on_apply_set_state(handler, edx, object, effect, loading);
+  }
+  const uint32_t id = Field<uint32_t>(object, nwmain::kCreatureObjectId);
+  void* creature = engine::GetCreature(id);
+  if (!creature || NwnRefusesFear(creature, effect)) return g_on_apply_set_state(handler, edx, object, effect, loading);
+  const uint32_t source = Field<uint32_t>(effect, nwmain::kEffectCreator);
+  const bool temporary = (Field<uint16_t>(effect, nwmain::kEffectFlags) & 0x7) == nwmain::kEffectDurationTemporary;
+  const float seconds = temporary ? Field<float>(effect, nwmain::kEffectDuration) : kPermanentFearSeconds;
+  engine::ApplyIcon(creature, source, nwmain::kIconFrightened, seconds, 0);
+  char line[160];
+  sprintf_s(line, "nwn5e: frightened for %.0f s - disadvantage on your attacks while you can see its source; you keep control",
+            seconds);
+  TellPlayer(id, line);
+  if (LogSlot()) Log("conditions: 0x%08X frightened by 0x%08X for %.0f s (2024 fear; NWN's flee state not applied)", id, source, seconds);
+  return 1;  // NWN's frightened state is not kept
+}
 
 constexpr float kFiveFeet = 1.524f;  // metres, edge to edge
 bool g_concealment_roll_removed = false;
@@ -105,10 +170,14 @@ ConditionRollSources ConditionAttackRollSources(void* attacker, void* target, bo
   ConditionRollSources out;
   if (g_config.conditions == rules::RuleVariant::kOff || !attacker || !target) return out;
   const rules::Conditions attacker_conditions = ReadConditions(attacker);
+  rules::Conditions attacker_frightened = attacker_conditions;
+  const uint32_t fear_source = FearSource(attacker);
+  attacker_frightened.frightened_source_in_sight =
+      fear_source != nwmain::kObjectInvalid && engine::Sees(attacker, fear_source);
   rules::Conditions target_conditions = ReadConditions(target);
   target_conditions.concealed = g_concealment_roll_removed && TargetConcealed(attacker, target, ranged);
   const rules::RollSources sources =
-      rules::ConditionAttackSources(attacker_conditions, target_conditions, g_config.conditions);
+      rules::ConditionAttackSources(attacker_frightened, target_conditions, g_config.conditions);
   out.advantage = sources.advantage;
   out.disadvantage = sources.disadvantage;
   const bool faithful = g_config.conditions == rules::RuleVariant::kFaithful;
@@ -119,6 +188,7 @@ ConditionRollSources ConditionAttackRollSources(void* attacker, void* target, bo
   AddName(&out.note, faithful && target_conditions.concealed, "target concealed");
   AddName(&out.note, faithful && attacker_conditions.restrained, "attacker restrained");
   AddName(&out.note, faithful && attacker_conditions.poisoned, "attacker poisoned");
+  AddName(&out.note, faithful && attacker_frightened.frightened_source_in_sight, "attacker frightened, source in sight");
   return out;
 }
 
@@ -179,6 +249,9 @@ void InstallConditionRules() {
   Log("conditions: %d of %u faithful patches applied", applied,
       static_cast<unsigned>(sizeof(nwmain::kFaithfulConditionPatches) /
                             sizeof(nwmain::kFaithfulConditionPatches[0])));
+  InstallHook({"CNWSEffectListHandler::OnApplySetState (CN5 2024 fear)", nwmain::kOnApplySetState,
+               nwmain::kOnApplySetStatePrologue, sizeof(nwmain::kOnApplySetStatePrologue),
+               reinterpret_cast<void*>(&OnApplySetState), reinterpret_cast<void**>(&g_on_apply_set_state)});
   // CN6 replaces the miss chance with disadvantage, so it needs the
   // advantage / disadvantage hook.
   if (g_config.advantage_disadvantage) {

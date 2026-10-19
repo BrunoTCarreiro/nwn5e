@@ -336,6 +336,9 @@ struct AwaitDamage {
 };
 std::unordered_map<uint32_t, AwaitDamage> g_slow_awaiting;  // Slow applies once the damage lands
 std::unordered_map<uint32_t, AwaitDamage> g_vex_awaiting;   // Vex's mark is withdrawn if it dealt none
+std::unordered_map<uint32_t, AwaitDamage> g_push_awaiting;  // Push moves the target when the hit lands
+constexpr float kPushMetres = 3.0f;  // 10 ft
+constexpr int kPushFallMs = 1200;    // the fall's round pause
 constexpr DWORD kAwaitDamageMs = 5000;
 using OnApplyDamageFn = int(__fastcall*)(void* handler, void* edx, void* object, void* effect, int loading);
 OnApplyDamageFn g_on_apply_damage = nullptr;
@@ -460,8 +463,11 @@ MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id) {
 void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) {
   if (!MasteryOn() || !attacker || !target_object || base_item < 0) return;
   const rules::Mastery mastery = rules::MasteryForNwnBaseItem(base_item);
+  // Push: faithful only (D4: NWN mode is the same without Push).
+  const bool push = mastery == rules::Mastery::kPush && g_config.weapon_mastery == rules::RuleVariant::kFaithful;
   if (mastery != rules::Mastery::kVex && mastery != rules::Mastery::kSap && mastery != rules::Mastery::kGraze &&
-      mastery != rules::Mastery::kSlow && mastery != rules::Mastery::kTopple && mastery != rules::Mastery::kCleave) {
+      mastery != rules::Mastery::kSlow && mastery != rules::Mastery::kTopple && mastery != rules::Mastery::kCleave &&
+      !push) {
     return;
   }
   void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
@@ -537,6 +543,10 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
              (save == 0 ? " failed, knocked down for a round" : save == 2 ? " - immune" : " made");
       break;
     }
+    case rules::Mastery::kPush:
+      g_push_awaiting[attacker_id] = AwaitDamage{target_id, now};  // moved when the hit lands
+      what = "Push: when the hit lands";
+      break;
     case rules::Mastery::kCleave: {
       if (Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0) return;  // melee attack rolls only
       const auto used = g_cleave_used.find(attacker_id);
@@ -577,10 +587,27 @@ int HitPointsOf(const void* object) {
 }
 
 // A damage effect landed: Slow takes hold if it dealt damage, Vex's mark is
-// withdrawn if it dealt none.
+// withdrawn if it dealt none, Push moves the target (any hit, 2024).
 void AfterDamage(uint32_t attacker_id, void* target, int damage) {
   const uint32_t target_id = Field<uint32_t>(target, nwmain::kCreatureObjectId);
   const DWORD now = GetTickCount();
+  const auto push = g_push_awaiting.find(attacker_id);
+  if (push != g_push_awaiting.end() && push->second.target == target_id) {
+    const bool fresh = now - push->second.tick <= kAwaitDamageMs;
+    g_push_awaiting.erase(push);
+    void* attacker = fresh ? engine::GetCreature(attacker_id) : nullptr;
+    if (attacker) {
+      const engine::PushOutcome outcome = engine::PushAway(target, attacker, kPushMetres, kPushFallMs);
+      if (EffectLogSlot()) {
+        if (outcome.refused) {
+          Log("mastery: 0x%08X Push on 0x%08X: not pushed (%s)", attacker_id, target_id, outcome.refused);
+        } else {
+          Log("mastery: 0x%08X Push on 0x%08X: moved %.1f m away%s", attacker_id, target_id, outcome.metres,
+              outcome.fell ? ", falls and gets up" : " (no fall: its round can't pause or it is lying down)");
+        }
+      }
+    }
+  }
   const auto slow = g_slow_awaiting.find(attacker_id);
   if (slow != g_slow_awaiting.end() && slow->second.target == target_id) {
     const bool fresh = now - slow->second.tick <= kAwaitDamageMs;
@@ -605,7 +632,7 @@ void AfterDamage(uint32_t attacker_id, void* target, int damage) {
 }
 
 int __fastcall OnApplyDamage(void* handler, void* edx, void* object, void* effect, int loading) {
-  const bool awaiting = !g_slow_awaiting.empty() || !g_vex_awaiting.empty();
+  const bool awaiting = !g_slow_awaiting.empty() || !g_vex_awaiting.empty() || !g_push_awaiting.empty();
   void* target = object && awaiting ? engine::GetCreature(Field<uint32_t>(object, nwmain::kCreatureObjectId)) : nullptr;
   const int before = target ? HitPointsOf(target) : 0;
   const int result = g_on_apply_damage(handler, edx, object, effect, loading);
