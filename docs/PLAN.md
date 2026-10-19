@@ -213,7 +213,17 @@ line in nwn5e.ini picks the default for all of them — `mode=faithful`
 rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
 retargeting, Phase 1b) are the same in both modes unless noted.
 
-## Conditions — proposal for the owner (2026-10-19, not decided)
+## Conditions — decided by the owner (2026-10-19)
+
+**Decision (owner, 2026-10-19): the recommendations below, as written**, with
+CN8 revised after decoding the engine (RE-NOTES "Condition effects"):
+Deafened leaves CN8 — faithful drops NWN's 20% spell failure (it only ever hit
+Bard / Sorcerer / Wizard spells, and Still Spell avoided it), keeps "can't
+hear"; NWN mode unchanged. Petrified stays NWN for now; resistance to all
+damage is a later decision. CN7 is built with Phase 5. Build order: CN8
+Deafened, then CN3/CN2 saves, CN2 crits, CN4, CN6, CN1, CN5 (by size and
+risk, adjusted after recon).
+
 
 The last open Phase 1 item. Phase 1b (B1) already turned NWN's attack terms
 for a blind, stunned or prone target, an invisible attacker and an unseen
@@ -281,9 +291,11 @@ mostly forced marches, no rest, a few spells); nothing in the campaign applies
 it yet. Both modes the same.
 
 **CN8. Keep as NWN** (no change, both modes): Charmed and Dominated (NWN's
-"becomes friendly / controlled" is close to 2024), Petrified, Dazed (= 2024
-Incapacitated), Confused, Deafened (its 20% spell failure is revisited with
-spellcasting in Phase 4), Grappled (no grapple in NWN; Phase 6).
+"becomes friendly / controlled" is close to 2024; on the player both are a
+daze, by NWN's design), Petrified (same as paralysis plus the stone look; no
+damage resistance — later decision), Dazed (= 2024 Incapacitated), Confused
+(random AI), Grappled (no grapple in NWN; Phase 6). *Revised 2026-10-19:*
+Deafened — faithful drops the 20% arcane spell failure; NWN mode keeps it.
 
 ## Phase 1c/1d and racial bonuses — decided by the owner, 2026-10-18
 
