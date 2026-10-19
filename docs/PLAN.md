@@ -232,6 +232,17 @@ NWN's. "NWN today" is from NWN's own rules; where marked *(confirm)* the
 engine code is not decoded yet and is checked before building. Each item has
 a faithful and an NWN-mode version; recommendation first.
 
+*Built 0.9.11–0.9.12 (2026-10-19):* CN8 Deafened, CN1, CN2 (advantage both
+modes — NWN gives paralysed / sleeping targets no attack bonus, only
+flat-footed — saves, 5 ft crits), CN3, CN4, CN6. Recon corrections: Evard's
+Black Tentacles applies paralysis (CN2), not entangle; NWN mode's CN2
+"advantage only" is new to NWN mode for the same reason. Still open (owner):
+CN5 (the generic monster AI refuses to fight while frightened — options in
+RE-NOTES "Conditions: hook points"), NWN's coup de grace against sleeping /
+paralysed creatures of level 4 or less (automatic hit and kill; 2024 has
+none), and whether paralysed / sleeping targets keep NWN's flat-footed
+Dexterity loss on top of advantage (they do for now).
+
 **CN1. Restrained** (Entangle, Web, Evard's Black Tentacles). NWN today: held
 in place, plus 3e's −2 to its attacks and −4 Dex *(confirm)*. 2024: speed 0;
 attacks against it have advantage, its attacks disadvantage, disadvantage on

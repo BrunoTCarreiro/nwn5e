@@ -23,8 +23,9 @@ int ConditionSaveDisadvantage(const Conditions& creature, Ability ability, RuleV
 
 RollSources ConditionAttackSources(const Conditions& attacker, const Conditions& target, RuleVariant variant) {
   RollSources sources;
+  if (variant == RuleVariant::kOff) return sources;
+  if (target.stunned || target.paralyzed || target.asleep) ++sources.advantage;
   if (variant != RuleVariant::kFaithful) return sources;
-  if (target.paralyzed || target.asleep) ++sources.advantage;
   if (target.restrained) ++sources.advantage;
   if (target.concealed) ++sources.disadvantage;
   if (attacker.restrained) ++sources.disadvantage;
@@ -33,8 +34,8 @@ RollSources ConditionAttackSources(const Conditions& attacker, const Conditions&
   return sources;
 }
 
-bool ConditionForcesCritical(const Conditions& target, bool melee, RuleVariant variant) {
-  return variant == RuleVariant::kFaithful && melee && (target.paralyzed || target.asleep);
+bool ConditionForcesCritical(const Conditions& target, bool within_five_feet, RuleVariant variant) {
+  return variant == RuleVariant::kFaithful && within_five_feet && (target.paralyzed || target.asleep);
 }
 
 }  // namespace rules

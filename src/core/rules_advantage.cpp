@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include "condition_effects.h"
 #include "config.h"
 #include "creature.h"
 #include "engine_queries.h"
@@ -66,6 +67,7 @@ struct PendingAttack {
   uint32_t attacker_id = 0;
   uint32_t target_id = 0;
   std::string mastery;  // D4 Vex / Sap note for the log
+  std::string conditions;  // CN1–CN6 note for the log
 };
 PendingAttack g_pending;
 
@@ -105,8 +107,7 @@ rules::NwnSituationalTerms ReadNwnTerms(void* attacker, void* target, bool range
 }
 
 bool IsIncapacitated(void* creature) {
-  const uint8_t state = Field<uint8_t>(creature, nwmain::kCreatureActionState);
-  return engine::IsDeadOrDying(creature) || state == 5 || state == 6;
+  return engine::IsDeadOrDying(creature) || IncapacitatedByCondition(creature);
 }
 
 // B5: enemies within 5 ft of the attacker that see it and can act.
@@ -168,9 +169,11 @@ void ReadPendingAttack(void* creature, void* target_object) {
   const MasteryRollSources mastery =
       TakeMasteryRollSources(creature, Field<uint32_t>(target, nwmain::kCreatureObjectId));
   g_pending.mastery = mastery.note;
+  const ConditionRollSources conditions = ConditionAttackRollSources(creature, target, ranged);
+  g_pending.conditions = conditions.note;
   g_pending.mode = rules::SituationalRollMode(
       g_pending.terms, rules::RangedCloseCombat(ranged, g_pending.point_blank_shot, g_pending.threats),
-      mastery.advantage, mastery.disadvantage);
+      mastery.advantage + conditions.advantage, mastery.disadvantage + conditions.disadvantage);
   g_pending.attacker_stats = stats;
   g_pending.target = target;
   g_pending.attacker_id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
@@ -216,12 +219,14 @@ void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
   g_pending = PendingAttack();
   if (g_config.advantage_disadvantage) ReadPendingAttack(creature, target);
   if (g_pending.active && g_pending.mode == rules::RollMode::kNormal &&
-      (g_pending.nwn_total != 0 || !g_pending.mastery.empty()) && LogSlotLeft()) {
-    Log("advantage: 0x%08X vs 0x%08X (%s): 3e situational %+d removed (%s)%s%s; normal roll", g_pending.attacker_id,
-        g_pending.target_id, g_pending.terms.ranged ? "ranged" : "melee", g_pending.nwn_total,
-        TermNames(g_pending.terms).c_str(), g_pending.mastery.empty() ? "" : "; mastery: ", g_pending.mastery.c_str());
+      (g_pending.nwn_total != 0 || !g_pending.mastery.empty() || !g_pending.conditions.empty()) && LogSlotLeft()) {
+    Log("advantage: 0x%08X vs 0x%08X (%s): 3e situational %+d removed (%s)%s%s%s%s; normal roll",
+        g_pending.attacker_id, g_pending.target_id, g_pending.terms.ranged ? "ranged" : "melee", g_pending.nwn_total,
+        TermNames(g_pending.terms).c_str(), g_pending.mastery.empty() ? "" : "; mastery: ", g_pending.mastery.c_str(),
+        g_pending.conditions.empty() ? "" : "; conditions: ", g_pending.conditions.c_str());
   }
   g_resolve_attack_roll(creature, edx, target);
+  ConditionsAfterAttackRoll(creature, target);
   MasteryAfterAttackRoll(creature, target, weapon);
   g_pending = outer;
 }
@@ -246,12 +251,13 @@ int __fastcall RollAttackD20(void* rules_object, void* edx, int count, int sides
   const bool keep_higher = g_pending.mode == rules::RollMode::kAdvantage;
   const int kept = keep_higher ? (first > second ? first : second) : (first < second ? first : second);
   if (LogSlotLeft()) {
-    Log("advantage: 0x%08X vs 0x%08X (%s): %s; 3e situational %+d removed (%s); close-combat enemies %d%s%s%s; d20 "
-        "%d / %d -> %d",
+    Log("advantage: 0x%08X vs 0x%08X (%s): %s; 3e situational %+d removed (%s); close-combat enemies %d%s%s%s%s%s; "
+        "d20 %d / %d -> %d",
         g_pending.attacker_id, g_pending.target_id, g_pending.terms.ranged ? "ranged" : "melee",
         ModeName(g_pending.mode), g_pending.nwn_total, TermNames(g_pending.terms).c_str(), g_pending.threats,
         g_pending.point_blank_shot ? " (Point Blank Shot)" : "", g_pending.mastery.empty() ? "" : "; mastery: ",
-        g_pending.mastery.c_str(), first, second, kept);
+        g_pending.mastery.c_str(), g_pending.conditions.empty() ? "" : "; conditions: ",
+        g_pending.conditions.c_str(), first, second, kept);
   }
   return HalflingLuck(rules_object, edx, count, sides, kept);
 }

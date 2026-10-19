@@ -37,7 +37,9 @@ TEST(RestrainedHasDisadvantageOnDexteritySaves) {
 }
 
 // CN1/CN2/CN4/CN5/CN6. Breaks caught: a source on the wrong side (attacker vs
-// target), concealment giving advantage, anything added in NWN mode.
+// target), concealment giving advantage, faithful-only sources in NWN mode,
+// helpless advantage missing in NWN mode (decided for both), anything with
+// conditions=off.
 TEST(ConditionsAddAttackRollSources) {
   Conditions none;
   Conditions held;
@@ -69,11 +71,21 @@ TEST(ConditionsAddAttackRollSources) {
   CHECK_EQ(s.advantage, 0);
   CHECK_EQ(s.disadvantage, 1);
   s = ConditionAttackSources(poisoned, held, RuleVariant::kNwn);
+  CHECK_EQ(s.advantage, 1);
+  CHECK_EQ(s.disadvantage, 0);
+  s = ConditionAttackSources(poisoned, restrained, RuleVariant::kNwn);
+  CHECK_EQ(s.advantage, 0);
+  CHECK_EQ(s.disadvantage, 0);
+  Conditions stunned;
+  stunned.stunned = true;
+  s = ConditionAttackSources(none, stunned, RuleVariant::kNwn);
+  CHECK_EQ(s.advantage, 1);
+  s = ConditionAttackSources(poisoned, held, RuleVariant::kOff);
   CHECK_EQ(s.advantage, 0);
   CHECK_EQ(s.disadvantage, 0);
 }
 
-// CN2. Breaks caught: ranged hits forced to crits; stunned targets forced
+// CN2. Breaks caught: hits from beyond 5 ft forced to crits; stunned targets forced
 // (2024 Stunned has no auto-crit); NWN mode forcing crits.
 TEST(MeleeHitsOnHelplessTargetsAreCriticals) {
   Conditions held;

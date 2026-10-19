@@ -11,6 +11,10 @@
 // - C3 species: advantage for dwarves vs poison, halflings vs fear, elves vs
 //   mind spells (charm), gnomes on Will (Wisdom) saves; Halfling Luck rerolls
 //   a natural 1. Both modes.
+// - CN1–CN3 (`conditions`): stunned (both modes), paralysed and sleeping
+//   (faithful) creatures fail Strength and Dexterity saves — the d20 comes up
+//   1 and the result is a failure, told to the player; a restrained creature
+//   (faithful) rolls Dexterity saves with disadvantage.
 
 #include <stdint.h>
 #include <string.h>
@@ -19,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "condition_effects.h"
 #include "config.h"
 #include "creature.h"
 #include "engine_queries.h"
@@ -27,8 +32,11 @@
 #include "log_once.h"
 #include "nwmain_1_69.h"
 #include "rules/core.h"
+#include "rules/d20.h"
 #include "rules/nwn_conversion.h"
 #include "rules/saves.h"
+
+void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
 
 namespace {
 
@@ -79,6 +87,7 @@ struct SaveContext {
   int type = 0;  // NWN save type
   int spell = -1;  // the spell whose script asked for this save, or -1
   std::optional<rules::Ability> ability;  // C1: the 2024 ability that spell uses
+  ConditionSave condition;  // CN1–CN3
 };
 
 // The spell of the script running the current FortitudeSave / ReflexSave /
@@ -199,16 +208,27 @@ uint32_t __fastcall SavingThrowRoll(void* creature, void* edx, uint32_t save, ui
   if (g_config.saves == rules::RuleVariant::kFaithful && g_script_spell >= 0) {
     g_save.ability = rules::SaveAbilityForNwnSpell(g_script_spell);
   }
-  const uint32_t result =
+  if (g_save.save >= 1 && g_save.save <= 3) {
+    const rules::Ability ability =
+        g_save.ability.value_or(rules::AbilityForNwnSave(static_cast<rules::NwnSave>(g_save.save - 1)));
+    g_save.condition = ConditionsForSave(creature, ability);
+  }
+  const ConditionSave condition = g_save.condition;
+  uint32_t result =
       g_saving_throw_roll(creature, edx, save, (dc & 0xFFFF0000u) | static_cast<uint32_t>(new_dc), type, versus, a5,
                           a6, a7);
   g_save = outer;
+  const uint32_t creature_id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
+  if (condition.auto_fail && (result & 0xFF) != 2) {
+    result &= ~0xFFu;  // a failure (0); the engine's own line may still read "success" when its total beat the DC
+    TellPlayer(creature_id, "nwn5e: that save fails automatically (" + condition.note + ")");
+  }
   if (g_config.log_attacks && g_save_log_lines < 300) {
     ++g_save_log_lines;
-    Log("save roll: object 0x%08X save %d type %d vs 0x%08X: DC %d%s -> %d%s, %s",
-        Field<uint32_t>(creature, nwmain::kCreatureObjectId), save & 0xFF, type & 0xFF, versus, engine_dc,
-        spell_dc ? " (spell)" : "", new_dc, SpellNote(g_script_spell).c_str(),
-        result == 1 ? "success" : (result == 2 ? "immune" : "failure"));
+    Log("save roll: object 0x%08X save %d type %d vs 0x%08X: DC %d%s -> %d%s, %s%s%s", creature_id, save & 0xFF,
+        type & 0xFF, versus, engine_dc, spell_dc ? " (spell)" : "", new_dc, SpellNote(g_script_spell).c_str(),
+        (result & 0xFF) == 1 ? "success" : ((result & 0xFF) == 2 ? "immune" : "failure"),
+        condition.auto_fail ? ", automatic failure: " : "", condition.auto_fail ? condition.note.c_str() : "");
   }
   return result;
 }
@@ -232,23 +252,30 @@ bool SpeciesAdvantage(void* stats, int save, int type) {
 // Replaces the save roll's RollDice(1, 20).
 int __fastcall RollSaveD20(void* rules_object, void* edx, int count, int sides) {
   if (!g_save.active) return g_roll_dice(rules_object, edx, count, sides);
+  if (g_save.condition.auto_fail) return 1;  // CN2/CN3: the wrapper makes it a failure
   void* stats = Field<void*>(g_save.creature, nwmain::kCreatureStats);
   int kept = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;
-  const bool advantage = stats && SpeciesAdvantage(stats, g_save.save, g_save.type);
+  const bool species = stats && SpeciesAdvantage(stats, g_save.save, g_save.type);
+  const rules::RollMode mode = rules::ResolveRollMode(species ? 1 : 0, g_save.condition.disadvantage);
+  const bool advantage = mode == rules::RollMode::kAdvantage;
+  const bool disadvantage = mode == rules::RollMode::kDisadvantage;
   int second = 0;
-  if (advantage) {
+  if (advantage || disadvantage) {
     second = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;
-    if (second > kept) std::swap(kept, second);
+    if (advantage ? second > kept : second < kept) std::swap(kept, second);
   }
   bool lucky = false;
   if (kept == 1 && stats && Field<uint16_t>(stats, nwmain::kStatsRace) == nwmain::kRaceHalfling) {
     kept = g_roll_dice(rules_object, edx, count, sides) & 0xFFFF;  // Halfling Luck: reroll a natural 1
     lucky = true;
   }
-  if ((advantage || lucky) && g_config.log_attacks && g_save_log_lines < 300) {
+  if ((species || disadvantage || lucky) && g_config.log_attacks && g_save_log_lines < 300) {
     ++g_save_log_lines;
-    Log("save d20: object 0x%08X save %d type %d:%s%s -> %d", Field<uint32_t>(g_save.creature, nwmain::kCreatureObjectId),
-        g_save.save, g_save.type, advantage ? " species advantage" : "", lucky ? " Halfling Luck reroll" : "", kept);
+    Log("save d20: object 0x%08X save %d type %d:%s%s%s%s -> %d",
+        Field<uint32_t>(g_save.creature, nwmain::kCreatureObjectId), g_save.save, g_save.type,
+        species ? " species advantage" : "", g_save.condition.disadvantage > 0 ? " disadvantage (" : "",
+        g_save.condition.disadvantage > 0 ? (g_save.condition.note + ")").c_str() : "",
+        lucky ? " Halfling Luck reroll" : "", kept);
   }
   return kept;
 }

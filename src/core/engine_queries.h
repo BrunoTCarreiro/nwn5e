@@ -30,6 +30,25 @@ void SetLocalInt(void* object, const char* name, int value);
 // not a double weapon; damage bonus 0x697D10)?
 bool CurrentAttackGetsTwoHandedStrength(void* creature);
 
+// The object's applied effects (nwmain_1_69.h kObjectEffects): fn(effect) for
+// each one of `type`; an effect's integer `index` (0 past its count).
+int EffectInteger(const void* effect, int index);
+template <typename Fn>
+void ForEachEffectOfType(const void* object, uint16_t type, Fn fn) {
+  if (!object) return;
+  void* const* effects = Field<void* const*>(object, nwmain::kObjectEffects);
+  const int count = Field<int32_t>(object, nwmain::kObjectEffectCount);
+  if (!effects || count <= 0 || count > 4096) return;
+  for (int i = 0; i < count; ++i) {
+    const void* effect = effects[i];
+    if (effect && Field<uint16_t>(effect, nwmain::kEffectType) == type) fn(effect);
+  }
+}
+bool HasEffectType(const void* object, uint16_t type);
+// A SetState effect of `state` (RE-NOTES "Condition effects": 6 stunned, 8
+// paralysed, 9 asleep, ...), whatever higher state the creature also holds.
+bool HasState(const void* object, int state);
+
 // Edge-to-edge distance, as GetNearestEnemy measures it.
 float EdgeDistance(const void* a, const void* b);
 // Centre-to-centre distance squared, as GetAttackModifierVersus compares it.

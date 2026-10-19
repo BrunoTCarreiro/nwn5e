@@ -542,12 +542,58 @@ constexpr SmallPatch kFaithfulOpportunityPatches[] = {
     {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, 2, {0x75, 0x5d}, {0xeb, 0x5d}},
 };
 
-// Conditions (RE-NOTES "Condition effects"). CNWSEffectListHandler::
-// OnApplyDeaf 0x66D770 adds a spell failure effect (type 25) of 20 — the
-// `push 0x14` before SetInteger(0, 20) at 0x66D942; faithful makes it 0.
+// Conditions (RE-NOTES "Condition effects").
+// - CNWSEffectListHandler::OnApplyDeaf 0x66D770 adds a spell failure effect
+//   (type 25) of 20 — the `push 0x14` before SetInteger(0, 20) at 0x66D942.
+// - OnApplyEntangle 0x66CB20 adds attack -2 (type 0x0B, `push 2` at
+//   0x66CD00) and Dexterity -4 (type 0x25, `push 4` at 0x66CD56); its AI-state
+//   effect (can't move) stays.
+// Faithful makes each 0.
 constexpr SmallPatch kFaithfulConditionPatches[] = {
     {"Deafened adds no spell failure", 0x0066D942, 2, {0x6a, 0x14}, {0x6a, 0x00}},
+    {"Entangled: no attack -2", 0x0066CD00, 2, {0x6a, 0x02}, {0x6a, 0x00}},
+    {"Entangled: no Dexterity -4", 0x0066CD56, 2, {0x6a, 0x04}, {0x6a, 0x00}},
 };
+// The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
+// before the hit decision) is entered only past this gate (eax = attacker miss
+// chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;
+// jle 0x7473E1`. A jmp 0x7473E1 (the hit-only tail: Deflect Arrows ...) skips
+// the roll; nothing jumps into the replaced bytes.
+constexpr SmallPatch kFaithfulConcealmentGate = {
+    "skip the concealment roll", 0x007472CC, 5, {0x85, 0xc0, 0x7f, 0x08, 0x85}, {0xe9, 0x10, 0x01, 0x00, 0x00}};
+
+// A creature's applied effects (CNWSObject): CGameEffect* array at +0xE8,
+// count at +0xEC, sorted by effect type. Per effect: type +0x08 (uint16),
+// creator +0x18, integer count +0x34 and int32 array +0x38 (GetInteger
+// 0x666A80). SetState (type 8) keeps its state in integer 0; creature +0x9DD
+// holds only the highest state number held.
+constexpr uintptr_t kObjectEffects = 0xE8;
+constexpr uintptr_t kObjectEffectCount = 0xEC;
+constexpr uintptr_t kEffectIntegerCount = 0x34;
+constexpr uintptr_t kEffectIntegers = 0x38;
+constexpr uint16_t kEffectTypeSetState = 8;
+constexpr uint16_t kEffectTypeEntangle = 18;
+constexpr uint16_t kEffectTypePoison = 35;     // kept while the poison lasts (OnApplyPoison 0x670590)
+constexpr uint16_t kEffectTypeConcealment = 76;  // ints: %, race (28 all), 2 alignment filters, 0 all/2 ranged/3 melee
+constexpr int kStateFrightened = 3;
+constexpr int kStateDazed = 5;
+constexpr int kStateStunned = 6;
+constexpr int kStateParalyzed = 8;
+constexpr int kStateAsleep = 9;
+constexpr int kStatePetrified = 15;
+constexpr int kRacialTypeAll = 28;
+constexpr int kFeatEpicSelfConcealmentFirst = 0x2EC;  // 10% .. 50%
+constexpr int kFeatEpicSelfConcealmentLast = 0x2F0;
+// CNWSCreatureStats::GetIsImmune(uint8 type, CNWSCreature* versus) 0x6B0090
+// (thiscall, ret 8; nonzero = immune). Before a critical the engine checks it
+// with type 31 and HasFeat(0x380) (0x74477B).
+constexpr uintptr_t kGetIsImmune = 0x006B0090;
+constexpr int kImmunityCriticalHit = 31;
+constexpr int kFeatCriticalHitImmunity = 0x380;
+// Attack data +0x50 (uint8): 1 hit, 2 parried, 3 critical, 4 miss, 7
+// automatic hit (coup de grace), 8 concealed, 9 attacker miss chance.
+constexpr uint8_t kAttackResultHit = 1;
+constexpr uint8_t kAttackResultCritical = 3;
 
 // Two-weapon fighting (D1; RE-NOTES "Two-weapon fighting and attacks of
 // opportunity"):

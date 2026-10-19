@@ -25,8 +25,10 @@ struct Config {
   rules::RuleVariant weapon_mastery = rules::RuleVariant::kFaithful;
   // E1: faithful = two-handed melee adds Strength once; nwn/off = NWN's 1.5 x.
   rules::RuleVariant two_handed_strength = rules::RuleVariant::kFaithful;
-  // CN1–CN8: conditions. faithful = 2024 conditions (so far: Deafened has no
-  // spell failure); nwn = NWN's; off = NWN's, and the both-mode additions off.
+  // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
+  // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
+  // both-mode parts (stunned / paralysed / asleep targets give advantage,
+  // stunned fails Dexterity saves); off = NWN's. The save parts need saves on.
   rules::RuleVariant conditions = rules::RuleVariant::kFaithful;
   bool crit_nat20_only = true;     // threat only on a natural 20
   bool crit_no_confirmation = true;  // a threat is a critical hit, no second roll

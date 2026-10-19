@@ -39,15 +39,18 @@ struct RollSources {
   int disadvantage = 0;
 };
 
-// Faithful only (NWN mode: none — NWN's own terms stay):
-//   target paralyzed or unconscious (CN2), restrained (CN1): advantage;
+// Both modes: target stunned, paralyzed or unconscious (CN2/CN3): advantage
+// (NWN gives paralyzed / sleeping targets no attack bonus, only flat-footed;
+// stunned already has B1's term, this covers a stunned creature that also
+// holds a higher state). Faithful only:
+//   target restrained (CN1): advantage;
 //   target concealed (CN6, NWN's miss chance removed): disadvantage;
 //   attacker restrained (CN1), poisoned (CN4), frightened with the source in
 //   sight (CN5): disadvantage.
 RollSources ConditionAttackSources(const Conditions& attacker, const Conditions& target, RuleVariant variant);
 
 // CN2 (faithful): a hit on a paralyzed or unconscious creature from an
-// attacker within 5 ft (a melee attack) is a critical hit.
-bool ConditionForcesCritical(const Conditions& target, bool melee, RuleVariant variant);
+// attacker within 5 ft is a critical hit (2024: melee or ranged).
+bool ConditionForcesCritical(const Conditions& target, bool within_five_feet, RuleVariant variant);
 
 }  // namespace rules

@@ -102,6 +102,25 @@ void SetLocalInt(void* object, const char* name, int value) {
   if (object) g_var_set_int(VarTable(object), nullptr, &text, value, 0);
 }
 
+int EffectInteger(const void* effect, int index) {
+  if (!effect || index < 0 || index >= Field<int32_t>(effect, nwmain::kEffectIntegerCount)) return 0;
+  const int32_t* integers = Field<const int32_t*>(effect, nwmain::kEffectIntegers);
+  return integers ? integers[index] : 0;
+}
+
+bool HasEffectType(const void* object, uint16_t type) {
+  bool found = false;
+  ForEachEffectOfType(object, type, [&](const void*) { found = true; });
+  return found;
+}
+
+bool HasState(const void* object, int state) {
+  bool found = false;
+  ForEachEffectOfType(object, nwmain::kEffectTypeSetState,
+                      [&](const void* effect) { found = found || EffectInteger(effect, 0) == state; });
+  return found;
+}
+
 bool CurrentAttackGetsTwoHandedStrength(void* creature) {
   if (!creature) return false;
   void* round = Field<void*>(creature, nwmain::kCreatureCombatRound);

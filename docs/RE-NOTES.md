@@ -648,3 +648,57 @@ not confirmed.
   large, 5 huge.
 - Not decoded: whether the client slides or snaps an NPC moved 3 m
   server-side, and whether a creature's animation / round pause is saved.
+
+## Conditions: hook points (decoded 2026-10-19, CN1-CN6 build)
+
+- Applied effects: CNWSObject +0xE8 CGameEffect* array, +0xEC count, sorted by
+  type (engine loops stop past the wanted type). Effect: type +8 (uint16),
+  flags +0xA, creator +0x18, integer count +0x34, int32 array +0x38
+  (GetInteger 0x666A80 has no bounds check). AI-state word +0xB08 (SET_AI_STATE
+  0x66D680 ANDs it); +0x9DC vision flags (GetBlind 0x6621D0); +0xC0 is the
+  commandable flag (set around ClearAllActions; inferred).
+- Entangle (0x66CB20): immunity type 10, clears actions, attack -2 vs all
+  (type 0x0B, int0 2 at 0x66CD00, race 0x1C), Dexterity -4 (type 0x25, at
+  0x66CD56), AI bit 0x2 cleared (can't move), icon 5. Web and Entangle use it;
+  Evard's Black Tentacles (nw_s0_evardsa/c) applies EffectParalyze for a round.
+- Attack modifier: the only state term is creature +0x9DD == 6 (stunned, +2).
+  Flat-footed (0x749D70): stunned, or AI bits 0x2/0x4 cleared (paralysed,
+  asleep, petrified). Coup de grace (0x745560): sleeping or paralysed target
+  of total level <= 4, not a PC, not immune, melee or within 10 m -> attack
+  data +0x44 = 1 (patch 0x74565A 01 -> 00 to drop it); ResolveAttackRoll then
+  makes it result 7 (automatic hit, d20 shown 20) and damage sets +0x40.
+- Attack result (data +0x50): 1 hit, 2 parried, 3 critical, 4 miss, 7
+  automatic hit, 8 target concealed, 9 attacker miss chance. Damage reads
+  +0x50 == 3 (ResolveDamage 0x745670 -> 0x69AEB0), so 1 -> 3 after
+  ResolveAttackRoll gives critical damage. Critical checks (0x74477B):
+  difficulty rule (0x600100(0) == 1, target PC +0xAD8 / 0x68E510, attacker
+  not), GetIsImmune 0x6B0090 (stats, type 31, versus creature; ret 8),
+  HasFeat(0x380).
+- Saves: every Reflex save goes through 0x749230 (also GetReflexAdjustedDamage
+  0x6F9FAF, poison and disease saves). Order: bonus, d20 (0x7499C9), immunity
+  by save type (returns 2 before feedback), feedback (DC, total, roll), then
+  natural 1 / 20 / total >= DC.
+- Poison (0x670590): poison.2da, Fortitude save (save 1, type 2) at 0x67095C;
+  success or immune -> not kept; failure -> ability damage, icon 20, the type
+  35 effect stays on the creature.
+- Fear (state 3): AIUpdate 0x647BF0 runs statescripts.2da SCRIPTNAME[state]
+  each AI tick (6-7.2 s) for states 1, 2, 3, 4, 6, 8, 9 and makes those not
+  commandable (+0xC0 = 0; 0x647DA4 74 14 skips it); switch byte table 0x64819C
+  (index state-1; 0 run the script, 1 skip). Row 3 / 4 is NW_G0_fear
+  (ActionMoveAwayFromObject from enemies within 5 m). Case 3 also gives saves
+  -2. x0_inc_generic bkEvaluationSanityCheck aborts DetermineCombatRound while
+  the creature is frightened (EFFECT_TYPE 25), paralysed, stunned, asleep or
+  dazed, so engine patches alone leave frightened monsters standing idle.
+  Options: recompile the AI includes; hide FRIGHTENED from GetEffectType while
+  AI scripts run; never let state 3 take hold and track fear ourselves; or
+  accept idle monsters.
+- Concealment / miss chance (0x746EF0, before the hit decision): attacker
+  miss chance = highest type-75 effect (int1 1 all / 2 ranged / 3 melee);
+  target concealment = highest of type-47 invisibility the attacker can't see
+  (50%), type-76 concealment (int0 %, int1 race, int2/int3 alignment, int4 0
+  all / 2 ranged / 3 melee) and Epic Self-Concealment feats 0x2EC-0x2F0;
+  d100 with a Blind-Fight reroll -> result 8 / 9. The only entry is the gate
+  at 0x7472CC (jmp 0x7473E1 skips it).
+- Confusion (NW_G0_confuse), d10 per AI tick: 1 wander, 2-6 nothing, 7-10
+  attack the nearest creature (any side); 2024 has 9-10 act normally. Charm
+  (nw_g0_charm) runs DetermineCombatRound; reputation picks targets.
