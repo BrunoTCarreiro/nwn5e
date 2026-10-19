@@ -231,6 +231,10 @@ if the project moves to EE). SK6: option A (Disarm does nothing in faithful).
 SK5's open choice (no recommendation was given) is taken as the 2024 rule
 in faithful: the hider rolls Stealth once per hide, not every 6 s. Deferred:
 Craft Trap (Phase 3), item use limitations without Use Magic Device (Phase 8).
+*Built 0.9.23 (step 1: SK1, SK2, SK3 a):* GetSkillRank hook, `!skills`,
+proficiency kept in local variables (taken from ranks until chosen), 2024
+names through the label hook, script skill ranks scaled (2 x). Next: SK3
+fixed-DC conversion, then SK10, SK6 / SK7, SK5, SK9, SK8 / SK11.
 
 Saves (C1–C8) and spell DCs (C5) are done; what is left of Phase 2 is skills,
 ability checks and spell attacks. Engine facts: docs/PHASE2-SKILLS-RECON.md.

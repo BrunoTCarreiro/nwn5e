@@ -648,6 +648,23 @@ constexpr uintptr_t kCreatureAiState = 0xB08;  // uint16
 // stores 1 at creature +0xA78 at 0x67B9EA for every potion (base items 49, 54,
 // 104), after the AoO call the difficulty option may skip; nothing jumps
 // into its 10 bytes.
+// Phase 2 skills (docs/PHASE2-SKILLS-RECON.md): CNWSCreatureStats::
+// GetSkillRank(uint8 skill, CNWSObject* vs, int bBaseRanksOnly) 0x6A2C00
+// (thiscall, ret 0xC, returns a char): skill >= the skill count ([rules] +0xDF)
+// -> 0; DM (stats +0x78) -> 127; ranks = [stats +0x478][skill]; base-only ->
+// ranks; untrained-use flag off and no ranks -> 0; + GetTotalEffectBonus
+// 0x65E7D0 (on the creature, stats +0x24; 9 arguments: type 5 = skill, vs, 0,
+// 0, 0, 0, skill, 0xFF, 0; ret 0x24); + the key ability modifier; - 4 Str /
+// Dex skills when blind; + armour check penalty; + feats; clamp.
+// The script command GetSkillRank (315) calls it at 0x6F9773.
+constexpr uintptr_t kGetSkillRank = 0x006A2C00;
+constexpr uint8_t kGetSkillRankPrologue[] = {0x53, 0x8b, 0x5c, 0x24, 0x08, 0x55, 0x56, 0x8b};
+constexpr uintptr_t kStatsSkillRanks = 0x478;     // int8* (one per skills.2da row)
+constexpr uintptr_t kStatsDungeonMaster = 0x78;   // int32
+constexpr uintptr_t kGetTotalEffectBonus = 0x0065E7D0;
+constexpr int kEffectBonusTypeSkill = 5;
+constexpr uintptr_t kScriptSkillRankCall = 0x006F9773;
+constexpr int kRaceHuman = 6;
 constexpr uintptr_t kPotionDrunkStore = 0x0067B9EA;
 constexpr uint8_t kPotionDrunkStoreBytes[] = {0xc7, 0x86, 0x78, 0x0a, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll

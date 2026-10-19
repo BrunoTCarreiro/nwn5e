@@ -12,6 +12,7 @@
 #include "log.h"
 #include "nwmain_1_69.h"
 #include "rules/saves.h"
+#include "rules/skills.h"
 
 namespace {
 
@@ -25,7 +26,8 @@ int g_logged = 0;
 int __fastcall GetSimpleString(void* table, void* edx, uint32_t strref, void* result, int gender) {
   const int found = g_get_simple_string(table, edx, strref, result, gender);
   if (!found || !result) return found;
-  const char* label = rules::Faithful2024SaveLabel(strref);
+  const char* label = g_config.saves == rules::RuleVariant::kFaithful ? rules::Faithful2024SaveLabel(strref) : nullptr;
+  if (!label && g_config.skills == rules::RuleVariant::kFaithful) label = rules::Faithful2024SkillLabelForStrref(strref);
   if (!label) return found;
   g_exo_string_assign(result, nullptr, label);  // the result's text (CExoString at +0)
   if (g_config.log_attacks && g_logged < 30) {
@@ -38,8 +40,8 @@ int __fastcall GetSimpleString(void* table, void* edx, uint32_t strref, void* re
 }  // namespace
 
 void InstallLabelRules() {
-  if (g_config.saves != rules::RuleVariant::kFaithful) return;
-  InstallHook({"CTlkTable::GetSimpleString (2024 save labels)", nwmain::kTlkGetSimpleString,
+  if (g_config.saves != rules::RuleVariant::kFaithful && g_config.skills != rules::RuleVariant::kFaithful) return;
+  InstallHook({"CTlkTable::GetSimpleString (2024 save and skill labels)", nwmain::kTlkGetSimpleString,
                nwmain::kTlkGetSimpleStringPrologue, sizeof(nwmain::kTlkGetSimpleStringPrologue),
                reinterpret_cast<void*>(&GetSimpleString), reinterpret_cast<void**>(&g_get_simple_string)});
 }

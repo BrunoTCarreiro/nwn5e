@@ -22,6 +22,8 @@
 std::string DescribeSaves(void* stats);                                            // rules_saves.cpp
 std::vector<std::string> MasteryCommand(void* creature, const std::string& args);  // rules_mastery.cpp
 
+std::vector<std::string> SkillsCommand(void* creature, const std::string& args);  // rules_skills.cpp
+
 namespace {
 
 // CExoString, passed by value (the callee destroys it).
@@ -45,7 +47,7 @@ const auto g_get_nws_message = reinterpret_cast<GetNwsMessageFn>(nwmain::kGetNws
 
 constexpr uint32_t kNoPlayer = 0xFFFFFFFE;
 
-enum class Command { kNone, kSaves, kMastery };
+enum class Command { kNone, kSaves, kMastery, kSkills };
 
 // "!saves" or "!mastery <args>" (command in any case, leading spaces
 // ignored), read before the engine frees the text.
@@ -64,6 +66,7 @@ Command ParseCommand(const ExoString& text, std::string* args) {
   }
   if (word == "!saves") return Command::kSaves;
   if (word == "!mastery") return Command::kMastery;
+  if (word == "!skills") return Command::kSkills;
   return Command::kNone;
 }
 
@@ -88,12 +91,14 @@ uint32_t __fastcall SendServerToPlayerChatMessage(void* message, void* edx, uint
     Log("chat: no player id for 0x%08X; command not answered", sender);
     return result;
   }
-  const std::vector<std::string> lines =
-      command == Command::kSaves ? std::vector<std::string>{DescribeSaves(stats)} : MasteryCommand(creature, args);
+  const std::vector<std::string> lines = command == Command::kSaves    ? std::vector<std::string>{DescribeSaves(stats)}
+                                         : command == Command::kSkills ? SkillsCommand(creature, args)
+                                                                       : MasteryCommand(creature, args);
   for (const std::string& line : lines) Reply(message, player, line);
   if (g_config.log_attacks && !lines.empty()) {
-    Log("chat: %s for 0x%08X: %s%s", command == Command::kSaves ? "!saves" : "!mastery", sender, lines[0].c_str(),
-        lines.size() > 1 ? " ..." : "");
+    Log("chat: %s for 0x%08X: %s%s",
+        command == Command::kSaves ? "!saves" : command == Command::kSkills ? "!skills" : "!mastery", sender,
+        lines[0].c_str(), lines.size() > 1 ? " ..." : "");
   }
   return result;
 }

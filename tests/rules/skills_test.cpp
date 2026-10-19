@@ -1,0 +1,104 @@
+#include <string>
+#include <vector>
+
+#include "check.h"
+#include "rules/skills.h"
+
+using namespace rules;
+
+// SK1. Breaks caught: Search mapped to Investigation (2024 finds hidden things
+// with Perception); a merged row left out of its 2024 skill; a 3e-only row
+// (Discipline, Concentration, Use Magic Device) given a 2024 skill; a key
+// ability not switched to the 2024 one (Animal Handling is Wisdom).
+TEST(NwnSkillsMapToThe2024Skills) {
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnHide) == Skill2024::kStealth, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnMoveSilently) == Skill2024::kStealth, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnSpot) == Skill2024::kPerception, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnListen) == Skill2024::kPerception, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnSearch) == Skill2024::kPerception, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnOpenLock) == Skill2024::kThievesTools, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnCraftWeapon) == Skill2024::kSmithsTools, true);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnDiscipline).has_value(), false);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnConcentration).has_value(), false);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnUseMagicDevice).has_value(), false);
+  CHECK_EQ(Skill2024ForNwnSkill(kNwnCraftTrap).has_value(), false);
+  CHECK_EQ(Skill2024ForNwnSkill(99).has_value(), false);
+  CHECK_EQ(AbilityFor(Skill2024::kAnimalHandling) == Ability::kWisdom, true);
+  CHECK_EQ(AbilityFor(Skill2024::kPerception) == Ability::kWisdom, true);
+  CHECK_EQ(AbilityFor(Skill2024::kThievesTools) == Ability::kDexterity, true);
+  CHECK_EQ(std::string(Faithful2024SkillLabelForStrref(274)) == "Stealth (Hide)", true);
+  CHECK_EQ(std::string(Faithful2024SkillLabelForStrref(284)) == "Perception (Search)", true);
+  CHECK_EQ(Faithful2024SkillLabelForStrref(343) == nullptr, true);  // Discipline keeps its name
+}
+
+// Breaks caught: multi-word names not found; aliases missing; unknown words
+// accepted.
+TEST(SkillNamesParse) {
+  std::vector<Skill2024> skills;
+  std::string unknown;
+  CHECK_EQ(ParseSkill2024List("Stealth sleight of hand, thieves' tools ANIMAL HANDLING", &skills, &unknown), true);
+  CHECK_EQ(skills.size(), static_cast<size_t>(4));
+  CHECK_EQ(skills[1] == Skill2024::kSleightOfHand, true);
+  CHECK_EQ(skills[2] == Skill2024::kThievesTools, true);
+  CHECK_EQ(skills[3] == Skill2024::kAnimalHandling, true);
+  skills.clear();
+  CHECK_EQ(ParseSkill2024List("stealth spot", &skills, &unknown), false);
+  CHECK_EQ(unknown == "spot", true);
+}
+
+// SK2 / SK3. Breaks caught: Expertise without proficiency counted; effects
+// dropped; script scaling applied to penalties.
+TEST(SkillBonusesAre2024) {
+  CHECK_EQ(SkillBonus2024(3, 2, false, false, 0), 3);
+  CHECK_EQ(SkillBonus2024(3, 2, true, false, 1), 6);
+  CHECK_EQ(SkillBonus2024(3, 4, true, true, 0), 11);
+  CHECK_EQ(SkillBonus2024(3, 4, false, true, 0), 3);
+  CHECK_EQ(ScriptSkillValue2024(6), 12);
+  CHECK_EQ(ScriptSkillValue2024(-1), -1);
+}
+
+// 2024 choices. Breaks caught: a class's count or list wrong; the Rogue's
+// Thieves' Tools not free; Expertise levels wrong (Rogue 1 / 6, Bard 2 / 9,
+// Ranger 2 / 9, Wizard 2); Human's extra skill missing; multiclass extra skill.
+TEST(SkillAllowancesAre2024) {
+  const SkillAllowance fighter = SkillAllowanceFor({{CharacterClass::kFighter, 5}}, Species2024::kOther);
+  CHECK_EQ(fighter.class_skills, 2);
+  CHECK_EQ(fighter.TotalSkills(), 4);
+  CHECK_EQ(fighter.expertise, 0);
+  const SkillAllowance human_rogue = SkillAllowanceFor({{CharacterClass::kRogue, 6}}, Species2024::kHuman);
+  CHECK_EQ(human_rogue.TotalSkills(), 7);
+  CHECK_EQ(Has(human_rogue.granted, Skill2024::kThievesTools), true);
+  CHECK_EQ(human_rogue.expertise, 4);
+  CHECK_EQ(SkillAllowanceFor({{CharacterClass::kRogue, 5}}, Species2024::kOther).expertise, 2);
+  CHECK_EQ(SkillAllowanceFor({{CharacterClass::kBard, 1}}, Species2024::kOther).expertise, 0);
+  CHECK_EQ(SkillAllowanceFor({{CharacterClass::kBard, 9}}, Species2024::kOther).expertise, 4);
+  CHECK_EQ(SkillAllowanceFor({{CharacterClass::kRanger, 9}}, Species2024::kOther).expertise, 3);
+  const SkillAllowance wizard = SkillAllowanceFor({{CharacterClass::kWizard, 2}}, Species2024::kOther);
+  CHECK_EQ(wizard.expertise, 1);
+  CHECK_EQ(Has(wizard.expertise_list, Skill2024::kArcana), true);
+  CHECK_EQ(Has(wizard.expertise_list, Skill2024::kStealth), false);
+  const SkillAllowance multi =
+      SkillAllowanceFor({{CharacterClass::kFighter, 4}, {CharacterClass::kRogue, 1}}, Species2024::kOther);
+  CHECK_EQ(multi.multiclass_skills, 1);
+  CHECK_EQ(Has(multi.granted, Skill2024::kThievesTools), true);
+}
+
+// Breaks caught: too many picks accepted; picks outside the class list not
+// placed in the background slots; a tool counted as a skill.
+TEST(SkillChoicesAreChecked) {
+  const SkillAllowance fighter = SkillAllowanceFor({{CharacterClass::kFighter, 1}}, Species2024::kOther);
+  SkillSet ok = SkillBit(Skill2024::kAthletics) | SkillBit(Skill2024::kPerception) |
+                SkillBit(Skill2024::kStealth) | SkillBit(Skill2024::kArcana) | SkillBit(Skill2024::kSmithsTools);
+  CHECK_EQ(CheckSkillChoice(fighter, ok).empty(), true);  // Stealth, Arcana from the background
+  SkillSet off_list = SkillBit(Skill2024::kStealth) | SkillBit(Skill2024::kArcana) |
+                      SkillBit(Skill2024::kDeception);  // three non-Fighter skills, two background slots
+  CHECK_EQ(CheckSkillChoice(fighter, off_list).empty(), false);
+  SkillSet too_many = ok | SkillBit(Skill2024::kHistory);
+  CHECK_EQ(CheckSkillChoice(fighter, too_many).empty(), false);
+  SkillSet two_tools = SkillBit(Skill2024::kSmithsTools) | SkillBit(Skill2024::kThievesTools);
+  CHECK_EQ(CheckSkillChoice(fighter, two_tools).empty(), false);
+  const SkillAllowance rogue = SkillAllowanceFor({{CharacterClass::kRogue, 1}}, Species2024::kOther);
+  CHECK_EQ(CheckSkillChoice(rogue, two_tools).empty(), true);  // Thieves' Tools is granted
+  CHECK_EQ(CheckExpertiseChoice(rogue, SkillBit(Skill2024::kStealth), SkillBit(Skill2024::kStealth)).empty(), true);
+  CHECK_EQ(CheckExpertiseChoice(rogue, SkillBit(Skill2024::kStealth), SkillBit(Skill2024::kArcana)).empty(), false);
+}
