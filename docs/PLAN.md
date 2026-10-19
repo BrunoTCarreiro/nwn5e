@@ -317,6 +317,8 @@ on an NWN threshold would be read as a level-set (rare: exact multiples of
 500·L·(L−1)).
 *0.9.47:* ReloadAll (module load / unload with haks, 11 callers) re-reads
 exptable.2da; the 2024 table is now written after it too.
+*Verified in game 2026-10-19 (0.9.48):* the 2024 table on the sheet. Not seen
+yet: a script SetXP (x2_dm_leveldown on a level 3+ character, a respawn).
 
 **CM2. Multiclassing.** 2024: 13 in the primary ability of every current
 class and the new one (Barbarian Str; Bard Cha; Cleric Wis; Druid Wis;
@@ -337,6 +339,9 @@ prestige classes counted as their parent class (decision 10: a Fighter taking
 Weapon Master is not a new class). It applies to henchmen's automatic
 level-ups too (decision 11). Later-class proficiencies wait for the feature
 mask (CM9).
+*Verified in game 2026-10-19 (0.9.48):* a Fighter with Str 16 Dex 15 Con 14
+Int 10 Wis 10 Cha 9 was refused Bard, Cleric, Druid, Monk, Paladin, Ranger,
+Sorcerer and Wizard, each with its reason; Barbarian and Rogue stayed open.
 
 **CM3. Hit points (open decision 4).** 2024: level 1 = the die's maximum +
 Con; each later level = roll or fixed average (d6 4, d8 5, d10 6, d12 7) +
@@ -349,6 +354,14 @@ ignored, so it is reversible and the same for henchmen); Con retroactive
 (already how NWN sums). Rolled would need 2024-die rolls stored per level
 (the client rolls with the in-memory die, so only new levels). NWN mode:
 NWN's dice and rolls. The 2024 die per class also feeds Phase 5's Hit Dice.
+*Built 0.9.49 (key `hit_points`):* GetMaxHitPoints hooked; for player
+characters and henchmen the dice come from the level history (the class of
+each level, in order) or, without one (henchmen built in the toolset), from
+the class slots in order; prestige classes use their parent's die (decision
+10). Toughness, Epic Toughness and the Pale Master's bonus no longer count
+(CM8). The level-up screen still shows NWN's HP roll for the new level (client
+code, Phase 7); the sheet shows the 2024 maximum. Current HP above a lower new
+maximum is left to the engine (watch in the test).
 
 **CM4. Ability scores.** 2024: standard array, 27-point buy (8–15) or roll;
 **species give nothing**; the background gives +2 / +1 or +1 / +1 / +1 among
@@ -493,6 +506,8 @@ by CM1's XP table and later by CM0's overlay); the creation screen's own
 hard-coded limits skipped (it never read the class fields); the item check
 treats every item as having no alignment limit. Not changed: alignment
 shifts and dialog checks; spells and weapon properties (with their phases).
+*Verified in game 2026-10-19 (owner):* every alignment at creation and the
+limited classes at level-up.
 
 **Build order (proposed).** 1. RE: resource serving, feat-list filtering,
 the ability read point, the has-feat check, the creation budget. 2. CM1 +

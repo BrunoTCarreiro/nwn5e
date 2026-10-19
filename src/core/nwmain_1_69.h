@@ -1345,4 +1345,21 @@ constexpr uintptr_t kItemAlignmentLimit = 0x0068EA84;
 constexpr uint8_t kItemAlignmentLimitBytes[] = {0x75, 0x18};  // jne 0x68EA9E (has 0x3E)
 constexpr uint8_t kItemAlignmentLimitSkip[] = {0xeb, 0x0e};   // jmp 0x68EA94 (usable)
 
+// Phase 3 CM3 (RE-NOTES "Hit points"). CNWSCreature::GetMaxHitPoints
+// 0x65A560 (vtable +0x98; ecx = creature, one flag (Toughness counts when 1);
+// ret 4): Epic Toughness I..X (+20..+200), then for a player character
+// (stats +0x74 == 1) that isn't a player's familiar (0x68E510) the level
+// history: each level's stored HP (+0x103) + the Con modifier (stats +0x3FD),
+// at least 1, +1 with Toughness; then the Pale Master's bonus. Others: the
+// stored HP path (0x65A852).
+constexpr uintptr_t kGetMaxHitPoints = 0x0065A560;
+constexpr uint8_t kGetMaxHitPointsPrologue[] = {0x83, 0xec, 0x08, 0x53, 0x55, 0x56, 0x57};
+// GetLevelStats(index) 0x6995E0 (ecx = stats, ret 4): the level history,
+// array at stats +0x28, count +0x2C; 0 past the end.
+constexpr uintptr_t kGetLevelStats = 0x006995E0;
+constexpr uintptr_t kStatsLevelHistoryCount = 0x2C;  // uint32
+constexpr uintptr_t kLevelStatsHitPoints = 0x103;    // uint8: the HP rolled for that level
+constexpr uintptr_t kLevelStatsClass = 0x104;        // uint8: the class taken at that level
+constexpr uintptr_t kClassHitDie = 0x5C;             // uint8 (CNWClass, classes.2da HitDie)
+
 }  // namespace nwmain

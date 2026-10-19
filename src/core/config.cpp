@@ -54,6 +54,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.progression = ReadVariant(ini, L"progression", g_config.mode);
   g_config.multiclass = ReadVariant(ini, L"multiclass", g_config.mode);
   g_config.alignment = ReadVariant(ini, L"alignment", g_config.mode);
+  g_config.hit_points = ReadVariant(ini, L"hit_points", g_config.mode);
+  Log("config: hit_points=%s", VariantName(g_config.hit_points));
   Log("config: alignment=%s", VariantName(g_config.alignment));
   Log("config: progression=%s multiclass=%s", VariantName(g_config.progression), VariantName(g_config.multiclass));
   Log("config: nwn_only_skills=%s", VariantName(g_config.nwn_only_skills));

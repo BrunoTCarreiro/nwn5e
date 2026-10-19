@@ -1044,3 +1044,19 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   otherwise Use Magic Device (0x68EDA0, mode 2) and the alignment test.
 - Rules (re)load: CM1's two redirects now run every in-memory edit
   (src/core/rules_loaded.cpp).
+
+## Hit points (decoded 2026-10-20, CM3)
+
+- CNWSCreature::GetMaxHitPoints 0x65A560 (vtable +0x98; one flag argument,
+  ret 4; prologue 83 ec 08 53 55 56 57). Epic Toughness X..I (feats
+  0x2FB..0x2F2) set a base of 200..20 (0x65A587..). A player character
+  (stats +0x74 == 1) that is not a player's familiar (0x68E510: associate
+  type 3 with a player master) sums its level history: for i < GetLevel(0),
+  GetLevelStats(i) 0x6995E0 (array stats +0x28, count +0x2C, ret 4) +0x103
+  (HP rolled) + the Con modifier byte stats +0x3FD (signed), at least 1, +1
+  with Toughness (feat 0x28) when the flag is 1. Then Pale Master levels
+  (class constant 0x8ACA04, GetNumLevelsOfClass 0x6B3D50) with feat 0x37B add
+  bonus HP from level 5 and more past 10. Everything else takes the stored
+  HP path (0x65A852). Nothing is cached: the sum runs on every call.
+- CNWLevelStats: +0x103 HP rolled (uint8), +0x104 class (uint8); CNWClass
+  +0x5C hit die (uint8).
