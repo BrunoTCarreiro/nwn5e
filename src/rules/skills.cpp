@@ -344,4 +344,7 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
   return std::string();
 }
 
+
+int PerceptionDie(bool searching, int d20) { return searching ? d20 : 10; }
+
 }  // namespace rules

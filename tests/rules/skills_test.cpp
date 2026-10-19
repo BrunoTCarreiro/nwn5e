@@ -102,3 +102,12 @@ TEST(SkillChoicesAreChecked) {
   CHECK_EQ(CheckExpertiseChoice(rogue, SkillBit(Skill2024::kStealth), SkillBit(Skill2024::kStealth)).empty(), true);
   CHECK_EQ(CheckExpertiseChoice(rogue, SkillBit(Skill2024::kStealth), SkillBit(Skill2024::kArcana)).empty(), false);
 }
+
+// SK5. Breaks caught: a passive observer rolling (NWN's d10, or a d20) instead
+// of passive Perception 10; a searching one losing its d20.
+TEST(PassivePerceptionUnlessSearching) {
+  CHECK_EQ(PerceptionDie(false, 0), 10);
+  CHECK_EQ(PerceptionDie(false, 17), 10);
+  CHECK_EQ(PerceptionDie(true, 3), 3);
+  CHECK_EQ(PerceptionDie(true, 20), 20);
+}

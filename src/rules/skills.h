@@ -97,4 +97,8 @@ SkillAllowance SkillAllowanceFor(const std::vector<ClassLevels>& classes, Specie
 std::string CheckSkillChoice(const SkillAllowance& allowance, SkillSet chosen);
 std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet proficient, SkillSet expertise);
 
+// SK5 (faithful): an observer's Perception die — the d20 it rolled when it
+// searches (detect mode: the Search action), else 10 (passive Perception).
+int PerceptionDie(bool searching, int d20);
+
 }  // namespace rules

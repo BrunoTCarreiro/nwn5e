@@ -788,3 +788,29 @@ not confirmed.
   does the store and notes the drink. After the drink the player character
   has no orders left (queue empty, current action -1), which is when the
   attack is reissued.
+
+## Stealth and perception (decoded 2026-10-19, SK5)
+
+- Creature bytes: detect mode +0x4A8 (0 passive, 1 and 2 searching;
+  SetDetectMode 0x67AFD0), stealth mode +0x4A9 (SetStealthMode 0x67AFF0,
+  thiscall (byte mode), ret 4, acts only on a change; loaded from the save at
+  0x69EA8F), cached rolls +0xA28 Hide, +0xA29 Move Silently, +0xA2A Spot,
+  +0xA2B Listen (bytes; the constructor seeds all four with a d10, 0x6431C4).
+- Rolls: the perception update re-rolls every 6 s (0x65302C compares the
+  time since +0x338/+0x33C with 6000 ms). In stealth mode: Hide and Move
+  Silently d20 (0x65304D, 0x653062). Spot: d20 with Keen Sense (feat 240),
+  in either detect mode, or standing still (animation +0xAC == 0); else a d10.
+  Listen uses Spot's die size (0x6530E2 / 0x6530FB push the sides).
+- Checks (this = observer; (target, flag), ret 8; returns 1 when noticed):
+  Listen 0x653180, Spot 0x653870. The first part tests range and line of
+  sight; then a score in ebx: the observer's skill (halved, `cdq; sub; sar`,
+  in the d10 case) + its cached roll + the area's modifier (+0x14C Listen,
+  +0x148 Spot) − the hider's skill total and cached roll (only in stealth
+  mode; a total of exactly 0 → noticed at once; a master is always heard by
+  its associate, +0xB30) − 10 when the observer is in combat (+0x4BC) − 5 if
+  the hider moves, + 5 if the observer moves (0x63A600) − distance; Spot also
+  − 5 when behind the observer, light terms (module +0x1F0 == 2 and effect
+  types 0x99-0xB4 / 0xB6); size (Listen: the hider's own size +0x4D4, 1..5 →
+  −8 / −4 / 0 / +4 / +8; Spot: hider minus observer size, ±4 / ±8); +
+  0x6AE770 (the observer's Favored Enemy bonus: the target's race → feats
+  0x105-0x117); noticed when the score is > 0.

@@ -934,4 +934,71 @@ constexpr uintptr_t kCreatureStats = 0xC64;    // CNWSCreatureStats* (ResolveAtt
 constexpr uintptr_t kCreatureAssociateType = 0xB38;
 constexpr uintptr_t kCreatureMaster = 0xB30;  // uint32 master object id (community layout)
 
+// SK5: stealth and perception (RE-NOTES "Stealth and perception"). Creature
+// bytes: detect mode +0x4A8 (0 passive; 1 / 2 searching — SetDetectMode
+// 0x67AFD0), stealth mode +0x4A9 (1 hiding — SetStealthMode 0x67AFF0, thiscall
+// (byte mode), ret 4, acts only on a change; the save loads it at 0x69EA8F),
+// cached d20s +0xA28 Hide, +0xA29 Move Silently, +0xA2A Spot, +0xA2B Listen
+// (seeded with a d10 by the constructor, 0x6431C4).
+constexpr uintptr_t kCreatureDetectMode = 0x4A8;
+constexpr uintptr_t kCreatureStealthMode = 0x4A9;
+constexpr uintptr_t kCreatureHideRoll = 0xA28;
+constexpr uintptr_t kCreatureMoveSilentlyRoll = 0xA29;
+constexpr uintptr_t kCreatureSpotRoll = 0xA2A;
+constexpr uintptr_t kCreatureListenRoll = 0xA2B;
+constexpr uintptr_t kSetStealthMode = 0x0067AFF0;
+constexpr uint8_t kSetStealthModePrologue[] = {0x53, 0x8a, 0x5c, 0x24, 0x08, 0x56, 0x57, 0x8b};
+// Every 6 s (0x65302C: +0x338/+0x33C, the time of the last rolls, 6000 ms
+// ago) the perception update rolls: in stealth mode the Hide and Move Silently
+// d20s; then Spot and Listen — a d20 with Keen Sense (feat 240), in either
+// detect mode or standing still (animation +0xAC == 0), else a d10 (Listen
+// uses Spot's die size). The block runs 0x65303A–0x653112; at 0x65310A it
+// loads ecx = [esp+0x20], edx = [esp+0xC] for the time stores at 0x653118.
+// Only its first byte is a jump target.
+constexpr uintptr_t kPerceptionRollBlock = 0x0065303A;
+constexpr uint8_t kPerceptionRollBlockBytes[] = {0x80, 0xbe, 0xa9, 0x04, 0x00, 0x00, 0x01};
+// The checks (this = observer; (target, flag), ret 8; 1 = noticed): Listen
+// 0x653180, Spot 0x653870. Score = observer skill (halved when it moves
+// without searching, the d10 case) + its cached roll + area modifier (area
+// +0x14C Listen / +0x148 Spot) - the hider's skill and cached roll (only in
+// stealth mode; a hider whose skill total is 0 is noticed at once) - 10 if the
+// observer is in combat (+0x4BC) -/+ 5 for the hider / observer moving
+// (0x63A600) - distance + size (Listen: the hider's size +0x4D4 1..5 -> -8 /
+// -4 / 0 / +4 / +8; Spot: hider minus observer size, +/-4 / +/-8) + the
+// observer's Favored Enemy bonus against the hider (0x6AE770: the target's
+// race -> feats 0x105-0x117), Spot also -5 behind the observer's facing and
+// light terms; noticed when > 0.
+constexpr uintptr_t kListenDetection = 0x00653180;
+constexpr uint8_t kListenDetectionPrologue[] = {0x83, 0xec, 0x40, 0x53, 0x55, 0x56, 0x57, 0x8b};
+constexpr uintptr_t kSpotDetection = 0x00653870;
+constexpr uint8_t kSpotDetectionPrologue[] = {0x83, 0xec, 0x28, 0x53, 0x55, 0x56, 0x8b, 0xf1};
+struct MediumPatch {
+  const char* what;
+  uintptr_t address;
+  uint8_t size;
+  uint8_t original[8];
+  uint8_t patched[8];
+};
+// None of the replaced bytes but the first is a jump target (checked).
+constexpr MediumPatch kFaithfulPerceptionPatches[] = {
+    {"Listen: full skill when not searching", 0x00653670, 5, {0x99, 0x2b, 0xc2, 0xd1, 0xf8},
+     {0x90, 0x90, 0x90, 0x90, 0x90}},  // cdq; sub eax,edx; sar eax
+    {"Spot: full skill when not searching", 0x00653A8F, 5, {0x99, 0x2b, 0xc2, 0xd1, 0xf8},
+     {0x90, 0x90, 0x90, 0x90, 0x90}},
+    {"Listen: no -10 in combat", 0x006536C6, 3, {0x83, 0xeb, 0x0a}, {0x90, 0x90, 0x90}},  // sub ebx,0xA
+    {"Spot: no -10 in combat", 0x00653C53, 3, {0x83, 0xeb, 0x0a}, {0x90, 0x90, 0x90}},
+    {"Listen: no size modifier", 0x00653706, 6, {0x8b, 0x87, 0xd4, 0x04, 0x00, 0x00},
+     {0xeb, 0x29, 0x90, 0x90, 0x90, 0x90}},  // mov eax,[edi+0x4D4] -> jmp 0x653731
+    {"Spot: no size modifier", 0x00653C80, 6, {0x8b, 0x87, 0xd4, 0x04, 0x00, 0x00},
+     {0xeb, 0x30, 0x90, 0x90, 0x90, 0x90}},  // -> jmp 0x653CB2
+    {"Listen: no Favored Enemy bonus", 0x00653737, 8, {0x57, 0x8b, 0xce, 0xe8, 0x31, 0xb0, 0x05, 0x00},
+     {0x31, 0xc0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},  // push edi; mov ecx,esi; call 0x6AE770 -> xor eax,eax
+    {"Spot: no Favored Enemy bonus", 0x00653CB8, 8, {0x57, 0x8b, 0xce, 0xe8, 0xb0, 0xaa, 0x05, 0x00},
+     {0x31, 0xc0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},
+    {"Listen: a Stealth total of 0 can hide", 0x006535A5, 6, {0x0f, 0x84, 0xb4, 0x01, 0x00, 0x00},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},  // je 0x65375F (heard)
+    {"Spot: a Stealth total of 0 can hide", 0x006539FF, 6, {0x0f, 0x84, 0xdb, 0x02, 0x00, 0x00},
+     {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},  // je 0x653CE0 (seen)
+};
+
 }  // namespace nwmain

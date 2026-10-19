@@ -29,6 +29,10 @@ struct Config {
   // Expertise instead of ranks, !skills to choose, 2024 names; scripts read
   // the values scaled to the 3e range); nwn / off = NWN's.
   rules::RuleVariant skills = rules::RuleVariant::kFaithful;
+  // SK5: Stealth against Perception. faithful = Stealth rolled once per hide,
+  // passive Perception (10 + modifier) unless searching, no size / in-combat /
+  // Favored Enemy terms; nwn / off = NWN's.
+  rules::RuleVariant perception = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

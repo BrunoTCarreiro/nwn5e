@@ -45,7 +45,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.two_handed_strength = ReadVariant(ini, L"two_handed_strength", g_config.mode);
   g_config.conditions = ReadVariant(ini, L"conditions", g_config.mode);
   g_config.skills = ReadVariant(ini, L"skills", g_config.mode);
-  Log("config: skills=%s", VariantName(g_config.skills));
+  g_config.perception = ReadVariant(ini, L"perception", g_config.mode);
+  Log("config: skills=%s perception=%s", VariantName(g_config.skills), VariantName(g_config.perception));
   Log("config: mode=%s racial_combat_bonuses=%s saves=%s opportunity_attacks=%s two_weapon_fighting=%s "
       "weapon_mastery=%s two_handed_strength=%s conditions=%s",
       VariantName(g_config.mode), VariantName(g_config.racial_combat_bonuses), VariantName(g_config.saves),

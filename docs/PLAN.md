@@ -336,6 +336,17 @@ light and cover instead); the hider's roll (rev.): keep NWN's re-roll every
 not 2024 (you can hide in combat if obscured) — drop. NWN mode: NWN's.
 Consequences: watchful guards become more consistent (no lucky d10 of 1);
 small creatures lose their hiding bonus; hiding in combat gets easier.
+*Built 0.9.29 (key `perception`):* Stealth rolled when hiding starts
+(SetStealthMode hook; a creature loaded already hidden rolls at its first
+6 s update) and kept until it stops; passive 10 unless searching. Found in
+the decode and done in the same spirit: one d20 serves both NWN rows of a
+2024 skill (Hide and Move Silently = one Stealth roll; Spot and Listen = one
+Perception die); NWN's half skill for an observer moving without searching
+goes with its d10 (passive Perception uses the full modifier); the Ranger's
+Favored Enemy bonus to Spot / Listen is dropped (SK2 drops feat bonuses to
+skills); a hider whose Stealth total is exactly 0 is no longer noticed at once
+(a 3e "no ranks" rule that +0 2024 totals would hit). The detection log lines
+(`stealth:` / `perception:`) are for testing.
 
 **SK6. Knockdown and Disarm (Discipline).** NWN: after a Knockdown / Improved
 Knockdown hit the defender (Large or smaller; one size more with Improved)
