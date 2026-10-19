@@ -542,6 +542,13 @@ constexpr SmallPatch kFaithfulOpportunityPatches[] = {
     {"unarmed attacks without Improved Unarmed Strike", 0x0074405C, 2, {0x75, 0x5d}, {0xeb, 0x5d}},
 };
 
+// Conditions (RE-NOTES "Condition effects"). CNWSEffectListHandler::
+// OnApplyDeaf 0x66D770 adds a spell failure effect (type 25) of 20 — the
+// `push 0x14` before SetInteger(0, 20) at 0x66D942; faithful makes it 0.
+constexpr SmallPatch kFaithfulConditionPatches[] = {
+    {"Deafened adds no spell failure", 0x0066D942, 2, {0x6a, 0x14}, {0x6a, 0x00}},
+};
+
 // Two-weapon fighting (D1; RE-NOTES "Two-weapon fighting and attacks of
 // opportunity"):
 //   off-hand attacks  CNWSCombatRound 0x73BF80 (plain ret; one caller,

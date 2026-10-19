@@ -40,6 +40,7 @@ in `nwn5e.ini`:
 | Weapon mastery Push (D4, stage 4) | `weapon_mastery` | parked (owner, 2026-10-18): a visual-only knockdown animation plus a 3 m shove, design in PLAN.md D4 |
 | Two-handed weapons add Strength once to damage, not NWN's 1.5 × (E1) | `two_handed_strength` | built (0.9.8; hook verified on load) |
 | Spells use their 2024 save ability (C1): Strength for Entangle, Gust of Wind, Evard's Black Tentacles; Intelligence for Feeblemind; Charisma for Bane, Banishment, the Planar Bindings; Constitution for Cone of Cold, Sunbeam, Sunburst, Inflict Wounds — with that ability's 2024 save value (proficiency by class). A spell's own DC is never re-converted (fixes lingering areas of effect) | `saves` (faithful) | built (0.9.8; hooks verified on load) |
+| Deafened no longer makes spells fail (CN8; NWN's 20% only ever hit Bard / Sorcerer / Wizard spells); a deafened creature still can't hear | `conditions` | built (0.9.11) |
 
 Prestige-class levels count as levels of their parent class for Extra Attack
 (decision 10).
