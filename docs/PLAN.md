@@ -93,6 +93,8 @@ monster AC by CR.
 - Feats: Origin, General (ASI at 4/8/12/16), Fighting Style, Epic Boon (19).
 - Multiclassing prerequisites (13 in primary ability).
 - Hit points: max at 1st level, fixed average or roll per level.
+- Decision brief: "Phase 3 — character model: decisions to make" below
+  (CM0–CM13); facts in docs/PHASE3-CHARACTER-RECON.md.
 
 ### Phase 4 — Spellcasting
 - Slot tables per class (full/half/pact casters); Pact Magic for Warlock.
@@ -230,6 +232,216 @@ line in nwn5e.ini picks the default for all of them — `mode=faithful`
 "NWN mode" is not the original 3e game: that stays available by switching a
 rule off (its key = 0). Earlier rules (crits, attack bonus, Extra Attack,
 retargeting, Phase 1b) are the same in both modes unless noted.
+
+## Phase 3 — character model: decisions to make (2026-10-19)
+
+Engine and data facts: docs/PHASE3-CHARACTER-RECON.md. "2024" = SRD 5.2;
+Player's Handbook / DMG-only material is named as such and, **since the repo
+is public, can't go in it at all** (personal use only). Answers open
+decisions 1, 3, 4, 5 and 12 above.
+
+**The frame (recommendation).** Faithful = the 2024 character model; NWN
+mode = NWN's character model (3e progression, feats, prestige classes), with
+the 2024 rules already built on top (proficiency bonus, attacks, saves,
+checks) — as Phase 2 kept NWN's ranks in NWN mode. Faithful is computed **at
+read time from the character's class levels** wherever the engine allows it
+(hit points, features, ability scores): nothing is written into the
+character that the other mode can't undo, a saved character works in both
+modes, and henchmen follow without their own code. Key engine facts: XP only
+gates level-ups; one server validator checks every level-up (PCs and
+henchmen) and accepts *fewer* feats, no ability bump and unspent points;
+the bonus-feat slots per class level are an in-memory table both the screen
+and the validator read; maximum HP is re-summed from the level history on
+every read; one function decides which classes a character may take. Until
+Phase 7 builds screens, choices the screens can't offer are chat commands
+(as `!skills`, `!mastery`).
+
+**CM0. Per-mode data (foundation).** Hit dice, XP table, feat slots, class
+lists and racial adjustments are 2da data, loaded once into the rules object;
+2da / tlk files are shared by both modes, and an override-folder file would
+change vanilla launches too. Recommendation: (A) **an in-memory overlay**:
+after the 2das load, the DLL rewrites the loaded values per rule key (hit
+die, XP table, XP penalty, bonus-feat slots, "player class" flag — all at
+decoded offsets); (B) **served rows**: new rows (Warlock, SRD feats,
+species) come from nwn5e's own 2da files that the DLL hands the resource
+manager (vanilla launches stay vanilla), present in both modes and hidden by
+the overlay in the mode that lacks them; names and descriptions through the
+label hook (private string ids, as the saves' labels). RE needed for B (the
+resource manager) and for how the level-up screen filters its feat lists.
+1.69-only: the offsets and the serving hook; the rows and rules port.
+
+**CM1. XP table and level cap (open decision 3).** NWN: 500·L·(L−1), cap 40
+with HotU. 2024: 300 / 900 / 2,700 / 6,500 / 14,000 … 355,000 at 20, cap 20
+(the Epic Boon feat at 19; SRD 5.2 has no advancement past 20 — the DMG's
+post-20 boons are DMG-only, to check). With the campaigns' XP awards
+unchanged, the 2024 table gives 2024's own pacing: levels 1–3 about 3 times
+faster, equal around level 6, slower after (partly offset: NWN gives lower
+characters more kill XP). OC (NWN ~16 at 120,000) ends near 13; SoU a little
+lower than NWN; **HotU climbs from 15 to 20 over the campaign** (its end, NWN
+~27–30, is past 355,000) instead of hitting 20 in its first chapter and
+staying there — the main argument for the table. Recommendation, faithful:
+the 2024 table in memory, cap 20 (CanLevelUp hook; MaxCharLevel left alone —
+lowering it makes the character validator refuse), and one invariant: **a
+character's XP is never below its level's threshold** — when a script or an
+automatic level-up sets the level (HotU sets 105,000 = NWN 15, then levels
+the PC to 15), XP is raised to the 2024 threshold (165,000); without it the
+HotU PC would wait until 195,000 for level 16. XP past 20 does nothing. NWN
+mode: NWN's table and cap 40 (epic levels; proficiency bonus stays +6).
+Consequences: switching a saved character between modes changes how many
+levels its XP is worth (its levels never drop).
+
+**CM2. Multiclassing.** 2024: 13 in the primary ability of every current
+class and the new one (Barbarian Str; Bard Cha; Cleric Wis; Druid Wis;
+Fighter Str or Dex; Monk Dex and Wis; Paladin Str and Cha; Ranger Dex and
+Wis; Rogue Dex; Sorcerer Cha; Warlock Cha; Wizard Int); no XP penalty; save
+proficiencies from the first class only (built, C2); limited proficiencies
+from later classes. NWN: −20 % XP per class 2+ levels behind (favored class
+excepted), no ability prerequisite, at most 3 classes. Recommendation,
+faithful: the 13 rule in CanLevelUpInClass (drives both the class list and
+the validator, so the screen greys the class out), XP penalty off (class
+penalty flag 0 in memory), later-class armour / weapon proficiencies limited
+to 2024's multiclass lists, 3 classes kept (the client's limit). NWN mode:
+NWN's (the penalty is NWN's multiclass brake; no 13 rule).
+
+**CM3. Hit points (open decision 4).** 2024: level 1 = the die's maximum +
+Con; each later level = roll or fixed average (d6 4, d8 5, d10 6, d12 7) +
+Con; dice Barbarian d12; Fighter, Paladin, Ranger d10; Bard, Cleric, Druid,
+Monk, Rogue, Warlock d8; Sorcerer, Wizard d6 (NWN: Bard, Rogue d6; Sorcerer,
+Wizard d4). NWN: the client rolls each level (max at levels 1–3, then half +
+random) and stores it. Recommendation, faithful: **fixed average**, computed
+in GetMaxHitPoints from class levels with the 2024 dice (stored rolls
+ignored, so it is reversible and the same for henchmen); Con retroactive
+(already how NWN sums). Rolled would need 2024-die rolls stored per level
+(the client rolls with the in-memory die, so only new levels). NWN mode:
+NWN's dice and rolls. The 2024 die per class also feeds Phase 5's Hit Dice.
+
+**CM4. Ability scores.** 2024: standard array, 27-point buy (8–15) or roll;
+**species give nothing**; the background gives +2 / +1 or +1 / +1 / +1 among
+its three abilities; Ability Score Improvement is a feat (CM7); 20 maximum
+(Epic Boons to 30). NWN: 30-point buy up to 18, racial adjustments (applied
+when read; where is not decoded yet), +1 every 4 total levels. Recommendation,
+faithful: racial adjustments → 0 and the background's increases added at the
+same read point; NWN's per-level +1s (stored in the level history) not
+counted; point buy 27 / max 15 if the creation screen's budget is a patchable
+constant (client RE, 1.69-only), otherwise Phase 7. NWN mode: NWN's.
+Consequences: campaign Int / Cha dialog checks (142 dialogs) see the 2024
+scores.
+
+**CM5. Backgrounds.** SRD 5.2 has 4: Acolyte, Criminal, Sage, Soldier
+(abilities, Origin feat, 2 skills, a tool). NWN has no background step; its
+"background" feats (Blooded, Luck of Heroes, Silver Palm…) are 3e/Forgotten
+Realms feats. Recommendation, faithful: `!background` (once per character,
+existing ones too): picks one of the 4 and the ability split, grants the
+Origin feat, and its 2 skills count in `!skills`; tools map to SK1's rows
+(Thieves' Tools = Open Lock / traps; Calligrapher's / gaming set have no use
+and are only recorded). NWN's background feats do nothing and are hidden.
+NWN mode: NWN's background feats, no 2024 background. Note: Magic Initiate
+(Acolyte, Sage) needs Phase 4's spells; until then it grants nothing.
+
+**CM6. Species (open decisions 1, 2).** SRD 5.2: Dragonborn, Dwarf, Elf,
+Gnome, Goliath, Halfling, Human, Orc, Tiefling. Built already: the save
+advantages (C3) and Halfling Luck. Recommendation, faithful: the 5 shared
+species get their 2024 traits (Dwarven Toughness +1 HP per level through
+CM3, Darkvision ranges, Elf Keen Senses and Human Skillful as `!skills`
+picks, Human Versatile = an Origin feat in NWN's human bonus slot, Trance and
+the lineage spells with Phases 4 / 5); NWN racial features with no 2024
+counterpart do nothing. **Half-Orc plays as the SRD Orc** and is named "Orc"
+in faithful (Relentless Endurance, Adrenaline Rush, Darkvision 120) — the
+missing Orc at no art cost, and the 23 campaign scripts checking Half-Orc
+still work. **Half-Elf stays as a legacy species** with its SRD 5.1 traits
+(Darkvision, Fey Ancestry, two skills; no ability increases; SRD 5.1 is
+CC-BY 4.0 as well). Tiefling, Goliath, Dragonborn: need models — a separate
+appearance recon after the core (Tiefling / Goliath may reuse NWN models;
+Dragonborn needs a new one). Aasimar is PHB-only. NWN mode: NWN's races and
+racial features.
+
+**CM7. When feats come (feat cadence).** 2024: Origin feat at level 1 (from
+the background; humans one more), a General feat at class levels 4 / 8 / 12
+/ 16 (Fighter also 6 / 14, Rogue 10), Fighting Style (Fighter 1, Paladin 2,
+Ranger 2), Epic Boon at 19 — Ability Score Improvement is one of the General
+feats. NWN: a general feat at total level 1 and every 3rd (+ human), class
+bonus feats, +1 ability every 4 total levels. Recommendation, faithful:
+NWN's general feat only at level 1 (the Origin slot; patched on client and
+server together); 2024's feat levels as class bonus-feat slots in memory
+(no protocol change — both sides read that table); NWN's ability step off
+on both sides (the level-up message carries the byte on both or neither);
+ASI as feat rows (one per possible pick, the next one shown) whose +2 / +1+1
+is assigned with `!asi`. NWN mode: NWN's cadence.
+
+**CM8. Which feats exist.** SRD 5.2 has 17: Origin — Alert, Magic Initiate,
+Savage Attacker, Skilled; General — Ability Score Improvement, Grappler;
+Fighting Style — Archery, Defense, Great Weapon Fighting, Two-Weapon
+Fighting; Epic Boons — Combat Prowess, Dimensional Travel, Fate, Irresistible
+Offense, Spell Recall, the Night Spirit, Truesight. NWN offers ~210 non-epic
+feats to everyone. Recommendation, faithful: **the 17 only**; an NWN feat
+that is one of them is reused under the 2024 name (Improved Initiative →
+Alert, built in SK9), the rest do nothing and are hidden. The PHB
+counterparts (Tough, Mobile, Great Weapon Master, War Caster, Dual Wielder,
+Sharpshooter, Mounted Combatant) are PHB-only: not in the public repo.
+Build-able now: the Fighting Styles, Savage Attacker, Alert, Skilled;
+Grappler waits for grappling, Magic Initiate / Spell Recall for Phase 4.
+NWN mode: NWN's feats. Consequences: faithful builds choose through class
+features (Fighting Style, Weapon Mastery, Invocations, Metamagic) and spells
+rather than feats — that is SRD 5.2's shape.
+
+**CM9. Class features.** Recommendation, faithful: a **feature mask** at
+read time (the engine's has-feat check, RE: address not taken yet): a
+character has exactly the 2024 features of its class levels — NWN features
+with a 2024 counterpart kept under the 2024 name and level (Rage, Sneak
+Attack, Evasion, Wild Shape, Lay on Hands…), NWN-only ones absent (Barbarian
+Uncanny Dodge and damage reduction, Scribe Scroll, NWN's level-1 Cleric
+domains), new ones as served rows with DLL mechanics. Many need bonus
+actions / reactions (Phase 6), rests (Phase 5) or spells (Phase 4), so the
+classes come **one at a time, each with its own short brief** (keep / rename
+/ new / drop / later per level): Fighter, Rogue, Barbarian, Monk first;
+Paladin, Ranger, Bard and the full casters with Phase 4. Campaign
+`GetHasFeat` checks (83 scripts) read the mask. NWN mode: NWN's features.
+
+**CM10. Subclasses and prestige classes (open decisions 5, 12).** SRD 5.2
+has one subclass per class: Berserker, Lore, Life, Land, Champion, Open Hand,
+Devotion, Hunter, Thief, Draconic Sorcery, Fiend Patron, Evoker (text checked
+per class before building). With one each, **faithful grants it at class
+level 3 automatically** — no selection screen (decision 12's feat-step
+design stays the fallback if more are ever added). Prestige classes in
+faithful: off for PCs and henchmen (CanLevelUpInClass); levels already taken
+count as the parent class (decision 10; e.g. Deekin's Red Dragon Disciple
+levels are Sorcerer levels with Draconic Sorcery at 3) and their own
+features read as absent. A henchman's package level-up into a prestige class
+falls back to its other class (NWN's own fallback). Dialog branches that
+check a prestige class simply never show. NWN mode: NWN's prestige classes
+(with decision 10's level counting), no 2024 subclasses.
+
+**CM11. Warlock.** New class in a blank classes.2da row (39) through CM0's
+served data: d8, Cha, Pact Magic, Eldritch Invocations, Magical Cunning, the
+Fiend Patron, Eldritch Blast. No campaign script can name it (1.69 has no
+CLASS_TYPE for it): no class-specific dialog, no henchman Warlocks; no art
+needed. Recommendation: faithful only (hidden in NWN mode); reserve the row
+in Phase 3, build it after Phase 4's slot system (a Warlock without Pact
+Magic is empty).
+
+**CM12. Henchmen and automatic level-ups.** Decision 11 (henchmen use the
+PC rules) holds. With read-time computation henchmen need no own code: HP,
+features and abilities follow their class levels; their packages keep
+picking NWN feats, which do nothing in faithful. Recommendation, faithful:
+their ASIs are assigned automatically (+2 to the class's primary ability,
+then the next); OC's pre-built blueprints read the same way. HotU's
+automatic level-up of the PC to 15: the player assigns its ASIs with `!asi`.
+
+**CM13. Existing characters.** Everything read-time switches cleanly with
+the mode. What a faithful player does once: `!background`, `!asi` for the
+ASIs already earned, `!skills` (built). Characters above 20 (HotU saves) are
+read as their first 20 levels in faithful. The XP floor (CM1) raises stored
+XP — the one write, and the reason a character moved back to NWN mode may
+have levels to take.
+
+**Build order (proposed).** 1. RE: resource serving, feat-list filtering,
+the ability read point, the has-feat check, the creation budget. 2. CM1 +
+CM2 (known hooks, small). 3. CM3. 4. CM7 + CM4 + CM5 (`!background`,
+`!asi`). 5. CM9 / CM10 frame (mask, automatic subclass, prestige off), then
+Fighter, Rogue, Barbarian, Monk. 6. CM8's feats as their hooks exist. 7. CM6
+(Orc, Half-Elf, traits; new species after the appearance recon). 8. CM11 and
+the casters with Phase 4. Phase 3 is the largest phase so far; each class
+brief is its own decision.
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 
