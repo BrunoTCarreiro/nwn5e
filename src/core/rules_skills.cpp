@@ -161,21 +161,22 @@ void StoreProfile(void* creature, uint32_t id, const Profile& profile, int how) 
   g_profiles[id] = profile;
 }
 
-// A character's proficiencies: its local variables (cached), or from its
-// ranks the first time (told to the player).
+// A character's proficiencies: chosen with !skills (local variables, cached),
+// or else taken from its ranks — worked out again each session, not stored
+// (they follow from the ranks), and told to the player once.
 Profile CharacterProfile(void* creature, void* stats) {
   const uint32_t id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
   const auto cached = g_profiles.find(id);
   if (cached != g_profiles.end()) return cached->second;
   Profile profile;
-  if (engine::GetLocalInt(creature, kVarSet) != 0) {
+  if (engine::GetLocalInt(creature, kVarSet) == 1) {
     profile.proficient = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarProficient));
     profile.expertise = static_cast<rules::SkillSet>(engine::GetLocalInt(creature, kVarExpertise));
     g_profiles[id] = profile;
     return profile;
   }
   profile = ProfileFromRanks(stats, rules::SkillAllowanceFor(ClassLevelsOf(stats), SpeciesOf(stats)));
-  StoreProfile(creature, id, profile, 2);
+  g_profiles[id] = profile;
   Log("skills: 0x%08X 2024 proficiencies taken from its ranks: %s; Expertise: %s", id, Names(profile.proficient).c_str(),
       Names(profile.expertise).c_str());
   if (IsPlayerControlled(id)) {
@@ -200,6 +201,13 @@ bool SkillValue2024(void* stats, uint8_t skill, void* vs, int* value, SkillParts
   const auto mapped = rules::Skill2024ForNwnSkill(skill);
   void* creature = Field<void*>(stats, nwmain::kStatsCreature);
   if (!mapped || !creature) return false;
+  // Not while the creature is being built (loading a game or module): its ranks
+  // are still being filled in and its id may not be final (0.9.24 log: one
+  // goblin proficient in Move Silently but not Hide). NWN's value until it is
+  // in an area.
+  if (!engine::GetArea(creature) || Field<uint32_t>(creature, nwmain::kCreatureObjectId) == nwmain::kObjectInvalid) {
+    return false;
+  }
   const CreatureFacts facts = ReadCreatureFacts(stats);
   if (!facts.plausible) return false;
   const bool character = CountsAsCharacter(stats, facts);
