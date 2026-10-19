@@ -39,7 +39,7 @@ int SaveBonusFor(void* stats, rules::Ability ability);         // rules_saves.cp
 
 namespace {
 
-using GetAttackFn = void*(__fastcall*)(void* round, void* edx, uint8_t index);
+using GetAttackFn = void*(__fastcall*)(void* round, void* edx, int index);  // a full int: the engine reads 32 bits
 using TargetFn = void(__fastcall*)(void* creature, void* edx, void* target);
 using AddSpecialAttackFn = void(__fastcall*)(void* round, void* edx, uint32_t feat);
 using SavingThrowRollFn = uint32_t(__fastcall*)(void* creature, void* edx, uint32_t save, uint32_t dc, uint32_t type,
@@ -63,7 +63,8 @@ uint32_t IdOf(const void* object) { return Field<uint32_t>(object, nwmain::kCrea
 
 void* CurrentAttack(void* creature) {
   void* round = creature ? Field<void*>(creature, nwmain::kCreatureCombatRound) : nullptr;
-  return round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
+  return round ? g_get_attack(round, nullptr, static_cast<int>(Field<uint8_t>(round, nwmain::kRoundCurrentAttack)))
+               : nullptr;
 }
 
 bool IsKnockdown(int special) { return special == nwmain::kFeatKnockdown || special == nwmain::kFeatImprovedKnockdown; }

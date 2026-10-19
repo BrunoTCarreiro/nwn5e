@@ -432,6 +432,11 @@ is better, so the log names it) against 8 + Str + PB; the engine's own
 knockdown effect (4.5 s) on a failure. Disarm is never added as a special
 attack: an ordinary attack (no -6 / -4, no opportunity attack, no disarm).
 Recon correction: NWN's Knockdown already limited size to one larger.
+*Owner test 2026-10-19 (0.9.40):* the save worked (Strength save -3 vs DC
+13, labelled; a failure knocked down, a success did not), but the attack roll
+and damage stayed: the current-attack lookup passed the index as a byte, so
+GetAttack read garbage and the attack never looked like a Knockdown. 0.9.41
+passes it as an int (as rules_advantage does).
 
 **SK7. Concentration (the skill).** NWN: a Concentration check on damage
 while casting (DC from the damage), for defensive casting, when entangled (DC
