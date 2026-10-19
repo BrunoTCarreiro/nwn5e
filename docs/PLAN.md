@@ -305,14 +305,20 @@ Knockdown hit the defender (Large or smaller) rolls d20 + Discipline against
 the attacker's attack total, and is knocked down on a loss; Disarm works the
 same way. 2024: **Shove** (an Unarmed Strike option) — the target makes a
 Strength or Dexterity saving throw (its choice) against DC 8 + the attacker's
-Strength modifier + PB, or is pushed 5 ft or knocked prone; there is no Disarm
-action (the Battle Master's Disarming Attack is a Strength save).
-Recommendation (faithful): the Knockdown feats keep their attack roll; on a
-hit the target makes the better of a Strength or Dexterity save (with our 2024
-save values) against 8 + Strength modifier + PB instead of the Discipline
-check; Disarm uses a Strength save against the same DC. NWN mode: Discipline.
-Consequences: knockdown works on high-Discipline monsters by their saves
-instead; Topple and Shove become one rule.
+Strength modifier + PB, or is pushed 5 ft or knocked prone. **SRD 5.2 has no
+Disarm at all** (the only disarming is the Battle Master's Disarming Attack,
+a Player's Handbook subclass outside the SRD). Recommendation (faithful): the
+Knockdown feats keep their attack roll; on a hit the target makes the better
+of a Strength or Dexterity save (with our 2024 save values) against 8 +
+Strength modifier + PB instead of the Discipline check; **Disarm does nothing
+in faithful** (option A; B = keep it as a house rule with a Strength save
+against the same DC; C, NWN's Discipline check, is not possible once SK1
+removes the skill) — a PC who took it gets the choice back in Phase 3. NWN
+mode: Discipline for both. Consequences: knockdown works on high-Discipline
+monsters by their saves instead; Topple and Shove become one rule; NPCs with
+Disarm stop disarming in faithful. *(Corrected 2026-10-19: the first draft
+recommended a Strength save for Disarm, which is the Battle Master maneuver,
+not SRD 2024.)*
 
 **SK7. Concentration (the skill).** NWN: a Concentration check on damage
 while casting (DC from the damage), for defensive casting, when entangled (DC
