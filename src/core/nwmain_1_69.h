@@ -612,6 +612,32 @@ constexpr uintptr_t kObjectSetPosition = 0x0063D2D0;
 constexpr uintptr_t kCreatureUpdateSubAreas = 0x006833F0;
 constexpr uintptr_t kAreaId = 0xC8;
 constexpr uint32_t kCreatureSizeLarge = 4;  // creature +0x4D4: 1 tiny .. 4 large, 5 huge
+// Push v2 (RE-NOTES "Push v2"):
+// - Placeables are static objects of the area (their .pwk walkmesh boxes,
+//   registered by 0x53EB90), not in the tile walkmesh. CNWArea static-object
+//   line test 0x53FBF0 (thiscall on the area, ret 0x30): (x1, y1, x2, y2, zA,
+//   zB, radius, exclude id, uint32* blocker, flag, 0, 0) -> 1 clear, 0
+//   blocked (blocker id written); ComputeSafeLocation runs it after
+//   NoNonWalkPolysOnLine, creature placement (0x66362C) with radius =
+//   [[creature + 0x304] + 4], exclude 0x7F000000, flag 1. Doors are not in it.
+// - CNWSCreature::AIUpdate 0x6475B0 (vtable +0x74, thiscall, plain ret) runs
+//   per creature per AI master pass and stores the ms since its last update
+//   at +0xA8 (0x6476E6).
+// - AddAttackActions 0x646D80 (thiscall, ret 0x10): (target id, passive ->
+//   +0x4C4, clear first -> ClearAllActions, at the front); a player's attack
+//   click is (t, 0, 1, 0). Clearing cancels the attack action and resets the
+//   attacker's round (loses its remaining attacks), so mid-round the target is
+//   switched in place: round +0x2134, +0x4C4 = 1, the queued attack action's
+//   target (node data +0x34), attack targets +0x4E0 / +0x4E4.
+constexpr uintptr_t kAreaStaticObjectsOnLine = 0x0053FBF0;
+constexpr uintptr_t kCreaturePathfind = 0x304;
+constexpr uintptr_t kPathfindRadius = 0x04;  // float
+constexpr uintptr_t kCreatureAIUpdate = 0x006475B0;
+constexpr uint8_t kCreatureAIUpdatePrologue[] = {0x6a, 0xff, 0x68, 0x88, 0x4e, 0x89, 0x00, 0x64};
+constexpr uintptr_t kCreatureUpdateMs = 0xA8;  // int32
+constexpr uintptr_t kAddAttackActions = 0x00646D80;
+constexpr uintptr_t kCreatureAttackTarget = 0x4E4;
+constexpr uintptr_t kCreatureAttemptedAttackTarget = 0x4E0;
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
 // before the hit decision) is entered only past this gate (eax = attacker miss
 // chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;

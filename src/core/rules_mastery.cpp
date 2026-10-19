@@ -339,6 +339,34 @@ std::unordered_map<uint32_t, AwaitDamage> g_vex_awaiting;   // Vex's mark is wit
 std::unordered_map<uint32_t, AwaitDamage> g_push_awaiting;  // Push moves the target when the hit lands
 constexpr float kPushMetres = 3.0f;  // 10 ft
 constexpr int kPushFallMs = 1200;    // the fall's round pause
+constexpr float kPushSlideSeconds = 0.45f;  // the move, stepped while it falls
+constexpr DWORD kPushMoveMaxMs = 3000;      // then it is put at the end
+// A pushed creature sliding along its planned line (target id ->).
+struct PushMove {
+  engine::Vector3 from;
+  engine::Vector3 to;
+  float metres;
+  float travelled;
+  void* area;
+  DWORD tick;
+};
+std::unordered_map<uint32_t, PushMove> g_push_moves;
+// After a push the attacker went for a closer enemy (attacker id ->): made
+// to stick at the end of its round.
+struct PushRetarget {
+  uint32_t pushed;
+  uint32_t next;
+  DWORD tick;
+};
+std::unordered_map<uint32_t, PushRetarget> g_push_retargets;
+using GetNearestEnemyFn = uint32_t(__fastcall*)(void* creature, void* edx, float range, uint32_t exclude, int seen,
+                                                int path);
+using AddAttackActionsFn = int(__fastcall*)(void* creature, void* edx, uint32_t target, int passive, int clear_first,
+                                            int front);
+const auto g_get_nearest_enemy = reinterpret_cast<GetNearestEnemyFn>(nwmain::kGetNearestEnemy);
+const auto g_add_attack_actions = reinterpret_cast<AddAttackActionsFn>(nwmain::kAddAttackActions);
+using AIUpdateFn = void(__fastcall*)(void* creature, void* edx);
+AIUpdateFn g_ai_update = nullptr;
 constexpr DWORD kAwaitDamageMs = 5000;
 using OnApplyDamageFn = int(__fastcall*)(void* handler, void* edx, void* object, void* effect, int loading);
 OnApplyDamageFn g_on_apply_damage = nullptr;
@@ -421,10 +449,64 @@ uint32_t RoundsEnded(uint32_t id) {
   return it == g_rounds_ended.end() ? 0 : it->second;
 }
 
+// The attack action the creature carries out next (the head of its queue),
+// or null.
+void* HeadAttackAction(void* creature) {
+  void* list = Field<void*>(creature, nwmain::kObjectActionQueue);
+  void* head = list ? Field<void*>(list, nwmain::kListHead) : nullptr;
+  void* data = head ? Field<void*>(head, nwmain::kListNodeData) : nullptr;
+  return data && Field<int32_t>(data, nwmain::kActionId) == nwmain::kActionAttackObject ? data : nullptr;
+}
+
+// After a push, at the end of the attacker's round: the in-place switch
+// holds when its attack action now targets the closer enemy; if it went back
+// to the pushed one, the switch is made the way a player's attack click
+// makes it (the round is over, so no attack is lost).
+void KeepPushRetarget(void* creature) {
+  const auto it = g_push_retargets.find(IdOf(creature));
+  if (it == g_push_retargets.end()) return;
+  const PushRetarget retarget = it->second;
+  g_push_retargets.erase(it);
+  if (GetTickCount() - retarget.tick > 15000) return;
+  const void* action = HeadAttackAction(creature);
+  if (!action || Field<uint32_t>(action, nwmain::kActionFirstParam) != retarget.pushed) return;  // holds, or a new order
+  void* next = engine::GetCreature(retarget.next);
+  if (!next || engine::IsDeadOrDying(next) || !engine::IsEnemy(creature, retarget.next)) return;
+  g_add_attack_actions(creature, nullptr, retarget.next, 0, 1, 0);
+  if (EffectLogSlot()) {
+    Log("mastery: 0x%08X after Push: attacks 0x%08X from the next round (attack order switched)", IdOf(creature),
+        retarget.next);
+  }
+}
+
 void __fastcall EndCombatRound(void* round, void* edx) {
   void* owner = Field<void*>(round, nwmain::kRoundOwner);
   if (owner) ++g_rounds_ended[IdOf(owner)];
   g_end_combat_round(round, edx);
+  if (owner && !g_push_retargets.empty()) KeepPushRetarget(owner);
+}
+
+// Push v2: a pushed creature slides along its line during the fall, a step
+// each AI update (after the engine's own, so its walking can't pull it off
+// the line).
+void __fastcall AIUpdate(void* creature, void* edx) {
+  g_ai_update(creature, edx);
+  if (g_push_moves.empty() || !creature) return;
+  const auto it = g_push_moves.find(IdOf(creature));
+  if (it == g_push_moves.end()) return;
+  PushMove& move = it->second;
+  if (engine::IsDeadOrDying(creature) || engine::GetArea(creature) != move.area) {
+    g_push_moves.erase(it);
+    return;
+  }
+  int ms = Field<int32_t>(creature, nwmain::kCreatureUpdateMs);
+  if (ms < 0 || ms > 250) ms = 50;
+  move.travelled += move.metres / kPushSlideSeconds * static_cast<float>(ms) / 1000.0f;
+  if (move.travelled >= move.metres || GetTickCount() - move.tick > kPushMoveMaxMs) move.travelled = move.metres;
+  const float t = move.travelled / move.metres;
+  engine::PlaceOnGround(creature, move.from.x + (move.to.x - move.from.x) * t,
+                       move.from.y + (move.to.y - move.from.y) * t);
+  if (move.travelled >= move.metres) g_push_moves.erase(it);
 }
 
 }  // namespace
@@ -581,6 +663,63 @@ void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item) 
 
 namespace {
 
+// After a push: when an enemy is now closer to the attacker than the pushed
+// one, the attacker goes for the nearest such enemy instead of chasing (owner,
+// 2026-10-19). Switched in place for the rest of this round (round target,
+// queued attack action, attack targets); KeepPushRetarget makes it stick.
+uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance) {
+  void* round = Field<void*>(attacker, nwmain::kCreatureCombatRound);
+  if (!round || Field<uint32_t>(round, nwmain::kRoundTarget) != pushed) return nwmain::kObjectInvalid;
+  const uint32_t next = g_get_nearest_enemy(attacker, nullptr, pushed_distance, pushed, 1, 0);
+  if (next == nwmain::kObjectInvalid || next == pushed || !engine::GetCreature(next)) return nwmain::kObjectInvalid;
+  SetField<uint32_t>(round, nwmain::kRoundTarget, next);
+  SetField<uint32_t>(attacker, nwmain::kCreatureTargetSwitched, 1);
+  if (void* action = HeadAttackAction(attacker)) {
+    if (Field<uint32_t>(action, nwmain::kActionFirstParam) == pushed) {
+      SetField<uint32_t>(action, nwmain::kActionFirstParam, next);
+    }
+  }
+  if (Field<uint32_t>(attacker, nwmain::kCreatureAttackTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kCreatureAttackTarget, next);
+  }
+  if (Field<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kCreatureAttemptedAttackTarget, next);
+  }
+  if (Field<int16_t>(attacker, nwmain::kObjectCurrentAction) == nwmain::kActionAttackObject &&
+      Field<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget) == pushed) {
+    SetField<uint32_t>(attacker, nwmain::kObjectCurrentActionTarget, next);
+  }
+  g_push_retargets[attacker_id] = PushRetarget{pushed, next, GetTickCount()};
+  return next;
+}
+
+// D4 Push, on the hit's landing: plan the line (walls, placeables), start the
+// fall, slide the target along the line in the AI updates, and retarget the
+// attacker if an enemy is now closer.
+void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id) {
+  const engine::PushPlan plan = engine::PlanPush(target, attacker, kPushMetres);
+  if (plan.refused) {
+    if (EffectLogSlot()) {
+      Log("mastery: 0x%08X Push on 0x%08X: not pushed (%s%s)", attacker_id, target_id, plan.refused,
+          plan.blocker != nwmain::kObjectInvalid ? ", see the blocker below" : "");
+      if (plan.blocker != nwmain::kObjectInvalid) Log("mastery:   blocker 0x%08X", plan.blocker);
+    }
+    return;
+  }
+  const float pushed_distance = engine::EdgeDistance(attacker, target) + plan.metres;
+  const bool fell = engine::PlayPushFall(target, attacker_id, plan.away, kPushFallMs);
+  g_push_moves[target_id] = PushMove{plan.from, plan.to, plan.metres, 0.0f, engine::GetArea(target), GetTickCount()};
+  const uint32_t next = RetargetAfterPush(attacker, attacker_id, target_id, pushed_distance);
+  if (EffectLogSlot()) {
+    char blocker[48] = "";
+    if (plan.blocker != nwmain::kObjectInvalid) sprintf_s(blocker, " (cut short by placeable 0x%08X)", plan.blocker);
+    char retarget[64] = "";
+    if (next != nwmain::kObjectInvalid) sprintf_s(retarget, "; attacker now attacks the closer 0x%08X", next);
+    Log("mastery: 0x%08X Push on 0x%08X: slides %.1f m away%s%s%s", attacker_id, target_id, plan.metres, blocker,
+        fell ? ", falls and gets up" : " (no fall: its round can't pause or it is lying down)", retarget);
+  }
+}
+
 int HitPointsOf(const void* object) {
   return Field<int16_t>(object, nwmain::kObjectCurrentHitPoints) +
          Field<int32_t>(object, nwmain::kObjectTemporaryHitPoints);
@@ -596,17 +735,7 @@ void AfterDamage(uint32_t attacker_id, void* target, int damage) {
     const bool fresh = now - push->second.tick <= kAwaitDamageMs;
     g_push_awaiting.erase(push);
     void* attacker = fresh ? engine::GetCreature(attacker_id) : nullptr;
-    if (attacker) {
-      const engine::PushOutcome outcome = engine::PushAway(target, attacker, kPushMetres, kPushFallMs);
-      if (EffectLogSlot()) {
-        if (outcome.refused) {
-          Log("mastery: 0x%08X Push on 0x%08X: not pushed (%s)", attacker_id, target_id, outcome.refused);
-        } else {
-          Log("mastery: 0x%08X Push on 0x%08X: moved %.1f m away%s", attacker_id, target_id, outcome.metres,
-              outcome.fell ? ", falls and gets up" : " (no fall: its round can't pause or it is lying down)");
-        }
-      }
-    }
+    if (attacker) Push(attacker, attacker_id, target, target_id);
   }
   const auto slow = g_slow_awaiting.find(attacker_id);
   if (slow != g_slow_awaiting.end() && slow->second.target == target_id) {
@@ -677,9 +806,14 @@ void InstallVexSapRound() {
   InstallHook({"CNWSCombatRound::EndCombatRound (mastery rounds)", nwmain::kEndCombatRound,
                nwmain::kEndCombatRoundPrologue, sizeof(nwmain::kEndCombatRoundPrologue),
                reinterpret_cast<void*>(&EndCombatRound), reinterpret_cast<void**>(&g_end_combat_round)});
-  InstallHook({"CNWSEffectListHandler::OnApplyDamage (Vex / Slow need damage)", nwmain::kOnApplyDamage,
+  InstallHook({"CNWSEffectListHandler::OnApplyDamage (Vex / Slow / Push need the hit)", nwmain::kOnApplyDamage,
                nwmain::kOnApplyDamagePrologue, sizeof(nwmain::kOnApplyDamagePrologue),
                reinterpret_cast<void*>(&OnApplyDamage), reinterpret_cast<void**>(&g_on_apply_damage)});
+  if (g_config.weapon_mastery == rules::RuleVariant::kFaithful) {
+    InstallHook({"CNWSCreature::AIUpdate (Push slides the target)", nwmain::kCreatureAIUpdate,
+                 nwmain::kCreatureAIUpdatePrologue, sizeof(nwmain::kCreatureAIUpdatePrologue),
+                 reinterpret_cast<void*>(&AIUpdate), reinterpret_cast<void**>(&g_ai_update)});
+  }
 }
 
 }  // namespace

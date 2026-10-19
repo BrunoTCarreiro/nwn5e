@@ -473,6 +473,15 @@ walkable ground with 0.5 m clear behind it, then plays the knockdown fall as a
 visual through a 1.2 s round pause (shortened by as much, as the hit flinch
 does); warhammer and heavy crossbow. To check in game: whether NPCs slide or
 snap over the move, the fall's length and direction.
+*0.9.14 after the owner's test (2026-10-19):* the one-step move made the
+client slide the model after the PC had already reacted, losing the fall;
+pushed goblins could end inside a fountain (placeables aren't in the tile
+walkmesh). Now the fall starts at once and the target slides along the line
+during it (AIUpdate steps), the line must also clear the area's static
+objects (placeables), and — owner request — when another enemy is then
+closer than the pushed one, the attacker switches to the nearest (in place
+for the round, made to stick at its end). Known gap: closed doors are not
+checked.
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

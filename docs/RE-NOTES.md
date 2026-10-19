@@ -725,3 +725,33 @@ not confirmed.
 - CN5: OnApplySetState 0x66DD30 is called (handler, object, effect, loading)
   and returns 1 to drop the effect; nwn5e drops state 3 in faithful after
   NWN's own refusals and applies an ICON effect (type 67, integer 0 = 14).
+
+## Push v2: placeables, per-tick moves, retargeting (decoded 2026-10-19)
+
+- Placeable walkmeshes (.pwk, type 0x805) load through GetWalkMesh 0x4AD510
+  (lazy, 0x5836E0); server placeable code (0x733E8A) registers each one's box
+  with the area (CNWArea) through 0x53EB90 — static objects (count +0x48,
+  0x18-byte boxes +0x4C, ids +0x50), not tile walkmesh. ComputeHeight,
+  NoNonWalkPolysOnLine and the creature-fits check 0x6D9890 (tile surface
+  mesh via GetTile 0x725B10; tiles at area +0x11C, 0x58 bytes) don't see them.
+- Static-object line test 0x53FBF0 (thiscall on the area, ret 0x30): (x1,
+  y1, x2, y2, zA, zB, radius, exclude, uint32* blocker, flag, 0, 0); 1 clear,
+  0 blocked with the blocker id written (argument 12 = 0); a per-object
+  virtual line-vs-mesh test (vtable +0x10). ComputeSafeLocation (0x6DA358)
+  calls it after NoNonWalkPolysOnLine; creature placement (0x66362C) with
+  radius [[creature + 0x304] + 4], exclude 0x7F000000, flag 1. Doors (.dwk,
+  0x804) are not loaded on the server or in that list.
+- CNWSCreature::AIUpdate 0x6475B0 (vtable +0x74, thiscall, plain ret at
+  0x647BE0) runs once per object per AI master pass (0x6BF2CD); +0xA8 = ms
+  since the creature's last update (0x6476E6), used by the round-pause
+  countdown 0x64B4E0. (0x647BF0 is the next function.)
+- Object updates to the client (0x62A4xx-0x62A7xx) send x, y when flag 0x200
+  is set; NPCs have no teleport bit (+0xB2C only affects the player's own
+  creature), so the client always slides an NPC to its latest position.
+- AddAttackActions 0x646D80: (target, passive -> +0x4C4, clear first ->
+  ClearAllActions 0x63A650, at the front -> 0x63A100 else 0x638F90). Callers:
+  player click (t, 0, 1, 0) at 0x6CD87E / 0x6CF800; AI retaliation (t, 1, 1, 0)
+  at 0x64A8B7; ActionAttack (t, bPassive, 0, 0) at 0x6E8B39; UseFeat 0x656DB0
+  (t, 0, 0, 0/1); AoO (t, 0, 1, 0) in 0x655E70. Cancelling an attack action
+  (0x649DCA) clears +0x4E0/+0x4E4, special attacks (0x73BF00) and all 50
+  attack slots (0x73C0E0): mid-round it loses the round's remaining attacks.
