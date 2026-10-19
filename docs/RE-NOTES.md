@@ -608,3 +608,43 @@ not confirmed.
   player daze them at every difficulty; confusion dazes a player only on
   DM Easy. Flesh to Stone (3045): 1 round / level on Normal or easier,
   permanent above; the caster resting restores.
+
+## Push: fall animation and short moves (decoded 2026-10-19, D4 stage 4 recon)
+
+- Knockdown (OnApplyKnockdown 0x66CE80; remove 0x66D220): immunity type 28,
+  pauses the target's combat round with no limit (SetRoundPaused 0x73B9E0(1,
+  attacker), SetPauseTimer 0x73BA60(0, infinite=1)), an AI-state effect
+  clearing 0x100 for duration + 1.5 s, ClearAllActions (0x63A650, cancels a
+  spell), then posture byte +0x480 = 5 / animation 7 when the target faces the
+  attacker (dot >= 0.707), else posture 6 / animation 5. Removal unpauses and
+  0x655C80 resets posture from state (0 standing, 1 seated, 2 dazed/stunned,
+  4 dead/asleep) and SetAnimation(0).
+- CNWSCreature::SetAnimation = vtable +0x80 = 0x649600 (thiscall, ret 4;
+  vtable 0x8B5F0C): idle 0/1 resolves from the posture byte (5 -> 7, 6 -> 5),
+  so setting the posture byte keeps a creature lying down; the value goes to
+  +0xAC unless seated (+0xA7C). PlayAnimation (0x6E9CC0) has no constant for
+  engine animations 5/7.
+- The engine's hit flinch (in OnApplyDamage, 0x668C0C-0x668C61) is the
+  template for a timed animation: GetActionResponsePossible 0x73BC90(attacker,
+  ms), SetRoundPaused(1, attacker), SetPauseTimer(ms, 0), DecrementRoundLength
+  0x73BAF0(ms, 0) (the round loses no attacks), SetAnimation(14). Each AI
+  update 0x64B4E0 counts a finite pause down by +0xA8 ms and on expiry
+  unpauses and SetAnimation(1) ("Animation Reset"), for any animation except
+  2/3/4/0x4E/0x4F/0x54-0x57. SetPauseTimer adds to a running timer (+0x210C).
+- Moves: JumpToLocation (313) / ActionJumpToLocation (214) share 0x6E7250 and
+  queue action 5, run by AIActionJumpToPoint 0x680D00 (SetAnimation(1),
+  ComputeSafeLocation radius 20, SetPosition, 0x6833F0, SetOrientation
+  0x63D2B0, +0xB2C = 1, associates jump too). Callable pieces:
+  CNWSArea::ComputeSafeLocation 0x6DA0C0 (Vector, maxDist, pathfind info =
+  creature +0x304, straight-line flag, Vector* out; ret 0x1C);
+  NoNonWalkPolysOnLine 0x6DF020 (x1, y1, x2, y2, -0.1f; 1 = walkable line;
+  ret 0x14); ComputeHeight 0x6D9730 (-6.0 off the walkmesh; ret 0xC); creature
+  footprint fits 0x6D9890 (x, y, z, pathfind; ret 0x10); CNWSObject::
+  SetPosition 0x63D2D0 (Vector, force; 0 also updates the area grid; ret
+  0x10); trigger enter/exit at a new spot 0x6833F0 (Vector, area id; ret 0x10);
+  GetArea 0x63ECC0. Object position +0x78, facing +0x84, area id +0x74.
+  Other creatures are not checked (overlap possible).
+- Size: creature +0x4D4 (GetCreatureSize, handler 0x7020F0): 1 tiny .. 4
+  large, 5 huge.
+- Not decoded: whether the client slides or snaps an NPC moved 3 m
+  server-side, and whether a creature's animation / round pause is saved.
