@@ -768,3 +768,14 @@ not confirmed.
   candidate gets "not an enemy" there. 0.9.15 also showed the round target
   (+0x2134) is already cleared (0x7F000000) when a hit's damage lands, so the
   Push retarget checks the attack order (queued action) as well.
+
+## Potions in the item-use action (0.9.22)
+
+- In the item-use action 0x67B550, the potion branch (base items 49, 54, 104)
+  calls the AoO broadcast at 0x67B9E5 — skipped for the party when the
+  difficulty option 2 (0x600100(2)) is set (0x67B9A8-0x67B9DA) — then always
+  stores 1 at creature +0xA78 (0x67B9EA, `c7 86 78 0a 00 00 01 00 00 00`,
+  esi = the drinker; nothing jumps into it). nwn5e calls a stub there that
+  does the store and notes the drink. After the drink the player character
+  has no orders left (queue empty, current action -1), which is when the
+  attack is reissued.

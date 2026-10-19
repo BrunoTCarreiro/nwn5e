@@ -644,6 +644,12 @@ constexpr uintptr_t kCreatureAttemptedAttackTarget = 0x4E0;
 constexpr uint16_t kEffectTypeSetAiState = 23;
 constexpr uint16_t kAiStateCanMove = 0x2;
 constexpr uintptr_t kCreatureAiState = 0xB08;  // uint16
+// Potions (resume_attack_after_potion): the item-use action's potion branch
+// stores 1 at creature +0xA78 at 0x67B9EA for every potion (base items 49, 54,
+// 104), after the AoO call the difficulty option may skip; nothing jumps
+// into its 10 bytes.
+constexpr uintptr_t kPotionDrunkStore = 0x0067B9EA;
+constexpr uint8_t kPotionDrunkStoreBytes[] = {0xc7, 0x86, 0x78, 0x0a, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00};
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
 // before the hit decision) is entered only past this gate (eax = attacker miss
 // chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;

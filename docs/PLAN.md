@@ -516,6 +516,9 @@ sometimes did not show though the server set it: now the target stops
 moving at once (AI-state bit cleared directly as well as by the effect) and
 the fall animation is put back after each of its AI updates for the fall
 s length (the first override is logged with the animation that replaced it).
+*0.9.22 (owner request, 2026-10-19):* after a potion mid-fight the PC goes back
+to attacking (`resume_attack_after_potion`, both modes). The creature-update
+hook (AIUpdate) moved to creature_update.cpp, shared by Push and this.
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:

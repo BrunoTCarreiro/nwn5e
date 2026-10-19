@@ -102,6 +102,25 @@ void SetLocalInt(void* object, const char* name, int value) {
   if (object) g_var_set_int(VarTable(object), nullptr, &text, value, 0);
 }
 
+bool HasNoOrders(void* creature) {
+  void* list = Field<void*>(creature, nwmain::kObjectActionQueue);
+  const bool queue_empty = !list || !Field<void*>(list, nwmain::kListHead);
+  return queue_empty && Field<int16_t>(creature, nwmain::kObjectCurrentAction) == -1;
+}
+
+void AttackAsClick(void* creature, uint32_t target) {
+  using AddAttackActionsFn = int(__fastcall*)(void* creature, void* edx, uint32_t target, int passive,
+                                              int clear_first, int front);
+  reinterpret_cast<AddAttackActionsFn>(nwmain::kAddAttackActions)(creature, nullptr, target, 0, 1, 0);
+}
+
+uint32_t NearestSeenEnemy(void* creature, float range) {
+  using GetNearestEnemyFn = uint32_t(__fastcall*)(void* creature, void* edx, float range, uint32_t exclude, int seen,
+                                                  int path);
+  return reinterpret_cast<GetNearestEnemyFn>(nwmain::kGetNearestEnemy)(creature, nullptr, range,
+                                                                        nwmain::kObjectInvalid, 1, 0);
+}
+
 int EffectInteger(const void* effect, int index) {
   if (!effect || index < 0 || index >= Field<int32_t>(effect, nwmain::kEffectIntegerCount)) return 0;
   const int32_t* integers = Field<const int32_t*>(effect, nwmain::kEffectIntegers);

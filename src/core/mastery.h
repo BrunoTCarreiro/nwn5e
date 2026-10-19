@@ -29,6 +29,8 @@ MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id);
 // D4: after an attack roll resolved — a hit with a mastered Vex or Sap weapon
 // leaves its mark. `base_item` is the weapon read before the roll.
 void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item);
+// Push's work on each creature update (creature_update.cpp).
+void MasteryCreatureUpdate(void* creature);
 
 // D4 Cleave: the damage bonus of the extra attack a Cleave hit added has no
 // ability modifier unless it is negative. Called from the damage bonus hook

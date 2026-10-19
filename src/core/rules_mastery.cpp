@@ -387,8 +387,6 @@ using AddAttackActionsFn = int(__fastcall*)(void* creature, void* edx, uint32_t 
                                             int front);
 const auto g_get_nearest_enemy = reinterpret_cast<GetNearestEnemyFn>(nwmain::kGetNearestEnemy);
 const auto g_add_attack_actions = reinterpret_cast<AddAttackActionsFn>(nwmain::kAddAttackActions);
-using AIUpdateFn = void(__fastcall*)(void* creature, void* edx);
-AIUpdateFn g_ai_update = nullptr;
 constexpr DWORD kAwaitDamageMs = 5000;
 using OnApplyDamageFn = int(__fastcall*)(void* handler, void* edx, void* object, void* effect, int loading);
 OnApplyDamageFn g_on_apply_damage = nullptr;
@@ -565,9 +563,7 @@ void WatchAfterPush(void* creature, uint32_t id) {
   if (EffectLogSlot()) Log("mastery: 0x%08X after Push: left with no orders; attack on 0x%08X reissued", id, watch.intended);
 }
 
-// Push v2: a pushed creature slides along its line during the fall, a step
-// each AI update (after the engine's own, so its walking can't pull it off
-// the line).
+// The fall animation is put back when the creature's own update replaced it.
 void HoldFall(void* creature, uint32_t id) {
   const auto it = g_push_falls.find(id);
   if (it == g_push_falls.end()) return;
@@ -585,8 +581,12 @@ void HoldFall(void* creature, uint32_t id) {
   }
 }
 
-void __fastcall AIUpdate(void* creature, void* edx) {
-  g_ai_update(creature, edx);
+}  // namespace
+
+// Push v2, from the creature-update hook (creature_update.cpp, after the
+// engine's own update, so its walking can't pull it off the line): the
+// attacker's watch, the held fall, and the slide along the line.
+void MasteryCreatureUpdate(void* creature) {
   if (!creature) return;
   if (!g_push_watch.empty()) WatchAfterPush(creature, IdOf(creature));
   if (!g_push_falls.empty()) HoldFall(creature, IdOf(creature));
@@ -607,8 +607,6 @@ void __fastcall AIUpdate(void* creature, void* edx) {
                        move.from.y + (move.to.y - move.from.y) * t);
   if (move.travelled >= move.metres) g_push_moves.erase(it);
 }
-
-}  // namespace
 
 int MasteryAttackWeapon(void* creature) { return CurrentAttackBaseItem(creature); }
 
@@ -997,11 +995,6 @@ void InstallVexSapRound() {
   InstallHook({"CNWSEffectListHandler::OnApplyDamage (Vex / Slow / Push need the hit)", nwmain::kOnApplyDamage,
                nwmain::kOnApplyDamagePrologue, sizeof(nwmain::kOnApplyDamagePrologue),
                reinterpret_cast<void*>(&OnApplyDamage), reinterpret_cast<void**>(&g_on_apply_damage)});
-  if (g_config.weapon_mastery == rules::RuleVariant::kFaithful) {
-    InstallHook({"CNWSCreature::AIUpdate (Push slides the target)", nwmain::kCreatureAIUpdate,
-                 nwmain::kCreatureAIUpdatePrologue, sizeof(nwmain::kCreatureAIUpdatePrologue),
-                 reinterpret_cast<void*>(&AIUpdate), reinterpret_cast<void**>(&g_ai_update)});
-  }
 }
 
 }  // namespace

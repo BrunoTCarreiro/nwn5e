@@ -100,6 +100,12 @@ uint32_t __fastcall SendServerToPlayerChatMessage(void* message, void* edx, uint
 
 }  // namespace
 
+// Is `object_id` a creature a player controls (not a henchman or monster)?
+bool IsPlayerControlled(uint32_t object_id) {
+  void* app = engine::ServerExoApp();
+  return app && g_player_id(app, nullptr, object_id) != kNoPlayer;
+}
+
 // A server message to the player controlling `object_id` (a player character).
 void TellPlayer(uint32_t object_id, const std::string& line) {
   void* app = engine::ServerExoApp();

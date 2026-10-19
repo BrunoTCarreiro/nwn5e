@@ -42,6 +42,9 @@ struct Config {
   int ranged_retarget_range = 40;  // metres a ranged retarget looks (capped at the weapon's range)
   bool advantage_disadvantage = true;  // situational modifiers become 2024 advantage/disadvantage
   bool log_attacks = true;         // write each rule decision to nwn5e.log
+  // Owner request: after drinking a potion mid-fight, a player character goes
+  // back to attacking (NWN drops the attack order on item use).
+  bool resume_attack_after_potion = true;
 
   // [debug] — test switches, not rules.
   bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored

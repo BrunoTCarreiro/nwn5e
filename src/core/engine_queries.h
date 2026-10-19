@@ -49,6 +49,13 @@ bool HasEffectType(const void* object, uint16_t type);
 // paralysed, 9 asleep, ...), whatever higher state the creature also holds.
 bool HasState(const void* object, int state);
 
+// No queued action and no current action (an idle creature).
+bool HasNoOrders(void* creature);
+// AddAttackActions(target, 0, 1, 0), as a player's attack click.
+void AttackAsClick(void* creature, uint32_t target);
+// GetNearestEnemy(range, none excluded, must be seen); kObjectInvalid if none.
+uint32_t NearestSeenEnemy(void* creature, float range);
+
 // Edge-to-edge distance, as GetNearestEnemy measures it.
 float EdgeDistance(const void* a, const void* b);
 // Centre-to-centre distance squared, as GetAttackModifierVersus compares it.
