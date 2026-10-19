@@ -365,3 +365,11 @@ void InstallPerceptionRules() {
                sizeof(nwmain::kSpotDetectionPrologue), reinterpret_cast<void*>(&SpotDetection),
                reinterpret_cast<void**>(&g_spot_detection)});
 }
+
+// SK9 (rules_initiative.cpp): is the creature hidden — in stealth mode with a
+// hide that held (Stealth 15 or more, hiding_needs_15)? 2024's Invisible
+// condition, which gives advantage on initiative.
+bool HiddenByStealth(void* creature) {
+  if (!creature || Field<uint8_t>(creature, nwmain::kCreatureStealthMode) != 1) return false;
+  return !g_not_hidden.count(IdOf(creature));
+}

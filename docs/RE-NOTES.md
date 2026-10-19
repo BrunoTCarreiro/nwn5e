@@ -939,3 +939,12 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   attack whose ResolveDamage is skipped applies none.
 - The feat-use handler adds the special attack at 0x657AEC (AddSpecialAttack
   0x73C760, round in ecx, feat on the stack) for feats 5, 9, 16, 17, 23, 31.
+
+## Initiative (decoded 2026-10-19, SK9)
+
+- 0x655AF0 (this = the creature; only when +0x4B8 == 1): d20 = RollDice(1,
+  20) at 0x655B26; modifier = GetDexMod(0) (0x655B3E) + 8 with Epic Superior
+  Initiative (feat 753) or else + 4 with Improved Initiative (377), + 2 with
+  Blooded (379), + 2 with Thug (402); the total (byte) at +0x4B4; the combat
+  log's "Initiative Roll : total : (d20 + modifier = total)" takes ints 0 / 1 =
+  d20 / modifier (0x655C01..).

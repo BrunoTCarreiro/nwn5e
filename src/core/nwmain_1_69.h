@@ -1227,4 +1227,20 @@ constexpr uintptr_t kKnockdownSizeCheck = 0x00742F8F;
 constexpr uint8_t kKnockdownSizeCheckBytes[] = {0x8b, 0x87, 0xd4, 0x04, 0x00, 0x00};
 constexpr uintptr_t kAddSpecialAttackCall = 0x00657AEC;
 
+// SK9: initiative, 0x655AF0 (this = edi = the creature; when +0x4B8 == 1):
+// d20 = RollDice(1, 20) at 0x655B26 (ebx); modifier = GetDexMod(0) at 0x655B3E
+// (stats in ecx, char), stored at [esp+0x10] by 0x655B51 (`push 0x2F1; mov
+// [esp+0x14],eax` at 0x655B4C), then + 8 with Epic Superior Initiative (feat
+// 0x2F1) or else + 4 with Improved Initiative (0x179), + 2 with Blooded (0x17B),
+// + 2 with Thug (0x192); 0x655BBC stores d20 + modifier at +0x4B4 and builds
+// the "Initiative Roll" log line (ints d20, modifier). No jump lands inside
+// 0x655B4D..0x655B54.
+constexpr int kFeatImprovedInitiative = 0x179;  // 377
+constexpr uintptr_t kInitiativeD20Call = 0x00655B26;
+constexpr uintptr_t kInitiativeDexModCall = 0x00655B3E;
+constexpr uintptr_t kInitiativeFeatBonuses = 0x00655B4C;
+constexpr uint8_t kInitiativeFeatBonusesBytes[] = {0x68, 0xf1, 0x02, 0x00, 0x00, 0x89, 0x44, 0x24, 0x14};
+constexpr uint8_t kInitiativeFeatBonusesSkip[] = {0x89, 0x44, 0x24, 0x10,         // mov [esp+0x10], eax
+                                                  0xe9, 0x67, 0x00, 0x00, 0x00};  // jmp 0x655BBC
+
 }  // namespace nwmain

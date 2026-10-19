@@ -45,6 +45,9 @@ struct Config {
   // target's better Strength / Dexterity save against 8 + Str + PB; at most one
   // size larger) and Disarm is an ordinary attack; nwn / off = NWN's.
   rules::RuleVariant knockdown = rules::RuleVariant::kFaithful;
+  // SK9: faithful = initiative d20 + Dex (+ PB with Improved Initiative = Alert),
+  // advantage when invisible or hidden; nwn / off = NWN's.
+  rules::RuleVariant initiative = rules::RuleVariant::kFaithful;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

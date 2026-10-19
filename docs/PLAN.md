@@ -473,6 +473,12 @@ the Alert feat, SRD); advantage / disadvantage apply. Recommendation
 (faithful): initiative = d20 + Dex modifier, Improved Initiative → Alert
 (+PB), Epic Superior Initiative → dropped until Phase 3 sorts epic feats;
 leave the score-gated dialog lines alone. NWN mode: NWN's.
+*Built 0.9.42 (key `initiative`):* GetDexMod in 0x655AF0 returns Dex (+ PB
+with Improved Initiative) and the feat bonuses after it are skipped — which,
+following the formula, also drops NWN's +2 for Blooded and Thug (background
+feats with no 2024 counterpart); the d20 has advantage while the creature is
+invisible (GetInvisible) or hidden (stealth mode with a hide of 15+, 2024's
+Invisible condition), and Halfling Luck rerolls a natural 1.
 
 **SK10. Spell attacks.** NWN: TouchAttackMelee / Ranged (in 59 spell
 scripts) roll their own d20 with the melee / ranged attack bonus (today PB +

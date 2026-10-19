@@ -140,3 +140,11 @@ TEST(FoundOnlyInFrontUpClose) {
   CHECK_EQ(InFrontWithin(0.0f, 1.0f, 1.0f, 0.0f, 2.0f), false);   // beside
   CHECK_EQ(InFrontWithin(1.0f, 1.0f, 1.0f, 0.0f, 2.0f), true);    // ahead and to the side, 1.4 m
 }
+
+// SK9. Breaks caught: NWN's +4 for Improved Initiative kept instead of PB; PB
+// added without the feat.
+TEST(InitiativeIs2024) {
+  CHECK_EQ(InitiativeModifier2024(2, 2, false), 2);
+  CHECK_EQ(InitiativeModifier2024(2, 2, true), 4);
+  CHECK_EQ(InitiativeModifier2024(-1, 5, true), 4);
+}

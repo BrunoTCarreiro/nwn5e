@@ -352,6 +352,10 @@ std::string CheckExpertiseChoice(const SkillAllowance& allowance, SkillSet profi
 
 int PerceptionDie(bool searching, int d20) { return searching ? d20 : 10; }
 
+int InitiativeModifier2024(int dexterity_modifier, int proficiency_bonus, bool alert) {
+  return dexterity_modifier + (alert ? proficiency_bonus : 0);
+}
+
 bool InFrontWithin(float dx, float dy, float fx, float fy, float metres) {
   return dx * dx + dy * dy <= metres * metres && fx * dx + fy * dy > 0.0f;
 }
