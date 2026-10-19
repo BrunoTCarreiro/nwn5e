@@ -64,6 +64,12 @@ int SkillBonus2024(int ability_modifier, int proficiency_bonus, bool proficient,
 // bonus — so conversation checks stay as passable as in NWN.
 int ScriptSkillValue2024(int skill_bonus);
 
+// SK3 (faithful): an NWN skill DC on the 2024 scale — 10 + (DC - 10) / 2,
+// rounded as saves' C6 (3e 15 -> 13, 20 -> 15, 30 -> 20, 40 -> 25) — but a
+// DC of 1 or less stays (NWN's "always works" floor) and nothing is clamped
+// (a DC 100 lock stays out of reach).
+int ConvertNwnSkillDc(int dc);
+
 // A set of skills (bit k = Skill2024 k).
 using SkillSet = uint32_t;
 inline SkillSet SkillBit(Skill2024 skill) { return 1u << static_cast<int>(skill); }

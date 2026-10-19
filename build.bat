@@ -14,7 +14,7 @@ cl %CFLAGS% /LD /Ithird_party\minhook\include /Isrc ^
   src\core\dllmain.cpp src\core\log.cpp src\core\config.cpp src\core\hooks.cpp ^
   src\core\rules_crit.cpp src\core\rules_crit_confirm.cpp src\core\rules_attack.cpp ^
   src\core\rules_extra_attack.cpp src\core\rules_attack_trace.cpp src\core\rules_retarget.cpp ^
-  src\core\rules_sheet.cpp src\core\creature.cpp src\core\engine_queries.cpp src\core\rules_advantage.cpp src\core\rules_racial.cpp src\core\rules_saves.cpp src\core\rules_save_roll.cpp src\core\rules_chat.cpp src\core\rules_opportunity.cpp src\core\rules_two_weapon.cpp src\core\rules_mastery.cpp src\core\engine_effects.cpp src\core\rules_labels.cpp src\core\rules_conditions.cpp src\core\rules_potion.cpp src\core\creature_update.cpp src\core\rules_skills.cpp src\core\rules_perception.cpp ^
+  src\core\rules_sheet.cpp src\core\creature.cpp src\core\engine_queries.cpp src\core\rules_advantage.cpp src\core\rules_racial.cpp src\core\rules_saves.cpp src\core\rules_save_roll.cpp src\core\rules_chat.cpp src\core\rules_opportunity.cpp src\core\rules_two_weapon.cpp src\core\rules_mastery.cpp src\core\engine_effects.cpp src\core\rules_labels.cpp src\core\rules_conditions.cpp src\core\rules_potion.cpp src\core\creature_update.cpp src\core\rules_skills.cpp src\core\rules_perception.cpp src\core\rules_skill_dcs.cpp ^
   src\rules\core.cpp src\rules\combat.cpp src\rules\monster.cpp src\rules\nwn_conversion.cpp ^
   src\rules\d20.cpp src\rules\nwn_situational.cpp src\rules\modes.cpp src\rules\saves.cpp src\rules\conditions.cpp src\rules\skills.cpp src\rules\text.cpp src\rules\weapons.cpp ^
   third_party\minhook\src\buffer.c third_party\minhook\src\hook.c ^

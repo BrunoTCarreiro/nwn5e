@@ -317,6 +317,24 @@ scripts with 2024 DCs — most faithful, ports to EE, heavy; (c) accept harder
 conversation checks. Recommendation: (a) now, (b) if the project moves to EE.
 NWN mode: NWN's DCs. Consequences: locks and traps stay openable by trained
 characters; untrained ones fail much more often (2024's intent).
+*Built 0.9.30 (with `skills`):* the engine's fixed DCs converted where each
+check loads them (before the combat log reads them): GetIsSkillSuccessful,
+unlock / lock and the scripts' "can it be picked", Flag / Recover / Disarm /
+Examine / Set Trap, Search, Heal kits (poison / disease DC), Pick Pocket (30
+/ 20 -> 20 / 15), Animal Empathy, Tumble against attacks of opportunity (15 ->
+13), Spellcraft's identify-spell checks and the Examine Trap message. A DC of
+1 or less stays (NWN's "always works" floor) and nothing is clamped (a DC 100
+lock stays out of reach) — unlike saves, whose C6 conversion keeps 10..30.
+Lore identification maps the 2024 total to the SkillVsItemCost.2da row as
+scripts do (2 x). A trap a character sets stores base + 2 x the setter's 2024
+skill, so the later conversion lands right. Open (not changed; NWN's for
+now): "fail by 10 sets the trap off" / "fail by 5" margins (Recover, Disarm,
+Set Trap, Animal Empathy) are still 3e-sized; Disable Trap and Set Trap still
+give each other NWN's +2 synergy (both are Thieves' Tools in 2024); traps of
+DC > 35 still need a Rogue (3e Trapfinding); NWN's take 20 out of combat
+(Open Lock, traps, Animal Empathy, Heal) stays — with 2024 totals it opens
+most locks for anyone given time; and Search's d10 when not searching could
+become passive Perception 10 as SK5 did for creatures.
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).

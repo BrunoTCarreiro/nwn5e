@@ -814,3 +814,46 @@ not confirmed.
   −8 / −4 / 0 / +4 / +8; Spot: hider minus observer size, ±4 / ±8); +
   0x6AE770 (the observer's Favored Enemy bonus: the target's race → feats
   0x105-0x117); noticed when the score is > 0.
+
+## Skill DCs (decoded 2026-10-19, SK3)
+
+Every engine skill check rolls its own die (RollDice d20, or a fixed 20 for
+"take 20": out of combat, +0x4BC == 0, or with Skill Mastery, feat 225, for
+Open Lock and the trap actions; Animal Empathy and Heal check only combat; no
+take 10 anywhere) and compares total >= DC; the combat log gets the DC as
+SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
+
+- GetIsSkillSuccessful 0x70CC30: the DC is the script's (stack slot [esp+0x10]
+  at 0x70CD51); it feeds the check (0x70CE1F), the log and the return value.
+- Open Lock: unlock 0x72F0C0, lock 0x72FC60 — lock DC bytes door +0x25B
+  (open) / +0x25C (close), placeable +0x22C / +0x22D; a DC below 1 is 1; each
+  load ends `and ebp,0xff` (ebp = DC). Bonus: thieves' tools (0x71E990). The
+  script handler 0x6FB6C0 (GetIsDoor/PlaceableActionPossible) tests skill + 20
+  >= DC at 0x6FB878 (skill must be > 0).
+- Traps (Disable Trap 2, Set Trap 15): Flag 0x677EA0 (DisarmDC − 5), Recover
+  0x678480 (DisarmDC + 10), Disarm 0x678F10 (DisarmDC; > 35 needs a Rogue
+  level, class byte 0x8AC9E8 = 8), Examine 0x679830 (DisarmDC − 7), Set
+  0x679DE0 (traps.2da SetDC, [esp+0x18]); all min 1. DisarmDC / DetectDC:
+  trigger +0x274 / +0x270 (dwords), door +0x294 / +0x295, placeable +0x23C /
+  +0x234. Each side gets +2 when the other skill's base ranks are >= 5 (3e
+  synergy). Failing by 10 sets the trap off (Recover, Disarm, Set). A set trap
+  stores DetectDC / DisarmDC = the trap's base + the setter's Set Trap total
+  (bl, 0x67A5E2 / 0x67A5EE).
+- Search 0x6485E0: d20 + Search vs DetectDC — d10 unless searching (the same
+  test as perception: detect mode, Keen Sense or standing still); > 35 needs a
+  Rogue level. No combat-log line.
+- Lore 0x65DB20: no DC — rank (<= 0 fails) is the row of SkillVsItemCost.2da;
+  the item is identified when its cost (0x721260) <= that row's DeviceCostMax
+  (a missing row identifies).
+- Pick Pocket 0x689310: DC 30, or 20 when 0x731520(thief) == 2, or 1 when the
+  victim's +0xB08 is 0; the victim's opposed Spot (0x689621 / 0x689641).
+- Animal Empathy 0x687E50: DC = HD + 15 (animal, race 8) or + 19 (beast,
+  magical beast, races 9 / 19), in ecx at 0x688130; fail by 5 matters.
+- Tumble against an attack of opportunity 0x655E70: fixed DC 15 (0x656328),
+  base ranks must be > 0.
+- Spellcraft identify-spell: 0x6409C0 (0x640C04) and 0x654E90 (0x65561A):
+  DC = spell level (+0x47) + 15.
+- Heal kit 0x68A010: DC = poison.2da Save_DC / disease.2da Subs_Save (min 1),
+  [esp+0x14] at 0x68A4F1.
+- Examine Trap message 0x62B800: Disable Trap + 20 against DisarmDC sorted
+  into five difficulty steps (0x62BA06, 0x62BA91, 0x62BB08).

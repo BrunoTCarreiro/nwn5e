@@ -230,6 +230,11 @@ int SkillBonus2024(int ability_modifier, int proficiency_bonus, bool proficient,
 
 int ScriptSkillValue2024(int skill_bonus) { return skill_bonus > 0 ? 2 * skill_bonus : skill_bonus; }
 
+int ConvertNwnSkillDc(int dc) {
+  if (dc <= 1) return dc;
+  return 10 + (dc >= 10 ? (dc - 10 + 1) / 2 : -((10 - dc) / 2));
+}
+
 int CountSkills(SkillSet set) {
   int count = 0;
   for (; set; set &= set - 1) ++count;

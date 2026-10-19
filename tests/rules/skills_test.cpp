@@ -111,3 +111,21 @@ TEST(PassivePerceptionUnlessSearching) {
   CHECK_EQ(PerceptionDie(true, 3), 3);
   CHECK_EQ(PerceptionDie(true, 20), 20);
 }
+
+// SK3. Breaks caught: the save conversion's 10..30 clamp reused (a DC 1
+// "always" check would need 10; a DC 100 lock would become pickable at 30);
+// rounding that disagrees with C6; the immediate DCs patched in the engine
+// (Pick Pocket 30 / 20, Tumble 15) drifting from the rule.
+TEST(SkillDcsAre2024) {
+  CHECK_EQ(ConvertNwnSkillDc(0), 0);
+  CHECK_EQ(ConvertNwnSkillDc(1), 1);
+  CHECK_EQ(ConvertNwnSkillDc(5), 8);
+  CHECK_EQ(ConvertNwnSkillDc(10), 10);
+  CHECK_EQ(ConvertNwnSkillDc(15), 13);  // Tumble (patched as 13)
+  CHECK_EQ(ConvertNwnSkillDc(20), 15);  // Pick Pocket, hostile (15)
+  CHECK_EQ(ConvertNwnSkillDc(25), 18);
+  CHECK_EQ(ConvertNwnSkillDc(30), 20);  // Pick Pocket (20)
+  CHECK_EQ(ConvertNwnSkillDc(40), 25);
+  CHECK_EQ(ConvertNwnSkillDc(50), 30);
+  CHECK_EQ(ConvertNwnSkillDc(100), 55);
+}

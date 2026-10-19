@@ -1001,4 +1001,91 @@ constexpr MediumPatch kFaithfulPerceptionPatches[] = {
      {0x90, 0x90, 0x90, 0x90, 0x90, 0x90}},  // je 0x653CE0 (seen)
 };
 
+
+// SK3: engine skill checks against fixed DCs (RE-NOTES "Skill DCs"; decoded
+// 2026-10-19). Each site's DC sits in one register or stack slot just before
+// its comparison and the combat log's SetInteger(3, DC); rules_skill_dcs.cpp
+// jumps from the site to a trampoline that runs the replaced bytes with the
+// conversion spliced in after the first `split` of them (none of the replaced
+// bytes but the first is a jump target — checked; the two decoded "jumps" at
+// 0x6782DD / 0x67837F are inside `sub ebx,5`). The two Set Trap stores add
+// the setter's skill (bl, Set Trap total) again when it is positive, so the
+// trap's DCs hold base + 2 x the 2024 skill (the 3e range) before they are
+// converted like any other.
+constexpr int8_t kRegEax = 0;
+constexpr int8_t kRegEcx = 1;
+constexpr int8_t kRegEdx = 2;
+constexpr int8_t kRegEbx = 3;
+constexpr int8_t kRegEbp = 5;
+constexpr int8_t kRegEsi = 6;
+constexpr int8_t kRegEdi = 7;
+constexpr int8_t kStackSlot = -2;
+constexpr int8_t kNoConversion = -1;
+constexpr uint8_t kSkillDc = 0;        // rules::ConvertNwnSkillDc
+constexpr uint8_t kSkillValueRow = 1;  // rules::ScriptSkillValue2024 (Lore's SkillVsItemCost.2da row)
+struct SkillDcSite {
+  const char* what;
+  uintptr_t address;
+  uint8_t length;  // bytes replaced by the jump (5..13)
+  uint8_t original[13];
+  uint8_t split;   // replaced bytes run before the conversion
+  int8_t target;   // register converted (x86 number), kStackSlot or kNoConversion
+  uint8_t slot;    // kStackSlot: [esp + slot] as the replaced code sees it
+  uint8_t kind;    // kSkillDc or kSkillValueRow
+  uint8_t extra[6];  // run after the replaced bytes
+  uint8_t extra_length;
+};
+constexpr SkillDcSite kSkillDcSites[] = {
+    {"GetIsSkillSuccessful (scripts)", 0x0070CD51, 6, {0x8b, 0x88, 0x64, 0x0c, 0x00, 0x00}, 0, kStackSlot, 0x10, kSkillDc, {}, 0},
+    {"Open Lock: unlock a door", 0x0072F8A3, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: unlock a placeable", 0x0072F915, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: unlock a door (second path)", 0x0072F99E, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: unlock a placeable (second path)", 0x0072F9DD, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: lock a door", 0x00730445, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: lock a placeable", 0x007304B0, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: lock a door (second path)", 0x00730532, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Open Lock: lock a placeable (second path)", 0x0073056D, 6, {0x81, 0xe5, 0xff, 0x00, 0x00, 0x00}, 6, kRegEbp, 0, kSkillDc, {}, 0},
+    {"scripts: can the lock be picked (skill + 20)", 0x006FB872, 6, {0x0f, 0xbe, 0xd0, 0x83, 0xc2, 0x14}, 0, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Flag Trap: trigger", 0x0067823A, 6, {0x8b, 0x4c, 0x24, 0x44, 0x03, 0xcd}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Flag Trap: door", 0x006782DF, 6, {0x8b, 0x54, 0x24, 0x44, 0x03, 0xd5}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Flag Trap: placeable", 0x00678381, 6, {0x8b, 0x4c, 0x24, 0x44, 0x03, 0xcd}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Recover Trap: trigger", 0x006788B0, 8, {0x8b, 0x4c, 0x24, 0x14, 0x8b, 0x54, 0x24, 0x64}, 0, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Recover Trap: door", 0x006789C3, 8, {0x8b, 0x54, 0x24, 0x64, 0x8b, 0x44, 0x24, 0x14}, 0, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Recover Trap: placeable", 0x00678ADC, 8, {0x8b, 0x54, 0x24, 0x64, 0x8b, 0x44, 0x24, 0x14}, 0, kRegEbp, 0, kSkillDc, {}, 0},
+    {"Disarm Trap: trigger", 0x006792BE, 7, {0x83, 0xf8, 0x23, 0x89, 0x44, 0x24, 0x14}, 3, kRegEax, 0, kSkillDc, {}, 0},
+    {"Disarm Trap: door", 0x006793FF, 7, {0x83, 0xf8, 0x23, 0x89, 0x44, 0x24, 0x14}, 3, kRegEax, 0, kSkillDc, {}, 0},
+    {"Disarm Trap: placeable", 0x006794F8, 7, {0x83, 0xf8, 0x23, 0x89, 0x44, 0x24, 0x14}, 3, kRegEax, 0, kSkillDc, {}, 0},
+    {"Examine Trap: trigger", 0x00679BB6, 6, {0x8b, 0x44, 0x24, 0x44, 0x03, 0xc5}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Examine Trap: door", 0x00679C3D, 6, {0x8b, 0x54, 0x24, 0x44, 0x03, 0xd5}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Examine Trap: placeable", 0x00679CBE, 6, {0x8b, 0x4c, 0x24, 0x44, 0x03, 0xcd}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Set Trap", 0x0067A3F1, 5, {0x83, 0x7c, 0x24, 0x18, 0x01}, 0, kStackSlot, 0x18, kSkillDc, {}, 0},
+    {"Set Trap: the trap's detect DC (setter's skill on the 3e range)", 0x0067A5E2, 6, {0x8a, 0x44, 0x24, 0x2c, 0x02, 0xc3}, 6, kNoConversion, 0, kSkillDc, {0x84, 0xdb, 0x7e, 0x02, 0x02, 0xc3}, 6},
+    {"Set Trap: the trap's disarm DC (setter's skill on the 3e range)", 0x0067A5EE, 6, {0x8a, 0x44, 0x24, 0x30, 0x02, 0xc3}, 6, kNoConversion, 0, kSkillDc, {0x84, 0xdb, 0x7e, 0x02, 0x02, 0xc3}, 6},
+    {"Search: trigger (d10)", 0x00648A25, 9, {0x25, 0xff, 0xff, 0x00, 0x00, 0x03, 0xd8, 0x3b, 0xdf}, 7, kRegEdi, 0, kSkillDc, {}, 0},
+    {"Search: trigger (d20)", 0x00648A7B, 9, {0x25, 0xff, 0xff, 0x00, 0x00, 0x03, 0xd8, 0x3b, 0xdf}, 7, kRegEdi, 0, kSkillDc, {}, 0},
+    {"Search: door (d10)", 0x00648CB2, 10, {0x8b, 0x4c, 0x24, 0x68, 0x81, 0xe1, 0xff, 0x00, 0x00, 0x00}, 10, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Search: door (d20)", 0x00648D1C, 10, {0x8b, 0x4c, 0x24, 0x70, 0x81, 0xe1, 0xff, 0x00, 0x00, 0x00}, 10, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Search: placeable (d10)", 0x00648F79, 9, {0x8b, 0x44, 0x24, 0x74, 0x25, 0xff, 0x00, 0x00, 0x00}, 9, kRegEax, 0, kSkillDc, {}, 0},
+    {"Search: placeable (d20)", 0x00648FD6, 13, {0x8b, 0x8c, 0x24, 0x84, 0x00, 0x00, 0x00, 0x81, 0xe1, 0xff, 0x00, 0x00, 0x00}, 13, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Lore: identify an item", 0x0065DBBC, 5, {0x0f, 0xbe, 0xf0, 0x85, 0xf6}, 3, kRegEsi, 0, kSkillValueRow, {}, 0},
+    {"Animal Empathy", 0x00688130, 6, {0x8b, 0xb7, 0x64, 0x0c, 0x00, 0x00}, 0, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Spellcraft: identify a spell", 0x00640C04, 9, {0x81, 0xe2, 0xff, 0x00, 0x00, 0x00, 0x83, 0xc2, 0x0f}, 9, kRegEdx, 0, kSkillDc, {}, 0},
+    {"Spellcraft: identify a spell (second check)", 0x0065561A, 9, {0x81, 0xe1, 0xff, 0x00, 0x00, 0x00, 0x83, 0xc1, 0x0f}, 9, kRegEcx, 0, kSkillDc, {}, 0},
+    {"Heal kit: poison / disease", 0x0068A4F1, 7, {0x8b, 0x44, 0x24, 0x14, 0x83, 0xf8, 0x01}, 0, kStackSlot, 0x14, kSkillDc, {}, 0},
+    {"Examine Trap message: difficulty (1)", 0x0062BA06, 7, {0x8b, 0x44, 0x24, 0x44, 0x8d, 0x48, 0xf1}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Examine Trap message: difficulty (2)", 0x0062BA91, 7, {0x8b, 0x44, 0x24, 0x44, 0x8d, 0x48, 0xf1}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+    {"Examine Trap message: difficulty (3)", 0x0062BB08, 7, {0x8b, 0x44, 0x24, 0x44, 0x8d, 0x48, 0xf1}, 0, kRegEbx, 0, kSkillDc, {}, 0},
+};
+// DCs that are immediates: Pick Pocket's 30 / 20 (`sbb; and eax,-10; add
+// eax,30` at 0x689829: 30, or 20 against a hostile victim) -> 20 / 15
+// (and -5, add 20); Tumble's 15 against attacks of opportunity (log, check,
+// "skill + 20" test) -> 13. ConvertNwnSkillDc gives the same numbers (tests).
+constexpr SmallPatch kSkillDcImmediates[] = {
+    {"Pick Pocket: DC 30 / 20 -> 20 / 15 (step)", 0x0068982D, 1, {0xf6}, {0xfb}},
+    {"Pick Pocket: DC 30 / 20 -> 20 / 15 (base)", 0x00689830, 1, {0x1e}, {0x14}},
+    {"Tumble against attacks of opportunity: DC 15 -> 13 (log)", 0x00656311, 1, {0x0f}, {0x0d}},
+    {"Tumble against attacks of opportunity: DC 15 -> 13", 0x0065632A, 1, {0x0f}, {0x0d}},
+    {"Tumble against attacks of opportunity: DC 15 -> 13 (skill + 20 test)", 0x00656347, 1, {0x0f}, {0x0d}},
+};
+
 }  // namespace nwmain
