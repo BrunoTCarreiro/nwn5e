@@ -371,6 +371,14 @@ struct PushWatch {
   bool reissued;
 };
 std::unordered_map<uint32_t, PushWatch> g_push_watch;
+// The fall is held for its length (target id ->): when the creature's own
+// update replaces the fall animation (its walk or swing), it is put back.
+struct PushFall {
+  int animation;
+  DWORD until;
+  bool logged;
+};
+std::unordered_map<uint32_t, PushFall> g_push_falls;
 constexpr DWORD kPushWatchMs = 8000;
 uint32_t RetargetAfterPush(void* attacker, uint32_t attacker_id, uint32_t pushed, float pushed_distance);
 using GetNearestEnemyFn = uint32_t(__fastcall*)(void* creature, void* edx, float range, uint32_t exclude, int seen,
@@ -560,10 +568,29 @@ void WatchAfterPush(void* creature, uint32_t id) {
 // Push v2: a pushed creature slides along its line during the fall, a step
 // each AI update (after the engine's own, so its walking can't pull it off
 // the line).
+void HoldFall(void* creature, uint32_t id) {
+  const auto it = g_push_falls.find(id);
+  if (it == g_push_falls.end()) return;
+  PushFall& fall = it->second;
+  if (GetTickCount() > fall.until || engine::IsDeadOrDying(creature)) {
+    g_push_falls.erase(it);
+    return;
+  }
+  const int animation = Field<int32_t>(creature, nwmain::kCreatureAnimation);
+  if (animation == fall.animation) return;
+  engine::SetCreatureAnimation(creature, fall.animation);
+  if (!fall.logged && EffectLogSlot()) {
+    fall.logged = true;
+    Log("mastery: 0x%08X Push fall: animation %d replaced it, fall %d put back", id, animation, fall.animation);
+  }
+}
+
 void __fastcall AIUpdate(void* creature, void* edx) {
   g_ai_update(creature, edx);
-  if (!g_push_watch.empty() && creature) WatchAfterPush(creature, IdOf(creature));
-  if (g_push_moves.empty() || !creature) return;
+  if (!creature) return;
+  if (!g_push_watch.empty()) WatchAfterPush(creature, IdOf(creature));
+  if (!g_push_falls.empty()) HoldFall(creature, IdOf(creature));
+  if (g_push_moves.empty()) return;
   const auto it = g_push_moves.find(IdOf(creature));
   if (it == g_push_moves.end()) return;
   PushMove& move = it->second;
@@ -857,6 +884,10 @@ void Push(void* attacker, uint32_t attacker_id, void* target, uint32_t target_id
   engine::ApplyCantMove(target, attacker_id, static_cast<float>(kPushFallMs) / 1000.0f, 0);
   uint32_t paused_by = nwmain::kObjectInvalid;
   const engine::FallResult fall = engine::PlayPushFall(target, attacker_id, plan.away, kPushFallMs, &paused_by);
+  if (fall != engine::FallResult::kLyingDown) {
+    g_push_falls[target_id] =
+        PushFall{Field<int32_t>(target, nwmain::kCreatureAnimation), GetTickCount() + kPushFallMs - 150, false};
+  }
   g_push_moves[target_id] = PushMove{plan.from, plan.to, plan.metres, 0.0f, engine::GetArea(target), GetTickCount()};
   if (EffectLogSlot()) {
     char blocker[48] = "";

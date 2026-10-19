@@ -167,7 +167,20 @@ void ApplyMovementSpeedDecrease(void* target, uint32_t creator, int percent, flo
   Apply(target, effect, creator, delay_ms);
 }
 
+void SetCreatureAnimation(void* creature, int animation) {
+  if (!creature) return;
+  const auto set_animation =
+      (*reinterpret_cast<SetAnimationFn* const*>(creature))[nwmain::kVtableSetAnimation / sizeof(void*)];
+  set_animation(creature, nullptr, animation);
+}
+
 void ApplyCantMove(void* target, uint32_t creator, float seconds, uint32_t delay_ms) {
+  // At once (the queued effect lands a moment later; its removal rebuilds the
+  // AI-state word from the base and the remaining effects).
+  if (target) {
+    SetField<uint16_t>(target, nwmain::kCreatureAiState,
+                       static_cast<uint16_t>(Field<uint16_t>(target, nwmain::kCreatureAiState) & ~nwmain::kAiStateCanMove));
+  }
   void* effect = NewEffect(nwmain::kEffectTypeSetAiState, nwmain::kEffectDurationTemporary, seconds, creator);
   if (!effect) return;
   g_set_integer(effect, nullptr, 0, static_cast<int>(~static_cast<uint32_t>(nwmain::kAiStateCanMove)));

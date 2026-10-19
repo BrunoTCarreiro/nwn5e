@@ -643,6 +643,7 @@ constexpr uintptr_t kCreatureAttemptedAttackTarget = 0x4E0;
 // remaining SET_AI_STATE effects. Bit 0x2 = can move (entangle clears it).
 constexpr uint16_t kEffectTypeSetAiState = 23;
 constexpr uint16_t kAiStateCanMove = 0x2;
+constexpr uintptr_t kCreatureAiState = 0xB08;  // uint16
 // The concealment / miss-chance roll (0x746EF0, called by ResolveAttackRoll
 // before the hit decision) is entered only past this gate (eax = attacker miss
 // chance, ebx = target concealment): `test eax,eax; jg 0x7472D8; test ebx,ebx;

@@ -47,6 +47,8 @@ PushPlan PlanPush(void* target, void* attacker, float max_metres);
 // the fall still plays, unpaused. Nothing when it is already lying down.
 enum class FallResult { kFell, kFellUnpaused, kLyingDown };
 FallResult PlayPushFall(void* target, uint32_t attacker_id, const Vector3& away, int ms, uint32_t* paused_by);
+// CNWSCreature::SetAnimation (vtable +0x80).
+void SetCreatureAnimation(void* creature, int animation);
 // The creature can't move for `seconds` (an AI-state effect clearing
 // "can move", as entangle's does); its orders stay queued.
 void ApplyCantMove(void* target, uint32_t creator, float seconds, uint32_t delay_ms);

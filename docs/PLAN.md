@@ -509,6 +509,13 @@ goblin attacked it: its attack order was dropped. For 8 s after a push the
 attacker is watched: its order changes are logged, and if it is left with no
 order at all while its intended target stands, the attack is reissued (as a
 click). Corpses are never chosen (the scan skips the dead).
+*0.9.21:* 0.9.20 test: retargeting held on all 8 pushes, no reissue needed;
+the PC lost its target once, after drinking a potion (outside the watch;
+probably NWN clearing the attack order on item use, unverified). The fall
+sometimes did not show though the server set it: now the target stops
+moving at once (AI-state bit cleared directly as well as by the effect) and
+the fall animation is put back after each of its AI updates for the fall
+s length (the first override is logged with the animation that replaced it).
 
 **E1. Two-handed Strength (owner, 2026-10-18).** NWN adds 1.5 x the Strength
 modifier (truncated) to two-handed melee damage; 2024 adds it once. Faithful:
