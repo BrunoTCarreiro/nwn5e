@@ -87,6 +87,7 @@ struct Config {
   bool debug_combat_breakdown = false;  // the engine's own per-term attack breakdown in the combat log
   int debug_creature_hp_multiplier = 0;  // >1: a creature's hit points x this when a character first attacks it
   int debug_creature_min_hp = 0;         // >0: ... and at least this many
+  bool debug_players_poisoned = false;   // SK11 test: player characters count as poisoned for ability checks
 };
 
 extern Config g_config;

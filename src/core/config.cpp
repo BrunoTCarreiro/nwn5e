@@ -93,6 +93,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.debug_creature_ac = GetPrivateProfileIntW(L"debug", L"creature_ac", 0, ini);
   g_config.debug_creature_hp_multiplier = GetPrivateProfileIntW(L"debug", L"creature_hp_multiplier", 0, ini);
   g_config.debug_creature_min_hp = GetPrivateProfileIntW(L"debug", L"creature_min_hp", 0, ini);
+  g_config.debug_players_poisoned = GetPrivateProfileIntW(L"debug", L"players_poisoned", 0, ini) != 0;
+  if (g_config.debug_players_poisoned) Log("config: [debug] players_poisoned=1 - player characters count as poisoned for ability checks");
   if (g_config.debug_creature_min_hp > 0) {
     Log("config: [debug] creature_min_hp=%d - creatures have at least this many hit points when your party first "
         "attacks them", g_config.debug_creature_min_hp);

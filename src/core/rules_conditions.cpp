@@ -41,6 +41,7 @@
 #include "nwmain_1_69.h"
 
 void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
+bool IsPlayerControlled(uint32_t object_id);                    // rules_chat.cpp
 
 namespace {
 
@@ -268,6 +269,9 @@ void InstallConditionRules() {
 // it has none: poisoned, or frightened while it can see the source of its fear.
 std::string CheckDisadvantage(void* creature) {
   if (!creature || g_config.conditions != rules::RuleVariant::kFaithful) return std::string();
+  if (g_config.debug_players_poisoned && IsPlayerControlled(Field<uint32_t>(creature, nwmain::kCreatureObjectId))) {
+    return "poisoned (test switch)";
+  }
   if (ReadConditions(creature).poisoned) return "poisoned";
   const uint32_t source = FearSource(creature);
   if (source != nwmain::kObjectInvalid && engine::Sees(creature, source)) return "frightened";
