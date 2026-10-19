@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -29,20 +30,26 @@
 #include "nwmain_1_69.h"
 #include "rules/skills.h"
 
-bool IsPlayerControlled(uint32_t object_id);  // rules_chat.cpp
+bool IsPlayerControlled(uint32_t object_id);                       // rules_chat.cpp
+void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
 
 namespace {
 
 using RollDiceFn = int(__fastcall*)(void* rules_object, void* edx, int count, int sides);
 using SetStealthModeFn = void(__fastcall*)(void* creature, void* edx, uint8_t mode);
 using DetectionFn = int(__fastcall*)(void* observer, void* edx, void* target, int flag);
+using GetSkillRankFn = char(__fastcall*)(void* stats, void* edx, uint8_t skill, void* vs, int base_only);
 
 const auto g_roll_dice = reinterpret_cast<RollDiceFn>(nwmain::kRollDice);
 SetStealthModeFn g_set_stealth_mode = nullptr;
 DetectionFn g_listen_detection = nullptr;
 DetectionFn g_spot_detection = nullptr;
+const auto g_get_skill_rank = reinterpret_cast<GetSkillRankFn>(nwmain::kGetSkillRank);  // through the skills hook
+constexpr uint8_t kSkillHide = 5;  // skills.2da (Stealth)
+constexpr int kHideDc = 15;        // the 2024 Hide action
 
 std::unordered_set<uint32_t> g_rolled;  // hiding creatures whose Stealth roll for this hide is made
+std::unordered_set<uint32_t> g_not_hidden;  // ... whose Stealth total missed 15 (hiding_needs_15)
 std::unordered_map<uint64_t, int> g_noticed;  // (observer, hider, Spot / Listen) -> last result, for the log
 int g_log_lines = 0;
 
@@ -60,13 +67,92 @@ int D20() {
 }
 
 void RollStealth(void* creature, const char* when) {
+  const uint32_t id = IdOf(creature);
   const int roll = D20();
   SetField<uint8_t>(creature, nwmain::kCreatureHideRoll, static_cast<uint8_t>(roll));
   SetField<uint8_t>(creature, nwmain::kCreatureMoveSilentlyRoll, static_cast<uint8_t>(roll));
-  g_rolled.insert(IdOf(creature));
-  if (IsPlayerControlled(IdOf(creature)) && LogSlot()) {
-    Log("stealth: 0x%08X %s: Stealth d20 %d, kept until it stops hiding", IdOf(creature), when, roll);
+  g_rolled.insert(id);
+  void* stats = Field<void*>(creature, nwmain::kCreatureStats);
+  const int skill = stats ? static_cast<int8_t>(g_get_skill_rank(stats, nullptr, kSkillHide, nullptr, 0)) : 0;
+  const int total = roll + skill;
+  const bool hidden = !g_config.hiding_needs_15 || total >= kHideDc;
+  if (hidden) {
+    g_not_hidden.erase(id);
+  } else {
+    g_not_hidden.insert(id);
   }
+  if (!IsPlayerControlled(id)) return;
+  char line[160];
+  if (!g_config.hiding_needs_15) {
+    sprintf_s(line, "nwn5e: Stealth %d (d20 %d %+d), kept while you stay hidden", total, roll, skill);
+  } else if (hidden) {
+    sprintf_s(line, "nwn5e: Stealth %d (d20 %d %+d) - hidden; that roll holds while you stay hidden", total, roll, skill);
+  } else {
+    sprintf_s(line, "nwn5e: Stealth %d (d20 %d %+d) - below 15, you are not hidden (stop and hide again to retry)",
+              total, roll, skill);
+  }
+  TellPlayer(id, line);
+  if (LogSlot()) {
+    Log("stealth: 0x%08X %s: Stealth d20 %d %+d = %d%s, kept until it stops hiding", id, when, roll, skill, total,
+        g_config.hiding_needs_15 ? (hidden ? " (hidden)" : " (below 15: not hidden)") : "");
+  }
+}
+
+// What Spot / Listen read as the hider's stealth mode: 0 (not hiding, noticed
+// once in range) when its Stealth total missed 15.
+int __stdcall SeenStealthMode(void* hider) {
+  const uint8_t mode = Field<uint8_t>(hider, nwmain::kCreatureStealthMode);
+  return mode == 1 && g_not_hidden.count(IdOf(hider)) ? 0 : mode;
+}
+
+// Called in place of `mov al,[edi+0x4A9]` (6 bytes, + 1 nop) at 0x653A05 /
+// 0x6535AB.
+__declspec(naked) void StealthReadStub() {
+  __asm {
+    push ecx
+    push edx
+    push edi
+    call SeenStealthMode
+    pop edx
+    pop ecx
+    ret
+  }
+}
+
+// Search's die (SK5 for traps): a d20 when the searcher searches (detect
+// mode), else passive Perception's 10.
+int __stdcall SearchDie(void* searcher) {
+  return rules::PerceptionDie(Field<uint8_t>(searcher, nwmain::kCreatureDetectMode) != 0, D20());
+}
+
+// Called in place of Search's RollDice(1, 10 / 20) (ecx = rules object, two
+// stack arguments, ret 8); esi = the searcher.
+__declspec(naked) void SearchDieStub() {
+  __asm {
+    push ecx
+    push edx
+    push esi
+    call SearchDie
+    pop edx
+    pop ecx
+    ret 8
+  }
+}
+
+bool RedirectCall(const char* name, uintptr_t site, uintptr_t expected_target, const void* new_target) {
+  const auto* code = reinterpret_cast<const uint8_t*>(site);
+  int32_t rel = 0;
+  memcpy(&rel, code + 1, sizeof(rel));
+  if (code[0] != 0xe8 || site + nwmain::kCallLength + rel != expected_target) {
+    Log("SKIP %s: 0x%08X is not the mapped call", name, site);
+    return false;
+  }
+  uint8_t expected[5];
+  memcpy(expected, code, sizeof(expected));
+  uint8_t call[5] = {0xe8};
+  const int32_t new_rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(new_target) - (site + nwmain::kCallLength));
+  memcpy(call + 1, &new_rel, sizeof(new_rel));
+  return PatchBytes(name, site, expected, call, sizeof(call));
 }
 
 void __fastcall SetStealthMode(void* creature, void* edx, uint8_t mode) {
@@ -76,6 +162,7 @@ void __fastcall SetStealthMode(void* creature, void* edx, uint8_t mode) {
     RollStealth(creature, "starts hiding");
   } else if (mode != 1) {
     g_rolled.erase(IdOf(creature));
+    g_not_hidden.erase(IdOf(creature));
   }
 }
 
@@ -86,6 +173,7 @@ void __stdcall PerceptionRolls(void* creature) {
     if (!g_rolled.count(id)) RollStealth(creature, "is hiding without a roll (loaded hidden)");
   } else {
     g_rolled.erase(id);
+    g_not_hidden.erase(id);
   }
   const bool searching = Field<uint8_t>(creature, nwmain::kCreatureDetectMode) != 0;
   const int die = rules::PerceptionDie(searching, searching ? D20() : 0);
@@ -159,6 +247,26 @@ void InstallPerceptionRules() {
   }
   Log("perception: %d of %u faithful patches applied", applied,
       static_cast<unsigned>(sizeof(nwmain::kFaithfulPerceptionPatches) / sizeof(nwmain::kFaithfulPerceptionPatches[0])));
+  int search_dice = 0;
+  for (uintptr_t site : nwmain::kSearchDieCalls) {
+    search_dice += RedirectCall("perception: Search die - d20 when searching, else passive 10 (faithful)", site,
+                                nwmain::kRollDice, reinterpret_cast<void*>(&SearchDieStub))
+                       ? 1
+                       : 0;
+  }
+  Log("perception: %d of %u Search dice redirected", search_dice,
+      static_cast<unsigned>(sizeof(nwmain::kSearchDieCalls) / sizeof(nwmain::kSearchDieCalls[0])));
+  if (g_config.hiding_needs_15) {
+    for (const uintptr_t site : {nwmain::kSpotStealthRead, nwmain::kListenStealthRead}) {
+      uint8_t call[6] = {0xe8, 0, 0, 0, 0, 0x90};
+      const int32_t rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(&StealthReadStub) -
+                                               (site + nwmain::kCallLength));
+      memcpy(call + 1, &rel, sizeof(rel));
+      PatchBytes(site == nwmain::kSpotStealthRead ? "perception: Spot - a hide below Stealth 15 is no hide (faithful)"
+                                                   : "perception: Listen - a hide below Stealth 15 is no hide (faithful)",
+                 site, nwmain::kStealthReadBytes, call, sizeof(call));
+    }
+  }
   InstallHook({"Listen detection (log)", nwmain::kListenDetection, nwmain::kListenDetectionPrologue,
                sizeof(nwmain::kListenDetectionPrologue), reinterpret_cast<void*>(&ListenDetection),
                reinterpret_cast<void**>(&g_listen_detection)});

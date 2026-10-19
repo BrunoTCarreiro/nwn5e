@@ -248,4 +248,20 @@ void InstallSkillDcRules() {
   Log("skill DCs: %d of %d faithful patches applied (%d trampoline bytes)", applied,
       count + static_cast<int>(sizeof(nwmain::kSkillDcImmediates) / sizeof(nwmain::kSkillDcImmediates[0])),
       static_cast<int>(next - code));
+  // Owner, 2026-10-19: no take 20, no trap synergy, no Rogue-only traps.
+  int rules_applied = 0;
+  int rules_count = 0;
+  const auto apply = [&](const nwmain::SmallPatch* patches, size_t n) {
+    for (size_t i = 0; i < n; ++i) {
+      char name[112];
+      sprintf_s(name, "skills: %s (faithful)", patches[i].what);
+      rules_applied += PatchBytes(name, patches[i].address, patches[i].original, patches[i].patched, patches[i].size) ? 1 : 0;
+      ++rules_count;
+    }
+  };
+  apply(nwmain::kNoTake20Patches, sizeof(nwmain::kNoTake20Patches) / sizeof(nwmain::kNoTake20Patches[0]));
+  apply(nwmain::kNoTrapSynergyPatches, sizeof(nwmain::kNoTrapSynergyPatches) / sizeof(nwmain::kNoTrapSynergyPatches[0]));
+  apply(nwmain::kNoRogueTrapPatches, sizeof(nwmain::kNoRogueTrapPatches) / sizeof(nwmain::kNoRogueTrapPatches[0]));
+  Log("skills: %d of %d patches applied (no take 20, no trap synergy, no Rogue-only traps)", rules_applied,
+      rules_count);
 }

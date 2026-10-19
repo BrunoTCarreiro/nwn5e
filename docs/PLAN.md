@@ -335,6 +335,20 @@ DC > 35 still need a Rogue (3e Trapfinding); NWN's take 20 out of combat
 (Open Lock, traps, Animal Empathy, Heal) stays — with 2024 totals it opens
 most locks for anyone given time; and Search's d10 when not searching could
 become passive Perception 10 as SK5 did for creatures.
+*Decided (owner, 2026-10-19), the recommendations:* faithful drops take 20
+(2024 has none; clicking again is the retry, traps keep their risk), the +2
+Disable Trap / Set Trap synergy (both are Thieves' Tools) and the Rogue
+requirement for traps above DC 35 (3e Trapfinding); Search uses passive
+Perception 10 when not searching (as SK5); "fail by 10 sets the trap off"
+stays. SK5 addition: hiding needs a Stealth total of 15 (the 2024 Hide action)
+behind its own switch — below it the creature is not hidden.
+*Built 0.9.31:* take 20 removed (both branches into the "20" path NOPed at
+the seven trap / lock actions; Animal Empathy and Heal kits' combat test),
+the synergy +2 skipped (5 sites), the DC > 35 Rogue test always passed (11
+sites); Search's six dice redirected (d20 in detect mode, else 10);
+`hiding_needs_15` (default on): the Stealth total (d20 + Hide) is told to the
+player when hiding starts, and below 15 Spot / Listen read the hider as not
+in stealth mode (noticed once in range) until it hides again.
 
 **SK4. Natural 20 / 1 on checks.** NWN has none on skill checks; 2024 has
 none on ability checks. Nothing to change (both modes).

@@ -857,3 +857,14 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   [esp+0x14] at 0x68A4F1.
 - Examine Trap message 0x62B800: Disable Trap + 20 against DisarmDC sorted
   into five difficulty steps (0x62BA06, 0x62BA91, 0x62BB08).
+- Take 20 (0.9.31 removes it): each trap / lock action tests +0x4BC (`je` to
+  the "20" path) and Skill Mastery (feat 0xE1, `jne`): Flag 0x6781A1 /
+  0x6781B5, Recover 0x678805 / 0x678819, Disarm 0x6791A9 / 0x6791BD, Examine
+  0x679B26 / 0x679B3A, Set 0x67A439 / 0x67A44D, unlock 0x72F7E3 / 0x72F800,
+  lock 0x7303B2 / 0x7303CF; Animal Empathy 0x688161 and Heal 0x68A379 test
+  combat only. Synergy `cmp al,5; jl`: 0x67818C, 0x6787E4, 0x67918C,
+  0x679B0D, 0x67A42C. DC > 35 Rogue tests: Disarm 0x6792C5 / 0x679406 /
+  0x6794FF, Examine message 0x62B9FA / 0x62BA85 / 0x62BB00, Search 0x6489F3 /
+  0x648A49 / 0x648C7D / 0x648CE7 / 0x648F3A. Search (this = esi throughout)
+  rolls at 0x648A20 / 0x648A76 (trigger d10 / d20), 0x648CAD / 0x648D17
+  (door), 0x648F6D / 0x648FD1 (placeable).

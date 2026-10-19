@@ -1088,4 +1088,64 @@ constexpr SmallPatch kSkillDcImmediates[] = {
     {"Tumble against attacks of opportunity: DC 15 -> 13 (skill + 20 test)", 0x00656347, 1, {0x0f}, {0x0d}},
 };
 
+// SK3 follow-ups (owner, 2026-10-19), faithful. Take 20: each action rolls a
+// d20 unless the creature is out of combat (+0x4BC == 0: `je` to the "20"
+// path) or has Skill Mastery (feat 0xE1: `jne` to it); Animal Empathy and
+// Heal kits only test combat. Both branches are NOPed, so only the d20 path
+// remains (the "20" path also sets the action's "took 20" flag, which keeps a
+// failure from setting a trap off — gone with it).
+constexpr SmallPatch kNoTake20Patches[] = {
+    {"Flag Trap: no take 20 out of combat", 0x006781A1, 2, {0x74, 0x26}, {0x90, 0x90}},
+    {"Flag Trap: no take 20 with Skill Mastery", 0x006781B5, 2, {0x75, 0x12}, {0x90, 0x90}},
+    {"Recover Trap: no take 20 out of combat", 0x00678805, 2, {0x74, 0x28}, {0x90, 0x90}},
+    {"Recover Trap: no take 20 with Skill Mastery", 0x00678819, 2, {0x75, 0x14}, {0x90, 0x90}},
+    {"Disarm Trap: no take 20 out of combat", 0x006791A9, 2, {0x74, 0x28}, {0x90, 0x90}},
+    {"Disarm Trap: no take 20 with Skill Mastery", 0x006791BD, 2, {0x75, 0x14}, {0x90, 0x90}},
+    {"Examine Trap: no take 20 out of combat", 0x00679B26, 2, {0x74, 0x26}, {0x90, 0x90}},
+    {"Examine Trap: no take 20 with Skill Mastery", 0x00679B3A, 2, {0x75, 0x12}, {0x90, 0x90}},
+    {"Set Trap: no take 20 out of combat", 0x0067A439, 2, {0x74, 0x28}, {0x90, 0x90}},
+    {"Set Trap: no take 20 with Skill Mastery", 0x0067A44D, 2, {0x75, 0x14}, {0x90, 0x90}},
+    {"Open Lock (unlock): no take 20 out of combat", 0x0072F7E3, 2, {0x74, 0x31}, {0x90, 0x90}},
+    {"Open Lock (unlock): no take 20 with Skill Mastery", 0x0072F800, 2, {0x75, 0x14}, {0x90, 0x90}},
+    {"Open Lock (lock): no take 20 out of combat", 0x007303B2, 2, {0x74, 0x31}, {0x90, 0x90}},
+    {"Open Lock (lock): no take 20 with Skill Mastery", 0x007303CF, 2, {0x75, 0x14}, {0x90, 0x90}},
+    {"Animal Empathy: no take 20 out of combat", 0x00688161, 2, {0x75, 0x12}, {0x90, 0x90}},
+    {"Heal kit: no take 20 out of combat", 0x0068A379, 2, {0x75, 0x0a}, {0x90, 0x90}},
+};
+// The 3e synergy: Disable Trap +2 with 5 base ranks of Set Trap and back
+// (`cmp al,5; jl` over the +2): the jl becomes a jmp.
+constexpr SmallPatch kNoTrapSynergyPatches[] = {
+    {"Flag Trap: no +2 from Set Trap ranks", 0x0067818C, 1, {0x7c}, {0xeb}},
+    {"Recover Trap: no +2 from Set Trap ranks", 0x006787E4, 1, {0x7c}, {0xeb}},
+    {"Disarm Trap: no +2 from Set Trap ranks", 0x0067918C, 1, {0x7c}, {0xeb}},
+    {"Examine Trap: no +2 from Set Trap ranks", 0x00679B0D, 1, {0x7c}, {0xeb}},
+    {"Set Trap: no +2 from Disable Trap ranks", 0x0067A42C, 1, {0x7c}, {0xeb}},
+};
+// 3e Trapfinding: a trap DC above 35 (`cmp dc,0x23`) needs a Rogue level, else
+// the check is skipped (Search) or refused (Disarm, the Examine message). The
+// branch taken for DC <= 35 becomes a jmp. Search has one test per die path
+// for triggers and doors, one for placeables.
+constexpr SmallPatch kNoRogueTrapPatches[] = {
+    {"Disarm Trap (trigger): above DC 35 without a Rogue", 0x006792C5, 1, {0x7e}, {0xeb}},
+    {"Disarm Trap (door): above DC 35 without a Rogue", 0x00679406, 1, {0x7e}, {0xeb}},
+    {"Disarm Trap (placeable): above DC 35 without a Rogue", 0x006794FF, 1, {0x7e}, {0xeb}},
+    {"Examine Trap message (1): above DC 35 without a Rogue", 0x0062B9FA, 1, {0x7e}, {0xeb}},
+    {"Examine Trap message (2): above DC 35 without a Rogue", 0x0062BA85, 1, {0x7e}, {0xeb}},
+    {"Examine Trap message (3): above DC 35 without a Rogue", 0x0062BB00, 1, {0x7e}, {0xeb}},
+    {"Search (trigger, d10): above DC 35 without a Rogue", 0x006489F3, 1, {0x7e}, {0xeb}},
+    {"Search (trigger, d20): above DC 35 without a Rogue", 0x00648A49, 1, {0x7e}, {0xeb}},
+    {"Search (door, d10): above DC 35 without a Rogue", 0x00648C7D, 1, {0x76}, {0xeb}},
+    {"Search (door, d20): above DC 35 without a Rogue", 0x00648CE7, 1, {0x76}, {0xeb}},
+    {"Search (placeable): above DC 35 without a Rogue", 0x00648F3A, 1, {0x76}, {0xeb}},
+};
+// SK5 follow-ups. Search (0x6485E0; esi = the searcher throughout) rolls its
+// die at six RollDice(1, 10 / 20) calls — a d20 with Keen Sense, standing
+// still or in detect mode, else a d10 (the perception test). Spot / Listen
+// read the hider's stealth mode at 0x653A05 / 0x6535AB (`mov al,[edi+0x4A9]`,
+// edi = the hider; 0 -> noticed, once in range); nothing jumps into either.
+constexpr uintptr_t kSearchDieCalls[] = {0x00648A20, 0x00648A76, 0x00648CAD, 0x00648D17, 0x00648F6D, 0x00648FD1};
+constexpr uintptr_t kSpotStealthRead = 0x00653A05;
+constexpr uintptr_t kListenStealthRead = 0x006535AB;
+constexpr uint8_t kStealthReadBytes[] = {0x8a, 0x87, 0xa9, 0x04, 0x00, 0x00};
+
 }  // namespace nwmain

@@ -53,6 +53,9 @@ struct Config {
   // Owner request: after drinking a potion mid-fight, a player character goes
   // back to attacking (NWN drops the attack order on item use).
   bool resume_attack_after_potion = true;
+  // SK5 (with perception=faithful): hiding needs a Stealth total of 15 (the
+  // 2024 Hide action); below it the creature is not hidden.
+  bool hiding_needs_15 = true;
 
   // [debug] — test switches, not rules.
   bool debug_every_hit_crits = false;  // every hit is a critical, crit immunity ignored
