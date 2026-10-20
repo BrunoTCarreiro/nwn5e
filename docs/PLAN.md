@@ -714,6 +714,17 @@ Two-Weapon Fighting (the off-hand ability modifier, as NWN's feat) work;
 Defense and Great Weapon Fighting can be taken and work once their hooks are
 built (AC in armour, the weapon's damage dice). At Fighter 7 the slot also
 offers ASI (NWN's screen can't limit one slot to styles).
+*Built 0.9.56 (F0, F2, F7 Shift):* scripts/*.nss are compiled at build time
+with the game's own compiler (utils\clcompile.exe — no download; it reads
+nwscript.nss from the install) into build\data\files, which CM0 serves as
+is. Second Wind = feat.2da 1220–1222 (2 / 3 / 4 uses per day, restored by a
+rest; data/rows/feat.fighter.txt) → spells.2da 1000–1002 (a self feat
+ability like Lay on Hands; data/rows/spells.fighter.txt) → nwn5e_secwind:
+1d10 + Fighter level (prestige levels included); from Fighter 5 it sets
+`nwn5e_tactical_shift` for 6 s, which the opportunity-attack rule reads (no
+AoO). nwn5e grants the right tier to every Fighter (character made earlier
+included) with full uses, records it (`nwn5e_granted_feats`), and removes it
+in NWN mode. Uses an action (Phase 6 makes it a bonus action).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

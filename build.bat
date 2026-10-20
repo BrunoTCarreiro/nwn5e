@@ -44,10 +44,30 @@ if exist build\data rmdir /s /q build\data
 xcopy /e /i /q /y data build\data >nul || exit /b 1
 if /i not "%~1"=="public" if exist private\data xcopy /e /i /q /y private\data build\data\private >nul
 
+rem nwn5e's scripts (scripts\*.nss; the private layer's in a private build),
+rem compiled with the game's own compiler (utils\clcompile.exe, which reads
+rem nwscript.nss from the install) into build\data\files, served as they are.
+rem The game folder: NWN5E_GAME, else the registry key the loader also reads.
+set NWN_DIR=%NWN5E_GAME%
+if not defined NWN_DIR for /f "tokens=2,*" %%a in ('reg query "HKLM\SOFTWARE\WOW6432Node\BioWare\NWN\Neverwinter" /v Location 2^>nul ^| findstr Location') do set NWN_DIR=%%b
+if not exist build\data\files mkdir build\data\files
+if exist scripts\*.nss call :compile scripts || exit /b 1
+if /i not "%~1"=="public" if exist private\scripts\*.nss call :compile private\scripts || exit /b 1
+
 rem build\nwn5e.ini holds the player's settings: only create it, never overwrite it.
 if not exist build\nwn5e.ini copy nwn5e.ini build\nwn5e.ini >nul
 if defined PRIVATE_SRC echo built build\nwn5e.exe build\nwn5e.dll WITH the private layer (personal use only)
 if not defined PRIVATE_SRC echo built build\nwn5e.exe build\nwn5e.dll
+exit /b 0
+
+:compile
+if not exist "%NWN_DIR%\utils\clcompile.exe" echo clcompile.exe not found in "%NWN_DIR%\utils" - set NWN5E_GAME to the NWN folder & exit /b 1
+pushd "%NWN_DIR%\utils"
+"%NWN_DIR%\utils\clcompile.exe" "%~dp0%1\*.nss" "%~dp0build\data\files" >"%~dp0build\obj\scripts.log" 2>&1
+popd
+findstr /c:"did not compile" build\obj\scripts.log >nul && type build\obj\scripts.log && exit /b 1
+findstr /c:"compiled successfully" build\obj\scripts.log >nul || (type build\obj\scripts.log & exit /b 1)
+del /q build\data\files\*.ndb 2>nul
 exit /b 0
 
 :no_vcvars

@@ -9,22 +9,22 @@ namespace {
 const std::vector<ClassFeature>& Fighter() {
   static const std::vector<ClassFeature> kFeatures = {
       {1, "Fighting Style", false, "built: Archery, Two-Weapon Fighting (Defense, Great Weapon Fighting: being built)"},
-      {1, "Second Wind", false, "brief F2"},
+      {1, "Second Wind", false, "built: radial menu (an action until Phase 6), 2 / 3 / 4 uses per rest"},
       {1, "Weapon Mastery", false, "built (!mastery)"},
       {2, "Action Surge", false, "Phase 6"},
-      {2, "Tactical Mind", false, "brief F4"},
+      {2, "Tactical Mind", false, "Phase 7 (a choice)"},
       {3, "Champion", false, "built: granted at 3"},
       {3, "Improved Critical", true, "built: crits on 19-20"},
       {3, "Remarkable Athlete", true, "built: advantage on initiative (the move after a crit: Phase 6)"},
       {4, "Ability Score Improvement", false, "built (!asi)"},
       {5, "Extra Attack", false, "built"},
-      {5, "Tactical Shift", false, "brief F7"},
+      {5, "Tactical Shift", false, "built: no opportunity attacks the round you use Second Wind"},
       {6, "Ability Score Improvement", false, "built (!asi)"},
       {7, "Additional Fighting Style", true, "built: a second style"},
       {8, "Ability Score Improvement", false, "built (!asi)"},
       {9, "Indomitable", false, "brief F5"},
-      {9, "Tactical Master", false, "brief F7"},
-      {10, "Heroic Warrior", true, "brief C4"},
+      {9, "Tactical Master", false, "later (a per-attack choice)"},
+      {10, "Heroic Warrior", true, "with Heroic Inspiration (CM6)"},
       {11, "Two Extra Attacks", false, "built"},
       {12, "Ability Score Improvement", false, "built (!asi)"},
       {13, "Indomitable (2 uses)", false, "brief F5"},
@@ -68,6 +68,20 @@ int ChampionCriticalFloor(int fighter_level) { return fighter_level >= 15 ? 18 :
 bool HasRemarkableAthlete(int fighter_level) { return fighter_level >= 3; }
 
 bool HasStudiedAttacks(int fighter_level) { return fighter_level >= 13; }
+
+std::vector<int> GrantedFeats2024(const std::vector<ClassLevels>& classes) {
+  std::vector<int> feats;
+  for (const ClassLevels& c : classes) {
+    if (c.character_class != CharacterClass::kFighter || c.levels < 1) continue;
+    feats.push_back(c.levels >= 10 ? kFeatSecondWind4 : c.levels >= 4 ? kFeatSecondWind3 : kFeatSecondWind2);
+  }
+  return feats;
+}
+
+const std::vector<int>& GrantableFeats2024() {
+  static const std::vector<int> kFeats = {kFeatSecondWind2, kFeatSecondWind3, kFeatSecondWind4};
+  return kFeats;
+}
 
 bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level) {
   return character_class == CharacterClass::kFighter && (class_level == 1 || class_level == 7);

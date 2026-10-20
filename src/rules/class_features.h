@@ -50,4 +50,15 @@ constexpr int kFeatFightingStyleTwoWeapon = 1213;
 bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level);
 constexpr int kArcheryAttackBonus = 2;
 
+// F2: Second Wind, one feat row per number of uses (data/rows/feat.fighter.txt).
+constexpr int kFeatSecondWind2 = 1220;  // Fighter 1
+constexpr int kFeatSecondWind3 = 1221;  // Fighter 4
+constexpr int kFeatSecondWind4 = 1222;  // Fighter 10
+
+// The feats nwn5e grants a character for its class levels (the DLL adds them —
+// so characters made earlier get them too — and removes them in NWN mode).
+std::vector<int> GrantedFeats2024(const std::vector<ClassLevels>& classes);
+// Every feat nwn5e may grant, in a fixed order (the record kept on a character).
+const std::vector<int>& GrantableFeats2024();
+
 }  // namespace rules

@@ -42,6 +42,16 @@ uint8_t __fastcall AooReaction(void* provoker, void* edx, uint32_t candidate_id)
   if (reaction != nwmain::kReactionEnemy || !Running(Field<int32_t>(provoker, nwmain::kCreatureAnimation))) {
     return reaction;
   }
+  // Fighter F7 Tactical Shift: after Second Wind, moving provokes nothing this
+  // round (scripts/nwn5e_secwind.nss sets the variable for 6 s).
+  if (engine::GetLocalInt(provoker, "nwn5e_tactical_shift")) {
+    if (g_config.log_attacks && g_aoo_log_lines < 100) {
+      ++g_aoo_log_lines;
+      Log("opportunity attacks: 0x%08X Tactical Shift - no AoO from 0x%08X",
+          Field<uint32_t>(provoker, nwmain::kCreatureObjectId), candidate_id);
+    }
+    return 1;
+  }
   void* candidate = engine::GetCreature(candidate_id);
   if (!candidate) return reaction;
   const Vector at = Field<Vector>(provoker, nwmain::kObjectPosition);

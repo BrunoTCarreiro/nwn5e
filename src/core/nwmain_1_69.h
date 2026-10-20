@@ -1471,4 +1471,14 @@ constexpr SmallPatch kFaithfulPointBuyPatches[] = {
     {"point buy: 2 points from 13", 0x005306EF, 1, {0x0e}, {0x0d}},
 };
 
+// Phase 3 Fighter F0 / F2: feats added and their uses (ecx = stats; feat
+// ids as uint16 in a dword). AddFeat 0x6A3500 (ret 4) only adds to the list;
+// SetFeatRemainingUses(feat, uses) 0x6A3760 (ret 8); GetFeatTotalUses(feat)
+// 0x6A4200 (ret 4); RemoveFeat 0x6A4BC0 (ret 4). A rest calls
+// ResetFeatRemainingUses 0x6A4B10 (every feat back to full).
+constexpr uintptr_t kAddFeat = 0x006A3500;
+constexpr uintptr_t kRemoveFeat = 0x006A4BC0;
+constexpr uintptr_t kSetFeatRemainingUses = 0x006A3760;
+constexpr uintptr_t kGetFeatTotalUses = 0x006A4200;
+
 }  // namespace nwmain

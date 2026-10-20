@@ -152,8 +152,16 @@ int BuildServedTables(const std::wstring& dll, const std::wstring& served) {
   }
   if (g_config.debug_served_data_probe) rows["feat"];  // the probe needs feat.2da even without rows
   CreateDirectoryW(served.c_str(), nullptr);
-  for (const std::wstring& old : FilesIn(served, L"*.2da")) DeleteFileW((served + L"\\" + old).c_str());
-  if (rows.empty()) return 0;
+  for (const std::wstring& old : FilesIn(served, L"*")) DeleteFileW((served + L"\\" + old).c_str());
+  // Files served as they are (compiled scripts: build.bat puts them in data\files).
+  int files = 0;
+  for (const std::wstring& folder : {dll + L"\\data\\files", dll + L"\\data\\private\\files"}) {
+    for (const std::wstring& name : FilesIn(folder, L"*")) {
+      if (CopyFileW((folder + L"\\" + name).c_str(), (served + L"\\" + name).c_str(), FALSE)) ++files;
+    }
+  }
+  if (files) Log("data: served %d files as they are (data\\files: compiled scripts ...)", files);
+  if (rows.empty()) return files;
 
   wchar_t host[MAX_PATH];
   GetModuleFileNameW(nullptr, host, MAX_PATH);
@@ -199,7 +207,7 @@ int BuildServedTables(const std::wstring& dll, const std::wstring& served) {
     Log("data: served %s.2da: %u rows from %s%s -> %u rows", entry.first.c_str(), static_cast<unsigned>(original),
         source.c_str(), applied.c_str(), static_cast<unsigned>(table.rows.size()));
   }
-  return built;
+  return built + files;
 }
 
 ExoString EngineString(const char* text) {

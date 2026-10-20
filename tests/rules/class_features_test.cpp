@@ -42,3 +42,15 @@ TEST(FighterFeatureLevels) {
   CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kFighter, 4), false);
   CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kPaladin, 2), false);  // with the Paladin's brief
 }
+
+// Breaks caught: Second Wind's uses not growing at 4 / 10, two tiers at once,
+// a non-Fighter getting it.
+TEST(GrantedFeatsFollowClassLevels) {
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kFighter, 1}})[0], kFeatSecondWind2);
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kFighter, 4}})[0], kFeatSecondWind3);
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kFighter, 10}})[0], kFeatSecondWind4);
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kFighter, 9}}).size(), 1u);
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kWizard, 5}}).empty(), true);
+  CHECK_EQ(GrantedFeats2024({{CharacterClass::kWizard, 3}, {CharacterClass::kFighter, 2}})[0], kFeatSecondWind2);
+  CHECK_EQ(GrantableFeats2024().size(), 3u);
+}
