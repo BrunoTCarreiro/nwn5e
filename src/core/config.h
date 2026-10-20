@@ -63,6 +63,11 @@ struct Config {
   // CM3: faithful = 2024 hit points (max die at level 1, then the fixed
   // average, 2024 dice); nwn / off = NWN's (rolled, max at levels 1-3).
   rules::RuleVariant hit_points = rules::RuleVariant::kFaithful;
+  // CM0: serve nwn5e's 2da rows and strings (data\rows, data\strings.txt).
+  bool served_data = true;
+  // [debug] served_data_probe: add a hidden test row to feat.2da and check
+  // on load that the engine has it and its name.
+  bool debug_served_data_probe = false;
   // CN1–CN8: conditions. faithful = 2024 conditions (restrained, helpless,
   // stunned, poisoned, concealment, deafened; PLAN.md); nwn = NWN's, plus the
   // both-mode parts (stunned / paralysed / asleep targets give advantage,

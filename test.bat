@@ -15,7 +15,7 @@ if exist private\tests\*.cpp set PRIVATE_SRC=%PRIVATE_SRC% private\tests\*.cpp
 if defined PRIVATE_SRC set PRIVATE_DEF=/DNWN5E_PRIVATE /Iprivate
 
 cl /nologo /O2 /MT /W3 /EHsc /std:c++17 /Isrc /Itests %PRIVATE_DEF% /Fobuild\obj\rules\ ^
-  tests\rules_main.cpp tests\rules\*.cpp src\rules\*.cpp %PRIVATE_SRC% ^
+  tests\rules_main.cpp tests\rules\*.cpp tests\data\*.cpp src\rules\*.cpp src\data\*.cpp %PRIVATE_SRC% ^
   /Fe:build\rules_test.exe >build\obj\rules\compile.log || goto :compile_failed
 
 build\rules_test.exe

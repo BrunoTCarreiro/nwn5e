@@ -61,7 +61,7 @@ Uncanny Dodge ✓, Slippery Mind ✓, Skill Mastery ≈ Reliable Talent); Sorcer
 (metamagic as feats; familiar ✗); Wizard (Scribe Scroll, familiar, school at
 1; 2024 Arcane Recovery, Scholar, Evoker at 3).
 
-**Feats (feat.2da, D):** 1,083 rows; ALLCLASSESCANUSE 502 (210 non-epic);
+**Feats (feat.2da, D):** 1,116 rows in the 1.69 copy (xp2patch.bif, which the engine loads; corrected 2026-10-20 by CM0 — the count was 1,083); ALLCLASSESCANUSE 502 (210 non-epic);
 MinLevel / MinLevelClass exist (usable for subclass feats at class level 3).
 Background feats (Artist, Blooded, Bullheaded, Courteous Magocracy, Luck of
 Heroes, Silver Palm, Snake Blood, Strong Soul; Stealthy and Thug without

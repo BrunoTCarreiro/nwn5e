@@ -1060,3 +1060,26 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   HP path (0x65A852). Nothing is cached: the sum runs on every call.
 - CNWLevelStats: +0x103 HP rolled (uint8), +0x104 class (uint8); CNWClass
   +0x5C hit die (uint8).
+
+## Served data (decoded 2026-10-19/20, CM0)
+
+- One CExoResMan ([0x92DC3C], ctor 0x5CB8E0 at 0x40E7DA), one CTlkTable
+  ([0x92DC5C]) and one CNWRules ([0x92DC64]) serve both client and server in
+  nwmain (byte [0x92DC30] = 0). The CNWRules constructor 0x47A440 (ecx =
+  object, plain ret) loads every rules table; ReloadAll 0x47AAC0 reloads
+  them when haks change.
+- Lookup GetKeyEntry 0x5CC470: premium images (type 4), then modules / haks
+  (3), then directories (2), then key / BIF tables (1); inside a type, the
+  newest first. AddResourceDirectory(CExoString const&) 0x5CBBE0 (ret 4) =
+  AddKeyTable(name, 2, 0) 0x5CBC50; a directory is listed once, when added
+  (0x5D3BF0). Aliases: CExoAliasList at [[0x92DC34]+0xC], Add(CExoString
+  alias, CExoString path) 0x5BE170 (by value, the callee destroys them, ret
+  0x10); "NWN5E:" resolves through it. Registered from the constructor's
+  entry, our folder outranks the override folder and every BIF for the
+  whole session.
+- Keys: the engine registers "HD0:xp2patch;HD0:xp3;HD0:xp2;HD0:xp1patch;
+  HD0:xp1;HD0:patch;HD0:chitin" (0x40EBEA); the DLL reads its originals in
+  that order, after the override folder.
+- Strings: CTlkTable::GetSimpleString 0x5C9C80 (already hooked for labels)
+  serves nwn5e's ids 16000000..16499999 (below 0x01000000, the module-tlk
+  flag).

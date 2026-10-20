@@ -280,6 +280,16 @@ label hook (private string ids, as the saves' labels); the private layer
 adds its own rows the same way. RE needed for B (the
 resource manager) and for how the level-up screen filters its feat lists.
 1.69-only: the offsets and the serving hook; the rows and rules port.
+*Built 0.9.50 (B; key `served_data`):* rows live in `data/rows/<table>.txt`
+(and `private/data/rows`), strings in `data/strings.txt` (ids 16000000+,
+served by the label hook); at start-up the DLL rebuilds each table from the
+game's own copy (override folder, then the key / BIF files in the engine's
+order — read directly, so no game file is ever in the repo) + the rows, into
+`build\served`, registered with the resource manager from the rules
+constructor's entry. Rows are shared by both modes; each rule hides its rows
+in the mode without them (A, through the rules-loaded hook). Checked with
+`[debug] served_data_probe` (a hidden feat row read back from the engine
+with its name). Format: data/README.md.
 
 **CM1. XP table and level cap (open decision 3).** NWN: 500·L·(L−1), cap 40
 with HotU. 2024: 300 / 900 / 2,700 / 6,500 / 14,000 … 355,000 at 20, cap 20

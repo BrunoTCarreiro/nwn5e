@@ -16,7 +16,7 @@ repository (local, or a private remote). Layout:
 | `private/rules/` | rule math (no engine code, like `src/rules`) | `build.bat`, `test.bat` |
 | `private/tests/` | unit tests (`TEST(...)` from `tests/check.h`) | `test.bat` |
 | `private/docs/` | briefs and decisions for private material | — |
-| `private/data/` | served rows and strings, once CM0 serves data | — |
+| `private/data/` | served rows (`rows/<table>.txt`) and strings (`strings.txt`), merged after the public ones (data/README.md) | `build.bat` copies it (not with `public`) |
 
 Name every private source file `private_*.cpp`: the build puts all objects in
 one folder, so a private `core.cpp` would overwrite the public one.

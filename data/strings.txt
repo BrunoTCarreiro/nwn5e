@@ -1,0 +1,2 @@
+# nwn5e's strings: <id> <text> (ids 16000000-16499999; data/README.md).
+# 16000000-16000099: reserved (16000000 / 16000001 = the served_data_probe test row).

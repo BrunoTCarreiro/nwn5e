@@ -1362,4 +1362,25 @@ constexpr uintptr_t kLevelStatsHitPoints = 0x103;    // uint8: the HP rolled for
 constexpr uintptr_t kLevelStatsClass = 0x104;        // uint8: the class taken at that level
 constexpr uintptr_t kClassHitDie = 0x5C;             // uint8 (CNWClass, classes.2da HitDie)
 
+// Phase 3 CM0 (RE-NOTES "Served data"). CNWRules' constructor loads every
+// rules table (ecx = the new object, no arguments, plain ret, returns it).
+constexpr uintptr_t kRulesConstructor = 0x0047A440;
+constexpr uint8_t kRulesConstructorPrologue[] = {0x6a, 0xff, 0x68, 0x37, 0x0e, 0x87, 0x00};
+constexpr uintptr_t kExoResMan = 0x0092DC3C;       // [ ] = CExoResMan (one, shared by client and server)
+constexpr uintptr_t kExoBase = 0x0092DC34;         // [ ] = CExoBase
+constexpr uintptr_t kExoBaseAliasList = 0x0C;      // CExoAliasList*
+// CExoAliasList::Add(CExoString alias, CExoString path): by value, the callee
+// destroys both (engine-allocated, CExoString(const char*) 0x5BA260); ret 0x10.
+constexpr uintptr_t kExoAliasListAdd = 0x005BE170;
+// AddResourceDirectory(CExoString const& name) 0x5CBBE0 (ret 4) = AddKeyTable
+// (name, 2 = directory, 0) 0x5CBC50: lists the folder once, newest first.
+constexpr uintptr_t kAddResourceDirectory = 0x005CBBE0;
+constexpr uintptr_t kTlkTable = 0x0092DC5C;        // [ ] = CTlkTable (GetSimpleString's this)
+// The loaded feat table (LoadFeatInfo 0x47AD70): CNWFeat array at rules
+// +0xC4, stride 0x70 (+0x00 FEAT strref, +0x04 DESCRIPTION), count +0xD8.
+constexpr uintptr_t kRulesFeats = 0xC4;
+constexpr uintptr_t kRulesFeatCount = 0xD8;  // uint16
+constexpr uintptr_t kFeatStride = 0x70;
+constexpr uintptr_t kFeatName = 0x00;        // uint32 strref
+
 }  // namespace nwmain

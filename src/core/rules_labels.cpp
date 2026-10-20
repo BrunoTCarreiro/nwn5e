@@ -8,6 +8,7 @@
 
 #include "config.h"
 #include "creature.h"
+#include "data_serving.h"
 #include "hooks.h"
 #include "log.h"
 #include "nwmain_1_69.h"
@@ -25,6 +26,12 @@ int g_logged = 0;
 constexpr uint32_t kReflexSaveStrref = 519;
 
 int __fastcall GetSimpleString(void* table, void* edx, uint32_t strref, void* result, int gender) {
+  if (const char* text = DataString(strref)) {
+    // nwn5e's own string (CM0): filled as string 0 is, then given our text.
+    const int found = g_get_simple_string(table, edx, 0, result, gender);
+    if (result) g_exo_string_assign(result, nullptr, text);
+    return found ? found : 1;
+  }
   if (const char* ability_label = rules::SaveLabelForStrref(strref)) {
     // A private id from the client's save-kind patch (rules_save_roll.cpp):
     // filled as "Reflex Save" is, then named for the spell's own ability.
@@ -52,8 +59,11 @@ int __fastcall GetSimpleString(void* table, void* edx, uint32_t strref, void* re
 }  // namespace
 
 void InstallLabelRules() {
-  if (g_config.saves != rules::RuleVariant::kFaithful && g_config.skills != rules::RuleVariant::kFaithful) return;
-  InstallHook({"CTlkTable::GetSimpleString (2024 save and skill labels)", nwmain::kTlkGetSimpleString,
+  if (g_config.saves != rules::RuleVariant::kFaithful && g_config.skills != rules::RuleVariant::kFaithful &&
+      !HaveDataStrings()) {
+    return;
+  }
+  InstallHook({"CTlkTable::GetSimpleString (2024 save and skill labels, nwn5e's strings)", nwmain::kTlkGetSimpleString,
                nwmain::kTlkGetSimpleStringPrologue, sizeof(nwmain::kTlkGetSimpleStringPrologue),
                reinterpret_cast<void*>(&GetSimpleString), reinterpret_cast<void**>(&g_get_simple_string)});
 }
