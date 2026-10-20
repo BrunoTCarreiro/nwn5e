@@ -404,7 +404,8 @@ the 2024 bases).
 *Verified in game 2026-10-20 (0.9.52):* `!background soldier str con` → Str 16
 → 18, Con 16 → 17; `!asi dex` after taking ASI 1 → Dex 13 → 15; switching to
 Criminal removed the Soldier increases (Str 16) and gave Dex 17 (+2 +2) and
-Alert (initiative +5 = Dex +3, PB +2); the owner checked the creation screen.
+Alert (initiative +5 = Dex +3, PB +2); a new character's point buy: 27 points,
+at most 15, the second point cost from 13 (owner).
 Not seen yet: a henchman's ASIs, the NWN-mode undo, legacy ASIs.
 
 **CM5. Backgrounds.** SRD 5.2 has 4: Acolyte, Criminal, Sage, Soldier
