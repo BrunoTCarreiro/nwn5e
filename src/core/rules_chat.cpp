@@ -26,6 +26,7 @@ std::vector<std::string> MasteryCommand(void* creature, const std::string& args)
 std::vector<std::string> SkillsCommand(void* creature, const std::string& args);  // rules_skills.cpp
 std::vector<std::string> AsiCommand(void* creature, const std::string& args);         // rules_abilities.cpp
 std::vector<std::string> BackgroundCommand(void* creature, const std::string& args);  // rules_abilities.cpp
+std::vector<std::string> FeaturesCommand(void* creature, const std::string& args);    // rules_features.cpp
 
 namespace {
 
@@ -50,7 +51,7 @@ const auto g_get_nws_message = reinterpret_cast<GetNwsMessageFn>(nwmain::kGetNws
 
 constexpr uint32_t kNoPlayer = 0xFFFFFFFE;
 
-enum class Command { kNone, kSaves, kMastery, kSkills, kAsi, kBackground };
+enum class Command { kNone, kSaves, kMastery, kSkills, kAsi, kBackground, kFeatures };
 
 // "!saves" or "!mastery <args>" (command in any case, leading spaces
 // ignored), read before the engine frees the text.
@@ -72,6 +73,7 @@ Command ParseCommand(const ExoString& text, std::string* args) {
   if (word == "!skills") return Command::kSkills;
   if (word == "!asi") return Command::kAsi;
   if (word == "!background") return Command::kBackground;
+  if (word == "!features") return Command::kFeatures;
   return Command::kNone;
 }
 
@@ -104,6 +106,7 @@ uint32_t __fastcall SendServerToPlayerChatMessage(void* message, void* edx, uint
     case Command::kSkills: lines = SkillsCommand(creature, args); name = "!skills"; break;
     case Command::kAsi: lines = AsiCommand(creature, args); name = "!asi"; break;
     case Command::kBackground: lines = BackgroundCommand(creature, args); name = "!background"; break;
+    case Command::kFeatures: lines = FeaturesCommand(creature, args); name = "!features"; break;
     default: lines = MasteryCommand(creature, args); name = "!mastery"; break;
   }
   for (const std::string& line : lines) Reply(message, player, line);

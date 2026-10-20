@@ -27,6 +27,8 @@
 
 namespace {
 
+constexpr uint32_t kLastBaseClass = 10;  // classes.2da rows 0..10: Barbarian .. Wizard
+
 using SetExperienceFn = void(__fastcall*)(void* stats, void* edx, uint32_t xp, int level_changes);
 using CanLevelUpInClassFn = int(__fastcall*)(void* stats, void* edx, uint32_t nwn_class);
 using StatFn = int(__fastcall*)(void* stats, void* edx);
@@ -83,6 +85,17 @@ void ReadScores(void* stats, int scores[6]) {
 int __fastcall CanLevelUpInClass(void* stats, void* edx, uint32_t nwn_class) {
   const int allowed = g_can_level_up_in_class(stats, edx, nwn_class);
   if (!allowed) return allowed;
+  // CM10: no prestige classes in faithful (their 2024 counterparts are the
+  // SRD subclasses, granted at class level 3); levels already taken count as
+  // the parent class (decision 10).
+  if (g_config.class_features == rules::RuleVariant::kFaithful && (nwn_class & 0xFF) > kLastBaseClass) {
+    if (g_logged.First(LogOnce::Key(ObjectIdOf(stats), nwn_class & 0xFF, -1))) {
+      Log("classes: 0x%08X can't take class %u - prestige classes are off (2024: subclasses)", ObjectIdOf(stats),
+          nwn_class & 0xFF);
+    }
+    return 0;
+  }
+  if (g_config.multiclass != rules::RuleVariant::kFaithful) return allowed;
   const auto next = rules::ClassFromNwnId(static_cast<int>(nwn_class & 0xFF));
   if (!next) return allowed;
   std::vector<rules::CharacterClass> current;
@@ -134,17 +147,17 @@ void InstallProgressionRules() {
     Log("progression: %d of 3 faithful changes installed", applied);
   }
   if (g_config.multiclass == rules::RuleVariant::kFaithful) {
-    int applied = PatchBytes("multiclass: no XP penalty (faithful)", nwmain::kMulticlassXpPenalty,
-                             nwmain::kMulticlassXpPenaltyBytes, nwmain::kMulticlassXpPenaltySkip,
-                             sizeof(nwmain::kMulticlassXpPenaltySkip))
-                      ? 1
-                      : 0;
-    applied += InstallHook({"CNWSCreatureStats::CanLevelUpInClass (2024 multiclass prerequisites)",
-                            nwmain::kCanLevelUpInClass, nwmain::kCanLevelUpInClassPrologue,
-                            sizeof(nwmain::kCanLevelUpInClassPrologue), reinterpret_cast<void*>(&CanLevelUpInClass),
-                            reinterpret_cast<void**>(&g_can_level_up_in_class)})
-                   ? 1
-                   : 0;
-    Log("multiclass: %d of 2 faithful changes installed", applied);
+    const bool applied = PatchBytes("multiclass: no XP penalty (faithful)", nwmain::kMulticlassXpPenalty,
+                                    nwmain::kMulticlassXpPenaltyBytes, nwmain::kMulticlassXpPenaltySkip,
+                                    sizeof(nwmain::kMulticlassXpPenaltySkip));
+    Log("multiclass: XP penalty %s", applied ? "off" : "NOT off");
+  }
+  // One hook for CM2 (13s to multiclass) and CM10 (no prestige classes).
+  if (g_config.multiclass == rules::RuleVariant::kFaithful ||
+      g_config.class_features == rules::RuleVariant::kFaithful) {
+    InstallHook({"CNWSCreatureStats::CanLevelUpInClass (2024 multiclassing, no prestige classes)",
+                 nwmain::kCanLevelUpInClass, nwmain::kCanLevelUpInClassPrologue,
+                 sizeof(nwmain::kCanLevelUpInClassPrologue), reinterpret_cast<void*>(&CanLevelUpInClass),
+                 reinterpret_cast<void**>(&g_can_level_up_in_class)});
   }
 }

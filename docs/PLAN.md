@@ -499,6 +499,12 @@ classes come **one at a time, each with its own short brief** (keep / rename
 / new / drop / later per level): Fighter, Rogue, Barbarian, Monk first;
 Paladin, Ranger, Bard and the full casters with Phase 4. Campaign
 `GetHasFeat` checks (83 scripts) read the mask. NWN mode: NWN's features.
+*Built 0.9.53 (the frame, key `class_features`):* rules::ClassFeatures2024
+lists each class's 2024 features by level with what nwn5e does with each (the
+Fighter's from its brief; the others empty until theirs); `!features` shows a
+character's. The feature mask (has-feat hook) waits for the first class
+that has NWN features to remove (the Fighter has none: its bonus feats went
+with CM7) or for CM8.
 
 **CM10. Subclasses and prestige classes (open decisions 5, 12).** SRD 5.2
 has one subclass per class: Berserker, Lore, Life, Land, Champion, Open Hand,
@@ -513,6 +519,11 @@ features read as absent. A henchman's package level-up into a prestige class
 falls back to its other class (NWN's own fallback). Dialog branches that
 check a prestige class simply never show. NWN mode: NWN's prestige classes
 (with decision 10's level counting), no 2024 subclasses.
+*Built 0.9.53:* CanLevelUpInClass (CM2's hook, now installed for either rule)
+refuses every class past the 11 base classes in faithful — the level-up
+list greys the prestige classes out, henchmen's package level-ups fall back.
+The subclass is the SRD one at class level 3 (rules::Subclass2024), shown by
+`!features`; its features come with each class's brief.
 
 **CM11. Warlock.** New class in a blank classes.2da row (39) through CM0's
 served data: d8, Cha, Pact Magic, Eldritch Invocations, Magical Cunning, the
@@ -578,6 +589,114 @@ Fighter, Rogue, Barbarian, Monk. 6. CM8's feats as their hooks exist. 7. CM6
 (Orc, Half-Elf, traits; new species after the appearance recon). 8. CM11 and
 the casters with Phase 4. Phase 3 is the largest phase so far; each class
 brief is its own decision.
+
+## Phase 3 — Fighter (CM9): decisions to make (2026-10-20)
+
+The first class brief. SRD 5.2 Fighter, one subclass: **Champion** (Battle
+Master and the others are PHB-only — private layer). NWN's Fighter has no
+features of its own beyond proficiencies (the same in 2024: simple and
+martial weapons, all armour, shields) and its bonus feats, which CM7 already
+removed in faithful. Status per level, then the decisions (F0–F7, C1–C5).
+
+| Lvl | 2024 feature | Status |
+|---|---|---|
+| 1 | Fighting Style | F1 |
+| 1 | Second Wind | F0, F2 |
+| 1 | Weapon Mastery (3 / 4 at 4 / 5 at 10 / 6 at 16) | built (D3) |
+| 2 | Action Surge (2 uses at 17) | F3 |
+| 2 | Tactical Mind | F4 |
+| 3 | Champion | automatic (CM10) |
+| 4, 6, 8, 12, 14, 16 | Ability Score Improvement | built (CM7) |
+| 5 | Extra Attack (2 / 3 at 11 / 4 at 20) | built (1a) |
+| 5 | Tactical Shift | F7 |
+| 9 | Indomitable (2 uses at 13, 3 at 17) | F5 |
+| 9 | Tactical Master | F7 |
+| 13 | Studied Attacks | F6 |
+| 19 | Epic Boon | with CM8 |
+| Champion 3 | Improved Critical (19–20) | C1 |
+| Champion 3 | Remarkable Athlete | C2 |
+| Champion 7 | Additional Fighting Style | C3 (with F1) |
+| Champion 10 | Heroic Warrior | C4 |
+| Champion 15 | Superior Critical (18–20) | C1 |
+| Champion 18 | Survivor | C5 |
+
+**F0. How usable features run (applies to every class).** Second Wind, Action
+Surge, Rage, Channel Divinity … are things the player *uses*. NWN does this
+with a feat that has uses per day and a spell row whose script does the work
+(Lay on Hands, Turn Undead); the engine counts the uses and restores them on
+rest. Options: (a) **NWScript** — the feat's spell row runs an nwn5e script
+(.nss in the repo, compiled at build time with the open-source nwnsc against
+the game's own nwscript.nss, served by CM0); ports to EE as is; (b) the DLL
+catches the spell and does the work in C++ (1.69-only). Recommendation: (a),
+with the DLL only where a script can't reach (rolls inside the engine).
+Short rests (Phase 5) later restore the short-rest uses.
+
+**F1. Fighting Style (and C3).** The four SRD Fighting Style feats as served
+rows in the Fighter's bonus list, a bonus slot at Fighter 1 (and Champion 7;
+Paladin / Ranger 2 with their briefs): Archery (+2 to ranged attack rolls),
+Defense (+1 AC in armour), Great Weapon Fighting (1s and 2s on the damage
+dice of a two-handed / versatile melee weapon count as 3s), Two-Weapon
+Fighting (the ability modifier on the off-hand attack — NWN's Two-Weapon
+Fighting feat already does this in faithful, D1; it becomes this style). The
+ASI rows get "Level 4+" (MinLevel 4, the SRD feat's prerequisite) so they
+aren't offered at level 1. Recommendation: build now (all hooks exist).
+
+**F2. Second Wind.** Bonus action: regain 1d10 + Fighter level HP; 2 uses (3
+at 4, 4 at 10), one back on a short rest, all on a long rest. Options: (a) now,
+through F0, as a normal action until Phase 6 has bonus actions; (b) wait for
+Phase 6. Recommendation: (a) — it is the Fighter's level-1 identity.
+
+**F3. Action Surge.** One extra action (two uses at 17). NWN has no actions to
+add to; the closest is an extra round of attacks. Recommendation: Phase 6
+(action economy) — a stand-in now would have to be redone.
+
+**F4. Tactical Mind.** Spend a Second Wind use to add 1d10 to a failed ability
+check. Needs a choice the engine can't ask for. Options: (a) automatic — when
+a check fails by 10 or less and a use is left, it is spent; (b) later with
+Phase 7's interface. Recommendation: (b) — spending heals silently is worse
+than not having it.
+
+**F5. Indomitable.** Reroll a failed saving throw with a bonus of your Fighter
+level; 1 use per long rest (2 at 13, 3 at 17). The save roll is ours (C4).
+Options: (a) automatic: the first failed save each time a use is left is
+rerolled (no prompt in NWN); (b) automatic only for saves against spells and
+effects the player marks with a command. Recommendation: (a), uses through
+F0's feat counting.
+
+**F6. Studied Attacks.** When you miss with an attack, advantage on your next
+attack against that creature before the end of your next turn. Built like
+Vex (D4). Recommendation: build now.
+
+**F7. Tactical Shift (move half speed without opportunity attacks after
+Second Wind) and Tactical Master (swap a weapon's mastery for Push, Sap or
+Slow on one attack).** Shift needs Second Wind; Master needs a per-attack
+choice. Recommendation: Shift with F2; Master later (a `!mastery` style
+toggle, or Phase 7).
+
+**C1. Improved Critical (3) and Superior Critical (15).** Crits on 19–20, then
+18–20 with weapon and unarmed attacks. Every crit is held to 20 today
+(decision 8 already says an expanded range only upgrades a hit).
+Recommendation: build now (class check on the threat range). NWN's Improved
+Critical feat no longer widens the range in faithful (CM8).
+
+**C2. Remarkable Athlete.** Advantage on initiative and on Strength
+(Athletics) checks; after a critical hit, move half speed without
+opportunity attacks. Recommendation: the initiative advantage now (SK9 has
+the hook); Athletics has no NWN use; the move with Phase 6.
+
+**C4. Heroic Warrior (10).** In combat, gain Heroic Inspiration at the start
+of each turn if you don't have it (spend it to reroll a d20). Heroic
+Inspiration is also the Human's Resourceful (CM6). Options: (a) automatic —
+it rerolls your first failed attack roll or save each round; (b) later with a
+shared Heroic Inspiration (CM6). Recommendation: (b), built once for both.
+
+**C5. Survivor (18).** Heroic Rally: at the start of each turn, if you're
+Bloodied (half HP or less) and above 0, regain 5 + Con modifier HP. Defy
+Death: advantage on death saves (Phase 5). Recommendation: Heroic Rally now
+(the creature update), Defy Death with Phase 5.
+
+**NWN mode:** NWN's Fighter (bonus feats; prestige classes such as Weapon
+Master).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

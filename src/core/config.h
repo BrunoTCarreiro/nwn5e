@@ -70,6 +70,9 @@ struct Config {
   // CM4 / CM5: faithful = no racial ability adjustments, 27-point buy to
   // 15, NWN's level +1s not counted, !background and !asi; nwn / off = NWN's.
   rules::RuleVariant ability_scores = rules::RuleVariant::kFaithful;
+  // CM9 / CM10: faithful = the 2024 class features (built class by class),
+  // the SRD subclass at class level 3, no prestige classes; nwn / off = NWN's.
+  rules::RuleVariant class_features = rules::RuleVariant::kFaithful;
   // CM0: serve nwn5e's 2da rows and strings (data\rows, data\strings.txt).
   bool served_data = true;
   // [debug] served_data_probe: add a hidden test row to feat.2da and check

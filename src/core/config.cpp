@@ -58,6 +58,8 @@ void ConfigLoad(const wchar_t* directory) {
   g_config.feat_cadence = ReadVariant(ini, L"feat_cadence", g_config.mode);
   Log("config: feat_cadence=%s", VariantName(g_config.feat_cadence));
   g_config.ability_scores = ReadVariant(ini, L"ability_scores", g_config.mode);
+  g_config.class_features = ReadVariant(ini, L"class_features", g_config.mode);
+  Log("config: class_features=%s", VariantName(g_config.class_features));
   Log("config: ability_scores=%s", VariantName(g_config.ability_scores));
   g_config.served_data = ReadBool(ini, L"served_data", g_config.served_data);
   g_config.debug_served_data_probe = ReadBool(ini, L"served_data_probe", g_config.debug_served_data_probe, L"debug");
