@@ -37,6 +37,8 @@ class GameResources {
 
   std::wstring directory_;
   std::vector<Key> keys_;
+  // Each BIF's resource table ("data/xp2patch.bif" -> its 16-byte entries).
+  std::map<std::string, std::string> bif_tables_;
 };
 
 }  // namespace data

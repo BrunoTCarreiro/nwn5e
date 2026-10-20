@@ -1,2 +1,11 @@
 # nwn5e's strings: <id> <text> (ids 16000000-16499999; data/README.md).
 # 16000000-16000099: reserved (16000000 / 16000001 = the served_data_probe test row).
+# 16000100-16000107: Ability Score Improvement (CM7).
+16000100 Ability Score Improvement (2024): increase one ability score by 2, or two ability scores by 1 each; none can go above 20.\n\nAfter taking it, choose the abilities with the chat command !asi - for example "!asi str" (+2 Strength) or "!asi str con" (+1 Strength, +1 Constitution). Type !asi alone to see your scores and what is still unspent.\n\nYou can take it at every feat level of your class (4, 8, 12, 16, 19; Fighters also 6 and 14, Rogues 10).
+16000101 Ability Score Improvement 1
+16000102 Ability Score Improvement 2
+16000103 Ability Score Improvement 3
+16000104 Ability Score Improvement 4
+16000105 Ability Score Improvement 5
+16000106 Ability Score Improvement 6
+16000107 Ability Score Improvement 7

@@ -27,8 +27,8 @@ std::string WriteTwoDA(const TwoDA& table);
 // Applies a rows file: '#' comments; the first other line names columns of
 // the table; every following line is "<row> <value per named column>". A row
 // inside the table replaces those columns; a row past its end creates it
-// (empty rows pad the gap; unnamed columns stay "****"). `rows_changed` =
-// rows touched.
+// (empty rows pad the gap; unnamed columns stay "****"); row "+" appends.
+// `rows_changed` = rows touched.
 bool ApplyRows(TwoDA* table, const std::string& rows_text, std::string* error, int* rows_changed);
 
 // Splits a line into tokens: whitespace-separated, "double quotes" keep spaces.

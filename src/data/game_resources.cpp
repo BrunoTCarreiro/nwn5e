@@ -78,19 +78,37 @@ bool GameResources::LoadKey(Key* key) {
   return true;
 }
 
+// Reads only what's needed (a BIF can be hundreds of MB): the header and the
+// resource table (kept per BIF), then the one resource.
 bool GameResources::ReadFromBif(const std::string& bif, uint32_t resource_index, std::string* bytes) {
-  std::string b;
-  if (!ReadFile(directory_ + L"\\" + Wide(bif), &b) || b.compare(0, 8, "BIFFV1  ") != 0) return false;
-  const uint32_t count = U32(b, 8), table = U32(b, 16);
-  for (uint32_t i = 0; i < count; ++i) {
-    const size_t at = table + i * 16;
-    if ((U32(b, at) & 0xFFFFF) != resource_index) continue;
-    const uint32_t offset = U32(b, at + 4), size = U32(b, at + 8);
-    if (static_cast<size_t>(offset) + size > b.size()) return false;
-    *bytes = b.substr(offset, size);
-    return true;
+  FILE* file = nullptr;
+  if (_wfopen_s(&file, (directory_ + L"\\" + Wide(bif)).c_str(), L"rb") != 0 || !file) return false;
+  auto table = bif_tables_.find(bif);
+  if (table == bif_tables_.end()) {
+    std::string header(20, '\0');
+    if (fread(&header[0], 1, header.size(), file) != header.size() || header.compare(0, 8, "BIFFV1  ") != 0) {
+      fclose(file);
+      return false;
+    }
+    std::string entries(static_cast<size_t>(U32(header, 8)) * 16, '\0');
+    if (fseek(file, static_cast<long>(U32(header, 16)), SEEK_SET) != 0 ||
+        (!entries.empty() && fread(&entries[0], 1, entries.size(), file) != entries.size())) {
+      fclose(file);
+      return false;
+    }
+    table = bif_tables_.emplace(bif, std::move(entries)).first;
   }
-  return false;
+  const std::string& entries = table->second;
+  bool found = false;
+  for (size_t at = 0; at + 16 <= entries.size(); at += 16) {
+    if ((U32(entries, at) & 0xFFFFF) != resource_index) continue;
+    bytes->assign(U32(entries, at + 8), '\0');
+    found = fseek(file, static_cast<long>(U32(entries, at + 4)), SEEK_SET) == 0 &&
+            (bytes->empty() || fread(&(*bytes)[0], 1, bytes->size(), file) == bytes->size());
+    break;
+  }
+  fclose(file);
+  return found;
 }
 
 bool GameResources::Read(const std::string& resref, uint16_t type, std::string* bytes, std::string* source) {

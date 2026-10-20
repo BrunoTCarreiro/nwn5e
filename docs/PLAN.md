@@ -429,6 +429,18 @@ server together); 2024's feat levels as class bonus-feat slots in memory
 on both sides (the level-up message carries the byte on both or neither);
 ASI as feat rows (one per possible pick, the next one shown) whose +2 / +1+1
 is assigned with `!asi`. NWN mode: NWN's cadence.
+*Built 0.9.51 (key `feat_cadence`):* six 2-byte patches — the general feat
+only at level 1 on the server, in henchmen's automatic level-up and on the
+level-up screen; no ability byte in the level-up message on either side and
+no ability page on the screen — and the bonus-feat slots of the 11 base
+classes rewritten after every rules load (rules::IsFeatLevel2024). Ability
+Score Improvement = feat.2da rows 1200–1206 (data/rows/feat.txt), each
+needing the one before so the next one is offered, in every base class's
+bonus list (List 2); hidden in NWN mode (MinLevel 0xFF). Henchmen still level
+(LevelUpAutomatic fills free slots from all feats; the validator accepts
+fewer). Not yet: Fighting Style slots and Epic Boons (with those feats, CM8 /
+CM9), the level-1 slot limited to Origin feats (CM8), prestige classes' slots
+(CM10 turns them off).
 
 **CM8. Which feats exist.** SRD 5.2 has 17: Origin — Alert, Magic Initiate,
 Savage Attacker, Skilled; General — Ability Score Improvement, Grappler;

@@ -50,6 +50,10 @@ TEST(TwoDARowsMergeIntoTheTable) {
   CHECK_EQ(t.rows[2][0] == "****", true);  // padding
   CHECK_EQ(t.rows[4][1] == "16000000", true);
   CHECK_EQ(t.rows[4][3] == "****", true);
+  CHECK_EQ(ApplyRows(&t, "LABEL\n+ Appended\n+ Second\n", &error, &changed), true);
+  CHECK_EQ(t.rows.size(), 7u);
+  CHECK_EQ(t.rows[5][0] == "Appended", true);
+  CHECK_EQ(t.rows[6][0] == "Second", true);
   CHECK_EQ(ApplyRows(&t, "NOPE\n1 x\n", &error, &changed), false);
   CHECK_EQ(ApplyRows(&t, "LABEL FEAT\n1 only-one\n", &error, &changed), false);
 }

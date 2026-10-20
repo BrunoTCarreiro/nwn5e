@@ -122,9 +122,14 @@ bool ApplyRows(TwoDA* table, const std::string& rows_text, std::string* error, i
       have_header = true;
       continue;
     }
-    char* end = nullptr;
-    const long row = strtol(tokens[0].c_str(), &end, 10);
-    if (*end != '\0' || row < 0 || row > 65535 || tokens.size() != targets.size() + 1) {
+    long row = static_cast<long>(table->rows.size());  // "+": append
+    bool number = true;
+    if (tokens[0] != "+") {
+      char* end = nullptr;
+      row = strtol(tokens[0].c_str(), &end, 10);
+      number = *end == '\0';
+    }
+    if (!number || row < 0 || row > 65535 || tokens.size() != targets.size() + 1) {
       if (error) *error = "line " + std::to_string(line_number) + ": expected a row number and " +
                           std::to_string(targets.size()) + " values";
       return false;

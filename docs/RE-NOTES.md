@@ -1083,3 +1083,26 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
 - Strings: CTlkTable::GetSimpleString 0x5C9C80 (already hooked for labels)
   serves nwn5e's ids 16000000..16499999 (below 0x01000000, the module-tlk
   flag).
+
+## Feat and ability cadence (decoded 2026-10-20, CM7)
+
+- General feats: 1 when the new total level is 1 or a multiple of 3, +1 for a
+  human at level 1 — inline in ValidateLevelUp (0x6A8034..0x6A806E; the
+  multiple-of-3 branch `jne` at 0x6A8052), in LevelUpAutomatic
+  (0x6AABFE..0x6AAC38; 0x6AAC1C) and on the client (0x4F2CF0, ret 8: out
+  general, out bonus; 0x4F2D96). ValidateCharacter has its own (0x617945, ELC
+  only). Other divide-by-3 hits are rand() (0x6A5A1B).
+- Bonus feats: GetBonusFeats(class level) 0x53B6E0 = CNWClass byte +0x1ED +
+  level, 1..60; callers 0x4F2E6F (client), 0x617984 (ValidateCharacter),
+  0x6A8088 (ValidateLevelUp), 0x6AAC53 (LevelUpAutomatic).
+- Ability +1: the level-up message carries it only when the new level is a
+  multiple of 4 — client writer 0x4B25AA (`jne` 0x4B25C4), server reader
+  0x6D3918 (`jne` 0x6D392F; else the history's +0x102 keeps "none"). The
+  level-up screen opens its ability page (a 0xC54-byte panel, ctor 0x538B60)
+  at 0x531ECB when the new level is a multiple of 4 (`jne` 0x531EE1 skips
+  it); 0x4403E4 compares old and new scores for display. Other `and eax,
+  0x80000003` sites in the client are rand() % 4 or geometry.
+- LevelUpAutomatic (henchmen, HotU's auto-level): feats to pick = general +
+  bonus; it walks the package's feat table (0x6AACB8..) through 0x6AB840,
+  then every feat 0..count (0x6AADA4..) for the rest — unfilled slots don't
+  fail the level-up.

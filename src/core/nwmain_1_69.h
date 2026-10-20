@@ -1383,4 +1383,24 @@ constexpr uintptr_t kRulesFeatCount = 0xD8;  // uint16
 constexpr uintptr_t kFeatStride = 0x70;
 constexpr uintptr_t kFeatName = 0x00;        // uint32 strref
 
+// Phase 3 CM7 (RE-NOTES "Feat and ability cadence").
+// GetBonusFeats(class level) 0x53B6E0 (ecx = CNWClass, ret 4): the byte at
+// +0x1ED + level, levels 1..60 (0 outside); callers: the client's feat count
+// 0x4F2E6F, ValidateCharacter 0x617984, ValidateLevelUp 0x6A8088,
+// LevelUpAutomatic 0x6AAC53.
+constexpr uintptr_t kClassBonusFeats = 0x1ED;
+constexpr uintptr_t kFeatMinLevel = 0x55;  // uint8 (CNWFeat; the client's prerequisite check enforces it)
+constexpr MediumPatch kFaithfulFeatCadencePatches[] = {
+    // General feat = 1 at total level 1 or a multiple of 3 (+1 human at 1):
+    // the multiple-of-3 branch always skipped.
+    {"no general feat after level 1 (server level-up check)", 0x006A8052, 2, {0x75, 0x05}, {0xeb, 0x05}},
+    {"no general feat after level 1 (henchmen's automatic level-up)", 0x006AAC1C, 2, {0x75, 0x05}, {0xeb, 0x05}},
+    {"no general feat after level 1 (level-up screen)", 0x004F2D96, 2, {0x75, 0x04}, {0xeb, 0x04}},
+    // The ability byte is in the level-up message only when the new level is
+    // a multiple of 4 — on both sides; both always skip it now.
+    {"no ability +1 every 4 levels (client's level-up message)", 0x004B25C4, 2, {0x75, 0x59}, {0xeb, 0x59}},
+    {"no ability +1 every 4 levels (server's level-up message)", 0x006D392F, 2, {0x75, 0x0f}, {0xeb, 0x0f}},
+    {"no ability page every 4 levels (level-up screen)", 0x00531EE1, 2, {0x75, 0x5f}, {0xeb, 0x5f}},
+};
+
 }  // namespace nwmain

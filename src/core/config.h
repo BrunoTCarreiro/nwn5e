@@ -63,6 +63,10 @@ struct Config {
   // CM3: faithful = 2024 hit points (max die at level 1, then the fixed
   // average, 2024 dice); nwn / off = NWN's (rolled, max at levels 1-3).
   rules::RuleVariant hit_points = rules::RuleVariant::kFaithful;
+  // CM7: faithful = feats at 2024's class levels (4, 8, 12, 16, 19 ...),
+  // general feats only at level 1, Ability Score Improvement as a feat, no
+  // ability +1 every 4 levels; nwn / off = NWN's (the ASI rows hidden).
+  rules::RuleVariant feat_cadence = rules::RuleVariant::kFaithful;
   // CM0: serve nwn5e's 2da rows and strings (data\rows, data\strings.txt).
   bool served_data = true;
   // [debug] served_data_probe: add a hidden test row to feat.2da and check

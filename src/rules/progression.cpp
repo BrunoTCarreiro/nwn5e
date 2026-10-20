@@ -44,6 +44,23 @@ uint32_t ScriptSetXp2024(uint32_t requested, uint32_t current_xp, int current_le
   return std::max(requested, floor);
 }
 
+bool IsFeatLevel2024(CharacterClass character_class, int class_level) {
+  switch (class_level) {
+    case 4: case 8: case 12: case 16: case 19: return true;
+    case 6: case 14: return character_class == CharacterClass::kFighter;
+    case 10: return character_class == CharacterClass::kRogue;
+    default: return false;
+  }
+}
+
+int FeatLevelsReached2024(CharacterClass character_class, int class_level) {
+  int count = 0;
+  for (int level = 1; level <= class_level && level <= kMaxLevel2024; ++level) {
+    if (IsFeatLevel2024(character_class, level)) ++count;
+  }
+  return count;
+}
+
 bool MeetsPrimaryAbility(CharacterClass character_class, const int scores[6]) {
   auto at_least_13 = [scores](Ability ability) { return Score(scores, ability) >= 13; };
   switch (character_class) {

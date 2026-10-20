@@ -45,6 +45,26 @@ TEST(ScriptSetXpKeepsTheScriptsLevels) {
   CHECK_EQ(ScriptSetXp2024(0, 7000, 5), 0u);
 }
 
+// Breaks caught: NWN's every-3-levels cadence, the Fighter's 6 / 14 or the
+// Rogue's 10 missing or given to others, level 19 (Epic Boon) missing, levels
+// past 20 counted.
+TEST(FeatLevelsAre2024) {
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kWizard, 3), false);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kWizard, 4), true);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kWizard, 6), false);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kFighter, 6), true);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kFighter, 14), true);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kRogue, 10), true);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kFighter, 10), false);
+  CHECK_EQ(IsFeatLevel2024(CharacterClass::kCleric, 19), true);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kFighter, 20), 7);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kRogue, 20), 6);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kBard, 20), 5);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kBard, 3), 0);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kFighter, 8), 3);
+  CHECK_EQ(FeatLevelsReached2024(CharacterClass::kFighter, 30), 7);
+}
+
 // Breaks caught: the "or" / "and" classes swapped, a class already held
 // being checked, the current classes not being checked, a first level
 // (no classes yet) being refused.

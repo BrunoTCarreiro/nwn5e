@@ -37,6 +37,18 @@ int FaithfulLevelForXp(uint32_t xp);
 //   (2024 has no XP loss that takes levels).
 uint32_t ScriptSetXp2024(uint32_t requested, uint32_t current_xp, int current_level);
 
+// CM7: nwn5e's Ability Score Improvement feats (data/rows/feat.txt): feat.2da
+// rows 1200..1206, each needing the one before.
+constexpr int kAsiFeatFirst = 1200;
+constexpr int kAsiFeatCount = 7;
+
+// CM7: the class levels that give a feat in 2024 (Ability Score Improvement
+// or another feat): 4, 8, 12, 16 and 19 (Epic Boon), the Fighter also 6 and
+// 14, the Rogue also 10. Fighting Style levels are not counted here.
+bool IsFeatLevel2024(CharacterClass character_class, int class_level);
+// How many of those `class_level` levels of the class have reached.
+int FeatLevelsReached2024(CharacterClass character_class, int class_level);
+
 // 2024 multiclassing: a score of 13 in the primary ability of the new class
 // and of every current class. Scores indexed by Ability.
 bool MeetsPrimaryAbility(CharacterClass character_class, const int scores[6]);
