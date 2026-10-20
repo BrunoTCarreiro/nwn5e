@@ -26,6 +26,7 @@
 bool IsPlayerControlled(uint32_t object_id);  // rules_chat.cpp
 bool HiddenByStealth(void* creature);         // rules_perception.cpp
 bool HasAlertFromBackground(void* creature);  // rules_abilities.cpp (CM5)
+bool HasRemarkableAthleteAdvantage(void* creature);  // rules_fighter.cpp (Fighter C2)
 
 namespace {
 
@@ -73,8 +74,9 @@ int __stdcall InitiativeD20(void* creature) {
   if (!rules_object) return 10;
   const bool invisible = creature && Invisible(creature);
   const bool hidden = creature && !invisible && HiddenByStealth(creature);
+  const bool athlete = creature && !invisible && !hidden && HasRemarkableAthleteAdvantage(creature);  // Fighter C2
   const std::string worse = creature ? CheckDisadvantage(creature) : std::string();  // SK11
-  const int advantage = invisible || hidden ? 1 : 0;
+  const int advantage = invisible || hidden || athlete ? 1 : 0;
   const int disadvantage = worse.empty() ? 0 : 1;
   const int first = D20(rules_object);
   const int second = advantage || disadvantage ? D20(rules_object) : 0;
@@ -88,7 +90,10 @@ int __stdcall InitiativeD20(void* creature) {
   const uint32_t id = creature ? Field<uint32_t>(creature, nwmain::kCreatureObjectId) : nwmain::kObjectInvalid;
   if (g_config.log_attacks && (second || luck) && g_roll_lines < 200 && IsPlayerControlled(id)) {
     ++g_roll_lines;
-    std::string why = invisible ? "advantage: invisible" : hidden ? "advantage: hidden" : "";
+    std::string why = invisible ? "advantage: invisible"
+                      : hidden  ? "advantage: hidden"
+                      : athlete ? "advantage: Remarkable Athlete"
+                                : "";
     if (disadvantage) why += (why.empty() ? "disadvantage: " : "; disadvantage: ") + worse;
     if (advantage && disadvantage) why += " - they cancel";
     if (luck) why += why.empty() ? "Halfling Luck rerolled a 1" : "; Halfling Luck rerolled a 1";

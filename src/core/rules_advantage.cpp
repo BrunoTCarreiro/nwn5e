@@ -168,8 +168,10 @@ void ReadPendingAttack(void* creature, void* target_object) {
   g_pending.nwn_total = rules::NwnSituationalTotal(g_pending.terms);
   g_pending.point_blank_shot = HasFeat(creature, nwmain::kFeatPointBlankShot);
   g_pending.threats = ranged ? CountCloseCombatThreats(creature) : 0;
-  const MasteryRollSources mastery =
-      TakeMasteryRollSources(creature, Field<uint32_t>(target, nwmain::kCreatureObjectId));
+  MasteryRollSources mastery = TakeMasteryRollSources(creature, Field<uint32_t>(target, nwmain::kCreatureObjectId));
+  const MasteryRollSources studied = TakeStudiedAttacks(creature, Field<uint32_t>(target, nwmain::kCreatureObjectId));
+  mastery.advantage += studied.advantage;  // Fighter F6
+  if (!studied.note.empty()) mastery.note += mastery.note.empty() ? studied.note : ", " + studied.note;
   g_pending.mastery = mastery.note;
   const ConditionRollSources conditions = ConditionAttackRollSources(creature, target, ranged);
   g_pending.conditions = conditions.note;
@@ -232,6 +234,7 @@ void __fastcall ResolveAttackRoll(void* creature, void* edx, void* target) {
   g_resolve_attack_roll(creature, edx, target);
   ConditionsAfterAttackRoll(creature, target);
   MasteryAfterAttackRoll(creature, target, weapon);
+  StudiedAttacksAfterAttackRoll(creature, target);  // Fighter F6
   g_pending = outer;
 }
 

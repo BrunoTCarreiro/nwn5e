@@ -17,12 +17,16 @@
 #include <intrin.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include "config.h"
 #include "hooks.h"
 #include "log.h"
 #include "log_once.h"
 #include "nwmain_1_69.h"
 #include "rules/nwn_conversion.h"
+
+int ChampionCriticalFloorFor(void* stats);  // rules_fighter.cpp (Fighter C1)
 
 namespace {
 
@@ -64,7 +68,8 @@ int __fastcall GetCriticalHitRoll(void* stats, void* edx, int offhand) {
     return 1;
   }
   if (!g_config.crit_nat20_only) return vanilla;
-  const int converted = rules::ConvertCriticalThreatFloor(vanilla);
+  int converted = rules::ConvertCriticalThreatFloor(vanilla);
+  if (converted <= 20) converted = std::min(converted, ChampionCriticalFloorFor(stats));  // Fighter C1
   if (g_config.log_attacks && converted != vanilla && g_threat_logged.First(LogOnce::Key(0, vanilla, converted))) {
     Log("crit threat: 3e %d-20 -> 5e %d-20 (logged once per value)", vanilla, converted);
   }

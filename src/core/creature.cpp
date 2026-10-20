@@ -55,6 +55,14 @@ std::vector<rules::NwnClassSlot> ReadClassSlots(void* stats) {
   return slots;
 }
 
+int ClassLevel2024(void* stats, rules::CharacterClass character_class) {
+  int levels = 0;
+  for (const rules::ClassLevels& c : rules::GroupClassLevels(ReadClassSlots(stats))) {
+    if (c.character_class == character_class) levels += c.levels;
+  }
+  return levels;
+}
+
 int ConvertEngineAttackBonus(void* stats, int engine_value, const CreatureFacts& facts, int* base_attack_bonus,
                              int* proficiency_bonus) {
   if (!facts.plausible) return engine_value;

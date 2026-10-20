@@ -40,6 +40,9 @@ const char* KindOf(const CreatureFacts& facts);
 // Class slots (classes.2da id + levels), at most 3.
 std::vector<rules::NwnClassSlot> ReadClassSlots(void* stats);
 
+// Levels in a 2024 class, prestige classes counted as their parent (decision 10).
+int ClassLevel2024(void* stats, rules::CharacterClass character_class);
+
 // An engine attack bonus built on GetBaseAttackBonus(0), converted to 2024:
 // minus the 3e BAB, plus the proficiency bonus. Returns the engine value when
 // the creature's facts are not plausible.

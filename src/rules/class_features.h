@@ -30,4 +30,14 @@ std::vector<ClassFeature> ClassFeatures2024(CharacterClass character_class, int 
 // Has the class's brief been written (its features listed)?
 bool HasFeatureList(CharacterClass character_class);
 
+// Fighter (PLAN.md "Phase 3 — Fighter"), by Fighter level:
+// C1 Champion's Improved / Superior Critical: the lowest d20 that crits with
+// weapons and unarmed strikes (20; 19 from 3; 18 from 15).
+int ChampionCriticalFloor(int fighter_level);
+// C2 Remarkable Athlete (Champion 3): advantage on initiative.
+bool HasRemarkableAthlete(int fighter_level);
+// F6 Studied Attacks (13): a miss gives advantage on the next attack at that
+// creature before the end of your next turn.
+bool HasStudiedAttacks(int fighter_level);
+
 }  // namespace rules

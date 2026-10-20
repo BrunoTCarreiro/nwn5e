@@ -26,6 +26,14 @@ struct MasteryRollSources {
 };
 MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id);
 
+// The creature's ended combat rounds (while weapon mastery is on).
+uint32_t CombatRoundsEnded(uint32_t id);
+
+// Fighter F6 Studied Attacks (rules_fighter.cpp): the advantage an earlier
+// miss gives at this target (used up), and the mark a miss leaves.
+MasteryRollSources TakeStudiedAttacks(void* attacker, uint32_t target_id);
+void StudiedAttacksAfterAttackRoll(void* attacker, void* target_object);
+
 // D4: after an attack roll resolved — a hit with a mastered Vex or Sap weapon
 // leaves its mark. `base_item` is the weapon read before the roll.
 void MasteryAfterAttackRoll(void* attacker, void* target_object, int base_item);

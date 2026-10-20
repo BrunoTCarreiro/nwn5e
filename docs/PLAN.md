@@ -590,7 +590,12 @@ Fighter, Rogue, Barbarian, Monk. 6. CM8's feats as their hooks exist. 7. CM6
 the casters with Phase 4. Phase 3 is the largest phase so far; each class
 brief is its own decision.
 
-## Phase 3 — Fighter (CM9): decisions to make (2026-10-20)
+## Phase 3 — Fighter (CM9): decided by the owner (2026-10-20)
+
+**Decision (owner, 2026-10-20): the recommendations below (F0–F7, C1–C5).**
+Build order: C1, C2, F6 (existing hooks); F1 (AC and damage-dice hooks);
+F0 (script compiling, served scripts, granting features), then F2 + F7
+Shift, F5, C5.
 
 The first class brief. SRD 5.2 Fighter, one subclass: **Champion** (Battle
 Master and the others are PHB-only — private layer). NWN's Fighter has no
@@ -697,6 +702,11 @@ Death: advantage on death saves (Phase 5). Recommendation: Heroic Rally now
 
 **NWN mode:** NWN's Fighter (bonus feats; prestige classes such as Weapon
 Master).
+*Built 0.9.54:* C1 (GetCriticalHitRoll: the Champion's floor 19 / 18 under the
+2024 crit rule), C2 (initiative advantage, with invisible / hidden), F6
+(Studied Attacks: a miss marks the target like Vex; the next attack at it
+within the Fighter's next turn has advantage). Fighter levels include
+prestige-class levels (decision 10).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

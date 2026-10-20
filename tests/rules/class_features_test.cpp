@@ -25,3 +25,16 @@ TEST(ClassFeaturesByLevel) {
   CHECK_EQ(std::string(Subclass2024(CharacterClass::kRogue)) == "Thief", true);
   CHECK_EQ(std::string(Subclass2024(CharacterClass::kWizard)) == "Evoker", true);
 }
+
+// Breaks caught: Champion crits before 3, 18 before 15, the gates off by one.
+TEST(FighterFeatureLevels) {
+  CHECK_EQ(ChampionCriticalFloor(0), 20);
+  CHECK_EQ(ChampionCriticalFloor(2), 20);
+  CHECK_EQ(ChampionCriticalFloor(3), 19);
+  CHECK_EQ(ChampionCriticalFloor(14), 19);
+  CHECK_EQ(ChampionCriticalFloor(15), 18);
+  CHECK_EQ(HasRemarkableAthlete(2), false);
+  CHECK_EQ(HasRemarkableAthlete(3), true);
+  CHECK_EQ(HasStudiedAttacks(12), false);
+  CHECK_EQ(HasStudiedAttacks(13), true);
+}

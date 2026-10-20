@@ -1006,3 +1006,7 @@ void InstallMasteryRules() {
                nwmain::kResetFeatRemainingUsesPrologue, sizeof(nwmain::kResetFeatRemainingUsesPrologue),
                reinterpret_cast<void*>(&ResetFeatRemainingUses), reinterpret_cast<void**>(&g_reset_feat_uses)});
 }
+
+// The creature's ended combat rounds (counted while weapon mastery is on), for
+// other "until the end of your next turn" marks (rules_fighter.cpp).
+uint32_t CombatRoundsEnded(uint32_t id) { return RoundsEnded(id); }
