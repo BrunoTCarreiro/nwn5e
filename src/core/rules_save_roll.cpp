@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <utility>
@@ -37,6 +38,7 @@
 #include "rules/saves.h"
 
 void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
+int IndomitableReroll(void* creature);                          // rules_fighter.cpp (Fighter F5)
 
 namespace {
 
@@ -228,9 +230,22 @@ uint32_t __fastcall SavingThrowRoll(void* creature, void* edx, uint32_t save, ui
     g_save.condition = ConditionsForSave(creature, ability);
   }
   const ConditionSave condition = g_save.condition;
+  const SaveContext context = g_save;
   uint32_t result =
       g_saving_throw_roll(creature, edx, save, (dc & 0xFFFF0000u) | static_cast<uint32_t>(new_dc), type, versus, a5,
                           a6, a7);
+  // Fighter F5 Indomitable: a failed save is rolled again, + Fighter level.
+  if ((result & 0xFF) == 0 && !condition.auto_fail) {
+    const int bonus = IndomitableReroll(creature);
+    if (bonus > 0) {
+      g_save = context;
+      const int easier = std::max(1, new_dc - bonus);
+      TellPlayer(Field<uint32_t>(creature, nwmain::kCreatureObjectId),
+                 "nwn5e: Indomitable - the save is rolled again, +" + std::to_string(bonus) + ".");
+      result = g_saving_throw_roll(creature, edx, save, (dc & 0xFFFF0000u) | static_cast<uint32_t>(easier), type,
+                                   versus, a5, a6, a7);
+    }
+  }
   g_save = outer;
   const uint32_t creature_id = Field<uint32_t>(creature, nwmain::kCreatureObjectId);
   if (condition.auto_fail && (result & 0xFF) != 2) {

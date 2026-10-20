@@ -733,6 +733,14 @@ Two-Handed or Versatile weapon (rules::IsTwoHandedWeapon2024 /
 IsVersatileWeapon2024) held in two hands — NWN's two-handed wield, or the
 off hand empty (a versatile weapon of the wielder's size). Sneak attack and
 effect dice are not raised (the conservative reading).
+*Built 0.9.58 (F5, C5):* Indomitable in the saving-throw wrapper — a failed
+save (not an automatic failure) is rolled once more against the DC lowered by
+the Fighter level, spending a use (nwn5e_indomitable_used; cleared when the
+engine restores feat uses after a rest — the mastery module's rest hook now
+takes listeners). Heroic Rally once per combat round (the round counter of
+D4) when Bloodied and above 0 HP: + 5 + Con modifier, current HP written
+directly. The Fighter brief is done but for Action Surge (Phase 6), Tactical
+Mind / Master (later) and Heroic Warrior (with CM6).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

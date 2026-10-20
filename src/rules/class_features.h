@@ -40,6 +40,14 @@ bool HasRemarkableAthlete(int fighter_level);
 // creature before the end of your next turn.
 bool HasStudiedAttacks(int fighter_level);
 
+// F5 Indomitable: rerolls of a failed save per long rest (1 at 9, 2 at 13, 3 at 17).
+int IndomitableUses(int fighter_level);
+// C5 Survivor's Heroic Rally (Champion 18): Bloodied = at most half the
+// maximum; at the start of each turn, Bloodied and above 0, regain 5 + Con.
+bool IsBloodied(int hit_points, int max_hit_points);
+int HeroicRallyHitPoints(int con_modifier);
+bool HasHeroicRally(int fighter_level);
+
 // F1: the Fighting Style feats (data/rows/feat.styles.txt), feat.2da rows.
 constexpr int kFeatFightingStyleArchery = 1210;
 constexpr int kFeatFightingStyleDefense = 1211;

@@ -22,6 +22,7 @@ void PotionCreatureUpdate(void* creature);   // rules_potion.cpp: back to attack
 void AbilitiesCreatureUpdate(void* creature);  // rules_abilities.cpp: 2024 / NWN base scores
 bool AbilitiesActive();                        // rules_abilities.cpp
 void FeaturesCreatureUpdate(void* creature);   // rules_features.cpp: granted class-feature feats
+void FighterCreatureUpdate(void* creature);    // rules_fighter.cpp: Heroic Rally
 
 namespace {
 
@@ -79,6 +80,7 @@ void __fastcall AIUpdate(void* creature, void* edx) {
   if (g_idle_trace) IdleTrace(creature);
   if (g_abilities) AbilitiesCreatureUpdate(creature);
   if (g_abilities) FeaturesCreatureUpdate(creature);  // same lifetime: on in both modes (NWN mode removes)
+  if (g_abilities) FighterCreatureUpdate(creature);   // faithful only (it checks)
 }
 
 }  // namespace

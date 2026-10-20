@@ -22,19 +22,19 @@ const std::vector<ClassFeature>& Fighter() {
       {6, "Ability Score Improvement", false, "built (!asi)"},
       {7, "Additional Fighting Style", true, "built: a second style"},
       {8, "Ability Score Improvement", false, "built (!asi)"},
-      {9, "Indomitable", false, "brief F5"},
+      {9, "Indomitable", false, "built: a failed save is rerolled with + Fighter level (automatic), 1 use per long rest"},
       {9, "Tactical Master", false, "later (a per-attack choice)"},
       {10, "Heroic Warrior", true, "with Heroic Inspiration (CM6)"},
       {11, "Two Extra Attacks", false, "built"},
       {12, "Ability Score Improvement", false, "built (!asi)"},
-      {13, "Indomitable (2 uses)", false, "brief F5"},
+      {13, "Indomitable (2 uses)", false, "built"},
       {13, "Studied Attacks", false, "built"},
       {14, "Ability Score Improvement", false, "built (!asi)"},
       {15, "Superior Critical", true, "built: crits on 18-20"},
       {16, "Ability Score Improvement", false, "built (!asi)"},
       {17, "Action Surge (2 uses)", false, "Phase 6"},
-      {17, "Indomitable (3 uses)", false, "brief F5"},
-      {18, "Survivor", true, "brief C5"},
+      {17, "Indomitable (3 uses)", false, "built"},
+      {18, "Survivor", true, "built: Heroic Rally (Defy Death: Phase 5)"},
       {19, "Epic Boon", false, "CM8"},
       {20, "Three Extra Attacks", false, "built"},
   };
@@ -82,6 +82,14 @@ const std::vector<int>& GrantableFeats2024() {
   static const std::vector<int> kFeats = {kFeatSecondWind2, kFeatSecondWind3, kFeatSecondWind4};
   return kFeats;
 }
+
+int IndomitableUses(int fighter_level) { return fighter_level >= 17 ? 3 : fighter_level >= 13 ? 2 : fighter_level >= 9 ? 1 : 0; }
+
+bool IsBloodied(int hit_points, int max_hit_points) { return max_hit_points > 0 && hit_points * 2 <= max_hit_points; }
+
+int HeroicRallyHitPoints(int con_modifier) { return 5 + con_modifier; }
+
+bool HasHeroicRally(int fighter_level) { return fighter_level >= 18; }
 
 int GreatWeaponFightingDie(int roll) { return roll < 3 ? 3 : roll; }
 

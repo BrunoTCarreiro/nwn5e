@@ -29,6 +29,10 @@ MasteryRollSources TakeMasteryRollSources(void* attacker, uint32_t target_id);
 // The creature's ended combat rounds (while weapon mastery is on).
 uint32_t CombatRoundsEnded(uint32_t id);
 
+// Called with a creature's stats each time the engine restores its feat uses
+// after a rest (ResetFeatRemainingUses), for uses nwn5e keeps itself.
+void AddRestListener(void (*listener)(void* stats));
+
 // Fighter F6 Studied Attacks (rules_fighter.cpp): the advantage an earlier
 // miss gives at this target (used up), and the mark a miss leaves.
 MasteryRollSources TakeStudiedAttacks(void* attacker, uint32_t target_id);

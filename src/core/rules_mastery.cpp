@@ -156,8 +156,11 @@ int CurrentAttackBaseItem(void* creature) {
   return item ? Field<int32_t>(item, nwmain::kItemBaseItem) : -1;
 }
 
+std::vector<void (*)(void* stats)> g_rest_listeners;
+
 void __fastcall ResetFeatRemainingUses(void* stats, void* edx) {
   g_reset_feat_uses(stats, edx);
+  for (auto listener : g_rest_listeners) listener(stats);
   if (!Faithful()) return;
   void* creature = Field<void*>(stats, nwmain::kStatsCreature);
   if (!creature) return;
@@ -1001,8 +1004,10 @@ void InstallVexSapRound() {
 
 void InstallMasteryRules() {
   if (MasteryOn()) InstallVexSapRound();
-  if (!Faithful()) return;
-  InstallHook({"CNWSCreatureStats::ResetFeatRemainingUses (mastery swap after a rest)", nwmain::kResetFeatRemainingUses,
+  // The rest hook: the mastery swap (faithful) and the rest listeners (the
+  // Fighter's Indomitable uses, class_features faithful).
+  if (!Faithful() && g_config.class_features != rules::RuleVariant::kFaithful) return;
+  InstallHook({"CNWSCreatureStats::ResetFeatRemainingUses (mastery swap, uses after a rest)", nwmain::kResetFeatRemainingUses,
                nwmain::kResetFeatRemainingUsesPrologue, sizeof(nwmain::kResetFeatRemainingUsesPrologue),
                reinterpret_cast<void*>(&ResetFeatRemainingUses), reinterpret_cast<void**>(&g_reset_feat_uses)});
 }
@@ -1010,3 +1015,5 @@ void InstallMasteryRules() {
 // The creature's ended combat rounds (counted while weapon mastery is on), for
 // other "until the end of your next turn" marks (rules_fighter.cpp).
 uint32_t CombatRoundsEnded(uint32_t id) { return RoundsEnded(id); }
+
+void AddRestListener(void (*listener)(void* stats)) { g_rest_listeners.push_back(listener); }

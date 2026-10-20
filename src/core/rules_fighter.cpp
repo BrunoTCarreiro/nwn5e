@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <algorithm>
+#include <string>
 #include <unordered_map>
 
 #include "config.h"
@@ -27,6 +29,8 @@
 #include "rules/class_features.h"
 #include "rules/weapons.h"
 #include "rules_loaded.h"
+
+void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
 
 namespace {
 
@@ -296,10 +300,75 @@ void InstallFightingStyleHooks() {
   Log("fighter: Fighting Style hooks %d of 3", applied);
 }
 
+// --- F5 Indomitable, C5 Heroic Rally -------------------------------------------
+// Indomitable: a failed save is rolled again with the Fighter level added
+// (rules_save_roll.cpp asks IndomitableReroll), 1 / 2 / 3 times per long rest
+// — kept in nwn5e_indomitable_used, cleared when the engine restores feat uses
+// after a rest. Heroic Rally (Champion 18): once per combat round, Bloodied
+// and above 0 HP, regain 5 + Con modifier (the creature update).
+
+namespace {
+
+using MaxHitPointsFn = int(__fastcall*)(void* creature, void* edx, int include_toughness);
+const auto g_get_max_hit_points = reinterpret_cast<MaxHitPointsFn>(nwmain::kGetMaxHitPoints);
+constexpr const char* kVarIndomitableUsed = "nwn5e_indomitable_used";
+std::unordered_map<uint32_t, uint32_t> g_rally_round;  // by creature id: the round count it last rallied in
+
+void ResetIndomitable(void* stats) {
+  void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  if (creature && engine::GetLocalInt(creature, kVarIndomitableUsed)) {
+    engine::SetLocalInt(creature, kVarIndomitableUsed, 0);
+    if (g_config.log_attacks) Log("fighter: 0x%08X rested: Indomitable uses back", IdOf(creature));
+  }
+}
+
+}  // namespace
+
+// F5: the bonus for a failed save's reroll (the Fighter level), spending a
+// use — or 0 (no use left, not a Fighter 9+, not faithful).
+int IndomitableReroll(void* creature) {
+  if (!creature) return 0;
+  const int level = FighterLevelOf(Field<void*>(creature, nwmain::kCreatureStats));
+  const int uses = rules::IndomitableUses(level);
+  const int used = engine::GetLocalInt(creature, kVarIndomitableUsed);
+  if (used >= uses) return 0;
+  engine::SetLocalInt(creature, kVarIndomitableUsed, used + 1);
+  Log("fighter: 0x%08X Indomitable: failed save rerolled with +%d (%d of %d uses)", IdOf(creature), level, used + 1,
+      uses);
+  return level;
+}
+
+// C5: from the creature update.
+void FighterCreatureUpdate(void* creature) {
+  if (!Faithful() || !engine::GetArea(creature)) return;
+  void* stats = Field<void*>(creature, nwmain::kCreatureStats);
+  if (!rules::HasHeroicRally(FighterLevelOf(stats))) return;
+  const uint32_t id = IdOf(creature);
+  const uint32_t rounds = CombatRoundsEnded(id);
+  auto last = g_rally_round.find(id);
+  if (last == g_rally_round.end()) {
+    g_rally_round[id] = rounds;
+    return;
+  }
+  if (last->second == rounds) return;  // already this round (or no fight)
+  last->second = rounds;
+  const int hit_points = Field<int16_t>(creature, nwmain::kObjectCurrentHitPoints);
+  const int max_hit_points = g_get_max_hit_points(creature, nullptr, 1);
+  if (hit_points < 1 || !rules::IsBloodied(hit_points, max_hit_points)) return;
+  const int healed = std::min(max_hit_points, hit_points + rules::HeroicRallyHitPoints(
+                                                                Field<int8_t>(stats, nwmain::kStatsConModifier)));
+  SetField<int16_t>(creature, nwmain::kObjectCurrentHitPoints, static_cast<int16_t>(healed));
+  Log("fighter: 0x%08X Heroic Rally: %d -> %d HP (max %d)", id, hit_points, healed, max_hit_points);
+  if (ReadCreatureFacts(stats).is_player) {
+    TellPlayer(id, "nwn5e: Heroic Rally - you regain " + std::to_string(healed - hit_points) + " hit points.");
+  }
+}
+
 void InstallFighterRules() {
   if (!Faithful()) {
     OnRulesLoaded(&HideFightingStyleRows);
     return;
   }
   InstallFightingStyleHooks();
+  AddRestListener(&ResetIndomitable);
 }

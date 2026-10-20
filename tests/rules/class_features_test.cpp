@@ -43,6 +43,21 @@ TEST(FighterFeatureLevels) {
   CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kPaladin, 2), false);  // with the Paladin's brief
 }
 
+// Breaks caught: Indomitable's uses at the wrong levels, Bloodied off by one
+// (exactly half is Bloodied), Heroic Rally before 18.
+TEST(IndomitableAndSurvivor) {
+  CHECK_EQ(IndomitableUses(8), 0);
+  CHECK_EQ(IndomitableUses(9), 1);
+  CHECK_EQ(IndomitableUses(13), 2);
+  CHECK_EQ(IndomitableUses(17), 3);
+  CHECK_EQ(IsBloodied(10, 20), true);
+  CHECK_EQ(IsBloodied(11, 20), false);
+  CHECK_EQ(IsBloodied(5, 0), false);
+  CHECK_EQ(HeroicRallyHitPoints(3), 8);
+  CHECK_EQ(HasHeroicRally(17), false);
+  CHECK_EQ(HasHeroicRally(18), true);
+}
+
 // Breaks caught: Great Weapon Fighting raising a 3 or lowering a high roll,
 // a one-handed or double weapon counting, a versatile one missing.
 TEST(GreatWeaponFightingWeapons) {
