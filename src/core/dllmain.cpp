@@ -65,7 +65,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.9.56 loaded");
+  Log("nwn5e 0.9.57 loaded");
 #ifdef NWN5E_PRIVATE
   Log("private layer: compiled in (personal use only; never share this DLL)");
 #endif

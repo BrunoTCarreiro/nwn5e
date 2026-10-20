@@ -8,7 +8,7 @@ namespace {
 // of the brief, updated as its decisions are built.
 const std::vector<ClassFeature>& Fighter() {
   static const std::vector<ClassFeature> kFeatures = {
-      {1, "Fighting Style", false, "built: Archery, Two-Weapon Fighting (Defense, Great Weapon Fighting: being built)"},
+      {1, "Fighting Style", false, "built: Archery, Defense, Great Weapon Fighting, Two-Weapon Fighting"},
       {1, "Second Wind", false, "built: radial menu (an action until Phase 6), 2 / 3 / 4 uses per rest"},
       {1, "Weapon Mastery", false, "built (!mastery)"},
       {2, "Action Surge", false, "Phase 6"},
@@ -81,6 +81,24 @@ std::vector<int> GrantedFeats2024(const std::vector<ClassLevels>& classes) {
 const std::vector<int>& GrantableFeats2024() {
   static const std::vector<int> kFeats = {kFeatSecondWind2, kFeatSecondWind3, kFeatSecondWind4};
   return kFeats;
+}
+
+int GreatWeaponFightingDie(int roll) { return roll < 3 ? 3 : roll; }
+
+bool IsTwoHandedWeapon2024(int base_item) {
+  switch (base_item) {
+    case 10: case 13: case 18: case 35: case 55: return true;  // halberd, greatsword, greataxe, heavy flail, scythe
+    default: return false;
+  }
+}
+
+bool IsVersatileWeapon2024(int base_item) {
+  switch (base_item) {
+    case 1: case 2: case 5: case 50: case 58: case 95:  // longsword, battleaxe, warhammer, quarterstaff, spear, trident
+    case 3: case 41: case 45: case 108:                 // bastard sword, katana, magic staff, dwarven waraxe
+      return true;
+    default: return false;
+  }
 }
 
 bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level) {

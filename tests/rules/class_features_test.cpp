@@ -43,6 +43,20 @@ TEST(FighterFeatureLevels) {
   CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kPaladin, 2), false);  // with the Paladin's brief
 }
 
+// Breaks caught: Great Weapon Fighting raising a 3 or lowering a high roll,
+// a one-handed or double weapon counting, a versatile one missing.
+TEST(GreatWeaponFightingWeapons) {
+  CHECK_EQ(GreatWeaponFightingDie(1), 3);
+  CHECK_EQ(GreatWeaponFightingDie(2), 3);
+  CHECK_EQ(GreatWeaponFightingDie(3), 3);
+  CHECK_EQ(GreatWeaponFightingDie(6), 6);
+  CHECK_EQ(IsTwoHandedWeapon2024(13), true);   // greatsword
+  CHECK_EQ(IsTwoHandedWeapon2024(12), false);  // two-bladed sword (a double weapon)
+  CHECK_EQ(IsVersatileWeapon2024(1), true);    // longsword
+  CHECK_EQ(IsVersatileWeapon2024(4), false);   // light flail: one-handed
+  CHECK_EQ(IsTwoHandedWeapon2024(1) || IsVersatileWeapon2024(22), false);  // longsword not two-handed; dagger
+}
+
 // Breaks caught: Second Wind's uses not growing at 4 / 10, two tiers at once,
 // a non-Fighter getting it.
 TEST(GrantedFeatsFollowClassLevels) {

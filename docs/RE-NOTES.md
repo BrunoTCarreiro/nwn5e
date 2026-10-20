@@ -1128,3 +1128,25 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   (18, six sites), 0x0E and 0x10 (cost tiers: 2 points from 14, 3 from 16;
   30 sites each) and 8 (the minimum). ValidateCharacter's copies (0x617136,
   0x61728D) run only with Enforce Legal Characters.
+
+## Fighting Styles (decoded 2026-10-20, Fighter F1)
+
+- GetDamageRoll 0x69AEB0 (ret 0x18; esi = stats; frame F = esp after push
+  edi: F+0x10 total, F+0x14 / +0x18 dice count / sides, F+0x24 weapon item,
+  arguments F+0x68..): the item is the left hand (or a double weapon's right)
+  for bOffHand, else GetCurrentAttackWeapon(0) 0x73E3F0; no item / gloves 36
+  / bracer 78 take the unarmed path (0x6957D0). RollDice 0x47E120 calls (11):
+  0x69B0E9 the manufactured weapon's base dice per critical multiplier;
+  0x69B2D1 the plain roll (manufactured and creature weapons); 0x69B26E
+  creature weapon dice; 0x69B125 / 0x69B2AA / 0x69B56C / 0x69B4E9
+  Overwhelming Critical 1d6; 0x69B4B6 a forced-max (Ki Damage) critical's
+  other passes; 0x69BACF sneak attack; 0x69BD9E death attack; 0x69BFC2
+  Massive Criticals. Every weapon roll then goes through 0x47E340 (the
+  difficulty's damage percent; unchanged at Normal / Hardcore). Two-handed
+  (the "Two Handed Strength Bonus" test in 0x697D10): a right-hand item,
+  weapon size − creature size (+0x4D4) == 1, melee, not a double weapon.
+- Armour: GetItemInSlot(creature +0xB6C, 0x2) 0x722510 is the chest; its base
+  AC = CNWSItem::ComputeArmorClass 0x71EBF0 (cached +0x1DC); "wearing armour"
+  = AC > 0, as GetDEXMod(1) 0x6A1430 tests before the armour's Dex cap.
+- The sheet's AC: CNWSCreature::GetArmorClass 0x65A490 (plain ret, AX;
+  prologue 51 53 55 8B E9 56 8B B5); attacks use GetArmorClassVersus.

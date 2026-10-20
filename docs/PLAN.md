@@ -725,6 +725,14 @@ ability like Lay on Hands; data/rows/spells.fighter.txt) → nwn5e_secwind:
 AoO). nwn5e grants the right tier to every Fighter (character made earlier
 included) with full uses, records it (`nwn5e_granted_feats`), and removes it
 in NWN mode. Uses an action (Phase 6 makes it a bonus action).
+*Built 0.9.57 (F1 part 2):* Defense +1 AC in armour (chest item base AC > 0,
+the engine's own test) on attacks and on the sheet (CNWSCreature::
+GetArmorClass hooked); Great Weapon Fighting on the weapon's base dice only
+(GetDamageRoll 0x69B0E9 / 0x69B2D1 redirected): melee, main hand, a
+Two-Handed or Versatile weapon (rules::IsTwoHandedWeapon2024 /
+IsVersatileWeapon2024) held in two hands — NWN's two-handed wield, or the
+off hand empty (a versatile weapon of the wielder's size). Sneak attack and
+effect dice are not raised (the conservative reading).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

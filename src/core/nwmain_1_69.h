@@ -1481,4 +1481,18 @@ constexpr uintptr_t kRemoveFeat = 0x006A4BC0;
 constexpr uintptr_t kSetFeatRemainingUses = 0x006A3760;
 constexpr uintptr_t kGetFeatTotalUses = 0x006A4200;
 
+// Phase 3 Fighter F1 (RE-NOTES "Fighting Styles"). Inventory slot 0x2 =
+// chest; CNWSItem::ComputeArmorClass 0x71EBF0 (ecx = item, plain ret; armour:
+// parts_chest.2da ACBonus of the torso, shields 1/2/3, else 0; cached at
+// +0x1DC). CNWSCreature::GetArmorClass 0x65A490 (ecx = creature, plain ret,
+// AX) is the sheet's AC (WriteGameObjUpdate_CharacterSheet 0x62C3A4,
+// ComputeCharacterSheetUpdateRequired 0x612865), not used by attacks.
+// GetDamageRoll's RollDice calls for a manufactured weapon's base dice:
+// 0x69B0E9 (per critical multiplier) and 0x69B2D1 (the plain roll).
+constexpr uint32_t kSlotChest = 0x2;
+constexpr uintptr_t kItemComputeArmorClass = 0x0071EBF0;
+constexpr uintptr_t kCreatureGetArmorClass = 0x0065A490;
+constexpr uint8_t kCreatureGetArmorClassPrologue[] = {0x51, 0x53, 0x55, 0x8b, 0xe9, 0x56, 0x8b};
+constexpr uintptr_t kWeaponDiceRollCalls[] = {0x0069B0E9, 0x0069B2D1};
+
 }  // namespace nwmain

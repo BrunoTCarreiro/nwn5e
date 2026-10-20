@@ -49,6 +49,15 @@ constexpr int kFeatFightingStyleTwoWeapon = 1213;
 // Champion's Additional Fighting Style). Paladin / Ranger 2 with their briefs.
 bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level);
 constexpr int kArcheryAttackBonus = 2;
+constexpr int kDefenseArmorClassBonus = 1;
+// Great Weapon Fighting: a damage die of 1 or 2 counts as 3.
+int GreatWeaponFightingDie(int roll);
+// The NWN base items with 2024's Two-Handed or Versatile property (the
+// double weapons are two weapons in NWN, so not here); NWN-only weapons as
+// their nearest 2024 weapon (bastard sword, katana, dwarven waraxe, magic
+// staff: versatile; heavy flail, scythe: two-handed).
+bool IsTwoHandedWeapon2024(int base_item);
+bool IsVersatileWeapon2024(int base_item);
 
 // F2: Second Wind, one feat row per number of uses (data/rows/feat.fighter.txt).
 constexpr int kFeatSecondWind2 = 1220;  // Fighter 1

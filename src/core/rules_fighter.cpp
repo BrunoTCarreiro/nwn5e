@@ -12,12 +12,14 @@
 
 #include <windows.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <unordered_map>
 
 #include "config.h"
 #include "creature.h"
 #include "engine_queries.h"
+#include "hooks.h"
 #include "log.h"
 #include "log_once.h"
 #include "mastery.h"
@@ -151,6 +153,153 @@ int FightingStyleSheetRangedBonus(void* stats) {
 // Two-Weapon Fighting (style): the ability modifier on the off-hand attack.
 bool HasTwoWeaponFightingStyle(void* stats) { return HasStyle(stats, rules::kFeatFightingStyleTwoWeapon); }
 
+// --- F1 Defense and Great Weapon Fighting -------------------------------------
+// Defense: +1 AC while wearing armour (the chest item's base AC above 0 — the
+// engine's own test in GetDEXMod(1)), on attacks (GetArmorClassVersus,
+// rules_attack.cpp) and on the sheet (CNWSCreature::GetArmorClass hooked).
+// Great Weapon Fighting: the weapon's damage dice (GetDamageRoll's RollDice
+// calls for manufactured weapons, 0x69B0E9 on a critical, 0x69B2D1 otherwise)
+// are rolled one by one, a 1 or 2 counting as 3, for a melee attack with a
+// two-handed or versatile weapon held in two hands (RE-NOTES "Fighting Styles").
+
+namespace {
+
+using GetItemInSlotFn = void*(__fastcall*)(void* inventory, void* edx, uint32_t slot);
+using ComputeArmorClassFn = int(__fastcall*)(void* item, void* edx);
+using GetBaseItemFn = void*(__fastcall*)(void* base_items, void* edx, int row);
+using RollDiceFn = int(__fastcall*)(void* rules_object, void* edx, int count, int sides);
+using CreatureArmorClassFn = int(__fastcall*)(void* creature, void* edx);
+
+const auto g_get_item_in_slot = reinterpret_cast<GetItemInSlotFn>(nwmain::kGetItemInSlot);
+const auto g_compute_armor_class = reinterpret_cast<ComputeArmorClassFn>(nwmain::kItemComputeArmorClass);
+const auto g_get_base_item = reinterpret_cast<GetBaseItemFn>(nwmain::kGetBaseItem);
+const auto g_roll_dice = reinterpret_cast<RollDiceFn>(nwmain::kRollDice);
+CreatureArmorClassFn g_creature_armor_class = nullptr;
+
+void* ItemInSlot(void* creature, uint32_t slot) {
+  void* inventory = Field<void*>(creature, nwmain::kCreatureInventory);
+  return inventory ? g_get_item_in_slot(inventory, nullptr, slot) : nullptr;
+}
+
+bool WearingArmor(void* creature) {
+  void* chest = ItemInSlot(creature, nwmain::kSlotChest);
+  return chest && (g_compute_armor_class(chest, nullptr) & 0xFFFF) > 0;
+}
+
+void* BaseItemOf(void* item) {
+  void* rules_object = *reinterpret_cast<void**>(nwmain::kRulesObject);
+  void* base_items = rules_object ? Field<void*>(rules_object, nwmain::kRulesBaseItems) : nullptr;
+  return base_items ? g_get_base_item(base_items, nullptr, Field<int32_t>(item, nwmain::kItemBaseItem)) : nullptr;
+}
+
+bool GreatWeaponFightingApplies(void* stats, void* item, int off_hand) {
+  if (off_hand || !item || !HasStyle(stats, rules::kFeatFightingStyleGreatWeapon) || CurrentAttackRanged(stats)) {
+    return false;
+  }
+  const int id = Field<int32_t>(item, nwmain::kItemBaseItem);
+  const bool two_handed = rules::IsTwoHandedWeapon2024(id), versatile = rules::IsVersatileWeapon2024(id);
+  if (!two_handed && !versatile) return false;
+  void* base = BaseItemOf(item);
+  void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  if (!base || !creature || Field<uint8_t>(base, nwmain::kBaseItemWield) == nwmain::kBaseItemWieldDouble) return false;
+  if (engine::CurrentAttackGetsTwoHandedStrength(creature)) return true;  // NWN wields it two-handed
+  // Otherwise in two hands = nothing in the off hand, and a versatile weapon
+  // of the wielder's own size (a two-handed one always).
+  if (ItemInSlot(creature, nwmain::kSlotLeftHand)) return false;
+  return two_handed || Field<uint8_t>(base, nwmain::kBaseItemSize) == Field<uint32_t>(creature, nwmain::kCreatureSize);
+}
+
+// The weapon-dice roll (from GreatWeaponDiceStub).
+int __cdecl GreatWeaponDice(void* rules_object, int count, int sides, void* stats, void* item, int off_hand) {
+  if (!GreatWeaponFightingApplies(stats, item, off_hand)) return g_roll_dice(rules_object, nullptr, count, sides);
+  int total = 0, raised = 0;
+  for (int i = 0; i < count; ++i) {
+    const int roll = g_roll_dice(rules_object, nullptr, 1, sides) & 0xFFFF;
+    raised += roll < 3 ? 1 : 0;
+    total += rules::GreatWeaponFightingDie(roll);
+  }
+  if (g_config.log_attacks && raised && g_logged.First(LogOnce::Key(ObjectIdOf(stats), count * 100 + sides, 4))) {
+    Log("fighter: 0x%08X Great Weapon Fighting: %dd%d, %d die(s) of 1-2 counted as 3 (logged once per dice)",
+        ObjectIdOf(stats), count, sides, raised);
+  }
+  return total;
+}
+
+// In place of RollDice(count, sides) at GetDamageRoll's weapon-dice sites:
+// [esp+4] count, [esp+8] sides; GetDamageRoll's frame F = esp+0x0C (item
+// F+0x24, bOffHand F+0x6C); esi = stats, ecx = rules object; ret 8, AX.
+__declspec(naked) void GreatWeaponDiceStub() {
+  __asm {
+    mov  eax, [esp + 0x30]
+    mov  edx, [esp + 0x78]
+    push edx
+    push eax
+    push esi
+    push dword ptr [esp + 0x14]
+    push dword ptr [esp + 0x14]
+    push ecx
+    call GreatWeaponDice
+    add  esp, 0x18
+    ret  8
+  }
+}
+
+int __fastcall CreatureArmorClass(void* creature, void* edx);
+
+bool RedirectCall(const char* name, uintptr_t site, uintptr_t expected_target, const void* new_target) {
+  const auto* code = reinterpret_cast<const uint8_t*>(site);
+  int32_t rel = 0;
+  memcpy(&rel, code + 1, sizeof(rel));
+  if (code[0] != 0xe8 || site + nwmain::kCallLength + rel != expected_target) {
+    Log("SKIP %s: 0x%08X is not the mapped call", name, site);
+    return false;
+  }
+  uint8_t expected[5];
+  memcpy(expected, code, sizeof(expected));
+  uint8_t call[5] = {0xe8};
+  const int32_t new_rel = static_cast<int32_t>(reinterpret_cast<uintptr_t>(new_target) - (site + nwmain::kCallLength));
+  memcpy(call + 1, &new_rel, sizeof(new_rel));
+  return PatchBytes(name, site, expected, call, sizeof(call));
+}
+
+}  // namespace
+
+// Defense: +1 AC in armour (GetArmorClassVersus and the sheet).
+int DefenseArmorClassBonus(void* creature) {
+  if (!creature) return 0;
+  void* stats = Field<void*>(creature, nwmain::kCreatureStats);
+  return HasStyle(stats, rules::kFeatFightingStyleDefense) && WearingArmor(creature) ? rules::kDefenseArmorClassBonus
+                                                                                       : 0;
+}
+
+namespace {
+int __fastcall CreatureArmorClass(void* creature, void* edx) {
+  const int ac = static_cast<int16_t>(g_creature_armor_class(creature, edx) & 0xFFFF);
+  return ac + DefenseArmorClassBonus(creature);
+}
+}  // namespace
+
+void InstallFightingStyleHooks() {
+  int applied = 0;
+  for (uintptr_t site : nwmain::kWeaponDiceRollCalls) {
+    applied += RedirectCall("fighter: Great Weapon Fighting - weapon dice 1-2 count as 3 (faithful)", site,
+                            nwmain::kRollDice, reinterpret_cast<void*>(&GreatWeaponDiceStub))
+                   ? 1
+                   : 0;
+  }
+  applied += InstallHook({"CNWSCreature::GetArmorClass (sheet: Defense)", nwmain::kCreatureGetArmorClass,
+                          nwmain::kCreatureGetArmorClassPrologue, sizeof(nwmain::kCreatureGetArmorClassPrologue),
+                          reinterpret_cast<void*>(&CreatureArmorClass),
+                          reinterpret_cast<void**>(&g_creature_armor_class)})
+                 ? 1
+                 : 0;
+  Log("fighter: Fighting Style hooks %d of 3", applied);
+}
+
 void InstallFighterRules() {
-  if (!Faithful()) OnRulesLoaded(&HideFightingStyleRows);
+  if (!Faithful()) {
+    OnRulesLoaded(&HideFightingStyleRows);
+    return;
+  }
+  InstallFightingStyleHooks();
 }

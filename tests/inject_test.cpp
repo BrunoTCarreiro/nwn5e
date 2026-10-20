@@ -59,7 +59,7 @@ int wmain() {
   fread(text, 1, sizeof(text) - 1, file);
   fclose(file);
   printf("--- nwn5e.log ---\n%s-----------------\n", text);
-  const bool loaded = strstr(text, "nwn5e 0.9.56 loaded") != nullptr;
+  const bool loaded = strstr(text, "nwn5e 0.9.57 loaded") != nullptr;
   const bool refused = strstr(text, "host is not the mapped nwmain.exe 1.69 build") != nullptr;
   const bool hooked = strstr(text, "hook ") != nullptr || strstr(text, "patch ") != nullptr;
   printf("whoami exit code: %lu\n", code);

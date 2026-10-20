@@ -30,6 +30,7 @@ int RacialAttackBonusToRemove(void* stats, void* target);            // rules_ra
 int RacialArmorBonusToRemove(void* defender_stats, void* attacker);  // rules_racial.cpp
 
 int FightingStyleAttackBonus(void* stats);  // rules_fighter.cpp (Fighter F1)
+int DefenseArmorClassBonus(void* creature);  // rules_fighter.cpp (Fighter F1)
 
 namespace {
 
@@ -67,7 +68,9 @@ int __fastcall GetArmorClassVersus(void* stats, void* edx, void* attacker, int t
       g_get_armor_class_versus(stats, edx, attacker, touch) - RacialArmorBonusToRemove(stats, attacker);
   if (!g_config.creature_ac_by_cr && g_config.debug_creature_ac <= 0) return engine_armor_class;
   const CreatureFacts facts = ReadCreatureFacts(stats);
-  if (facts.character) return engine_armor_class;  // players and henchmen keep their gear AC
+  if (facts.character) {  // players and henchmen keep their gear AC (+ Fighter F1 Defense)
+    return engine_armor_class + DefenseArmorClassBonus(Field<void*>(stats, nwmain::kStatsCreature));
+  }
   // ResolveAttackRoll reads the result as a 16-bit value.
   const int engine_value = static_cast<int16_t>(engine_armor_class & 0xFFFF);
   if (g_config.debug_creature_ac > 0) {
