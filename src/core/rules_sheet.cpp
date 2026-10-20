@@ -21,6 +21,7 @@
 #include "nwmain_1_69.h"
 
 int RacialSheetRangedBonusToRemove(void* stats);  // rules_racial.cpp
+int FightingStyleSheetRangedBonus(void* stats);    // rules_fighter.cpp (Fighter F1)
 
 namespace {
 
@@ -58,7 +59,7 @@ int __fastcall GetRangedAttackBonus(void* stats, void* edx, int a, int b) {
   // With b set the engine returns early (Dex only), before Good Aim / sling.
   const int engine_value =
       g_get_ranged_attack_bonus(stats, edx, a, b) - (b ? 0 : RacialSheetRangedBonusToRemove(stats));
-  return ConvertSheetAttackBonus(stats, engine_value, "ranged");
+  return ConvertSheetAttackBonus(stats, engine_value, "ranged") + FightingStyleSheetRangedBonus(stats);  // F1 Archery
 }
 
 void __fastcall UpdateCombatInformation(void* stats, void* edx) {

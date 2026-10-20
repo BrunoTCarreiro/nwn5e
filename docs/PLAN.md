@@ -707,6 +707,13 @@ Master).
 (Studied Attacks: a miss marks the target like Vex; the next attack at it
 within the Fighter's next turn has advantage). Fighter levels include
 prestige-class levels (decision 10).
+*Built 0.9.55 (F1 part 1):* the four style feats served (feat.2da 1210–1213,
+in the Fighter's bonus list only), bonus slots at Fighter 1 and 7, ASI rows
+Level 4+; Archery (+2 on the ranged attack roll and the sheet) and
+Two-Weapon Fighting (the off-hand ability modifier, as NWN's feat) work;
+Defense and Great Weapon Fighting can be taken and work once their hooks are
+built (AC in armour, the weapon's damage dice). At Fighter 7 the slot also
+offers ASI (NWN's screen can't limit one slot to styles).
 
 ## Phase 2 — skills and checks: decided by the owner (2026-10-19)
 

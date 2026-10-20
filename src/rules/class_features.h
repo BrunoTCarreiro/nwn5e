@@ -40,4 +40,14 @@ bool HasRemarkableAthlete(int fighter_level);
 // creature before the end of your next turn.
 bool HasStudiedAttacks(int fighter_level);
 
+// F1: the Fighting Style feats (data/rows/feat.styles.txt), feat.2da rows.
+constexpr int kFeatFightingStyleArchery = 1210;
+constexpr int kFeatFightingStyleDefense = 1211;
+constexpr int kFeatFightingStyleGreatWeapon = 1212;
+constexpr int kFeatFightingStyleTwoWeapon = 1213;
+// The class levels with a Fighting Style feat slot: Fighter 1, and 7 (the
+// Champion's Additional Fighting Style). Paladin / Ranger 2 with their briefs.
+bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level);
+constexpr int kArcheryAttackBonus = 2;
+
 }  // namespace rules

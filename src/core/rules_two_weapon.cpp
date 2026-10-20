@@ -18,6 +18,8 @@
 #include "nwmain_1_69.h"
 #include "rules/weapons.h"
 
+bool HasTwoWeaponFightingStyle(void* stats);  // rules_fighter.cpp (Fighter F1)
+
 namespace {
 
 using GetOffHandAttacksFn = int(__fastcall*)(void* round, void* edx);
@@ -106,7 +108,7 @@ int __fastcall GetDamageBonus(void* stats, void* edx, void* target, int off_hand
   if (g_config.two_weapon_fighting != rules::RuleVariant::kFaithful) return bonus;
   const int strength = Field<int8_t>(stats, nwmain::kStatsStrModifier);
   const int nwn_term = rules::NwnOffHandStrengthDamage(strength);
-  const bool style = HasFeat(stats, nwmain::kFeatTwoWeaponFighting);
+  const bool style = HasFeat(stats, nwmain::kFeatTwoWeaponFighting) || HasTwoWeaponFightingStyle(stats);  // + F1
   const int term = rules::OffHandDamageAbilityModifier(strength, style);
   const uint32_t id = ObjectIdOfStats(stats);
   if (g_config.log_attacks && g_logged_damage.First(LogOnce::Key(id, nwn_term, term))) {

@@ -29,6 +29,8 @@ int PendingSituationalTotal(const void* stats, const void* target);  // rules_ad
 int RacialAttackBonusToRemove(void* stats, void* target);            // rules_racial.cpp
 int RacialArmorBonusToRemove(void* defender_stats, void* attacker);  // rules_racial.cpp
 
+int FightingStyleAttackBonus(void* stats);  // rules_fighter.cpp (Fighter F1)
+
 namespace {
 
 using AttackModifierFn = int(__fastcall*)(void* stats, void* edx, void* target);
@@ -50,7 +52,8 @@ int __fastcall GetAttackModifierVersus(void* stats, void* edx, void* target) {
   if (!facts.plausible) return engine_modifier;
   int base_attack_bonus = 0;
   int proficiency = 0;
-  const int converted = ConvertEngineAttackBonus(stats, engine_modifier, facts, &base_attack_bonus, &proficiency);
+  const int converted = ConvertEngineAttackBonus(stats, engine_modifier, facts, &base_attack_bonus, &proficiency) +
+                        FightingStyleAttackBonus(stats);  // Fighter F1 Archery
   if (g_config.log_attacks && g_attack_logged.First(LogOnce::Key(ObjectIdOf(stats), engine_modifier, converted))) {
     Log("attack: object 0x%08X %s level %d CR %.2f: 3e %+d (BAB %d) -> 5e %+d (PB %d)", ObjectIdOf(stats),
         KindOf(facts), facts.level, facts.challenge_rating, engine_modifier, base_attack_bonus, converted,

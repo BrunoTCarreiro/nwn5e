@@ -24,6 +24,7 @@
 #include "nwmain_1_69.h"
 #include "rules/class_features.h"
 #include "rules/weapons.h"
+#include "rules_loaded.h"
 
 namespace {
 
@@ -99,4 +100,57 @@ void StudiedAttacksAfterAttackRoll(void* attacker, void* target_object) {
     Log("fighter: 0x%08X missed 0x%08X - Studied Attacks: advantage on its next attack at it", IdOf(attacker),
         target_id);
   }
+}
+
+// --- F1 Fighting Styles -------------------------------------------------------
+
+namespace {
+
+using HasFeatFn = int(__fastcall*)(void* stats, void* edx, int feat);
+const auto g_has_feat = reinterpret_cast<HasFeatFn>(nwmain::kHasFeat);
+
+bool HasStyle(void* stats, int feat) {
+  if (!stats || !Faithful()) return false;
+  const CreatureFacts facts = ReadCreatureFacts(stats);
+  return facts.character && g_has_feat(stats, nullptr, feat) != 0;
+}
+
+bool CurrentAttackRanged(void* stats) {
+  void* creature = Field<void*>(stats, nwmain::kStatsCreature);
+  void* round = creature ? Field<void*>(creature, nwmain::kCreatureCombatRound) : nullptr;
+  const void* attack = round ? g_get_attack(round, nullptr, Field<uint8_t>(round, nwmain::kRoundCurrentAttack)) : nullptr;
+  return attack && Field<int32_t>(attack, nwmain::kAttackDataRanged) != 0;
+}
+
+void HideFightingStyleRows(void* rules_object, bool reload) {
+  auto* feats = Field<uint8_t*>(rules_object, nwmain::kRulesFeats);
+  const int count = Field<uint16_t>(rules_object, nwmain::kRulesFeatCount);
+  if (!feats) return;
+  for (int id = rules::kFeatFightingStyleArchery; id <= rules::kFeatFightingStyleTwoWeapon && id < count; ++id) {
+    SetField<uint8_t>(feats + id * nwmain::kFeatStride, nwmain::kFeatMinLevel, 0xFF);
+  }
+  if (!reload) Log("fighter: NWN's - the Fighting Style feats hidden");
+}
+
+}  // namespace
+
+// Archery: +2 to the current attack roll when it is ranged (GetAttackModifierVersus).
+int FightingStyleAttackBonus(void* stats) {
+  if (!HasStyle(stats, rules::kFeatFightingStyleArchery) || !CurrentAttackRanged(stats)) return 0;
+  if (g_config.log_attacks && g_logged.First(LogOnce::Key(ObjectIdOf(stats), 0, 3))) {
+    Log("fighter: 0x%08X Archery: +%d to ranged attack rolls", ObjectIdOf(stats), rules::kArcheryAttackBonus);
+  }
+  return rules::kArcheryAttackBonus;
+}
+
+// Archery on the character sheet's ranged attack bonus.
+int FightingStyleSheetRangedBonus(void* stats) {
+  return HasStyle(stats, rules::kFeatFightingStyleArchery) ? rules::kArcheryAttackBonus : 0;
+}
+
+// Two-Weapon Fighting (style): the ability modifier on the off-hand attack.
+bool HasTwoWeaponFightingStyle(void* stats) { return HasStyle(stats, rules::kFeatFightingStyleTwoWeapon); }
+
+void InstallFighterRules() {
+  if (!Faithful()) OnRulesLoaded(&HideFightingStyleRows);
 }

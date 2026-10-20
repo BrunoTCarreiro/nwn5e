@@ -37,4 +37,8 @@ TEST(FighterFeatureLevels) {
   CHECK_EQ(HasRemarkableAthlete(3), true);
   CHECK_EQ(HasStudiedAttacks(12), false);
   CHECK_EQ(HasStudiedAttacks(13), true);
+  CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kFighter, 1), true);
+  CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kFighter, 7), true);
+  CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kFighter, 4), false);
+  CHECK_EQ(IsFightingStyleLevel2024(CharacterClass::kPaladin, 2), false);  // with the Paladin's brief
 }

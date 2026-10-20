@@ -145,6 +145,7 @@ int BuildServedTables(const std::wstring& dll, const std::wstring& served) {
   for (const auto& source : sources) {
     for (const std::wstring& name : FilesIn(source.first, L"*.txt")) {
       std::string table = Narrow(name.substr(0, name.size() - 4));
+      table = table.substr(0, table.find('.'));  // "feat.styles.txt" -> feat.2da
       for (char& c : table) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
       rows[table].push_back({source.first + L"\\" + name, std::string(source.second) + "\\rows\\" + Narrow(name)});
     }

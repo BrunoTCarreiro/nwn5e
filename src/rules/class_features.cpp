@@ -8,7 +8,7 @@ namespace {
 // of the brief, updated as its decisions are built.
 const std::vector<ClassFeature>& Fighter() {
   static const std::vector<ClassFeature> kFeatures = {
-      {1, "Fighting Style", false, "brief F1"},
+      {1, "Fighting Style", false, "built: Archery, Two-Weapon Fighting (Defense, Great Weapon Fighting: being built)"},
       {1, "Second Wind", false, "brief F2"},
       {1, "Weapon Mastery", false, "built (!mastery)"},
       {2, "Action Surge", false, "Phase 6"},
@@ -20,7 +20,7 @@ const std::vector<ClassFeature>& Fighter() {
       {5, "Extra Attack", false, "built"},
       {5, "Tactical Shift", false, "brief F7"},
       {6, "Ability Score Improvement", false, "built (!asi)"},
-      {7, "Additional Fighting Style", true, "brief C3"},
+      {7, "Additional Fighting Style", true, "built: a second style"},
       {8, "Ability Score Improvement", false, "built (!asi)"},
       {9, "Indomitable", false, "brief F5"},
       {9, "Tactical Master", false, "brief F7"},
@@ -68,6 +68,10 @@ int ChampionCriticalFloor(int fighter_level) { return fighter_level >= 15 ? 18 :
 bool HasRemarkableAthlete(int fighter_level) { return fighter_level >= 3; }
 
 bool HasStudiedAttacks(int fighter_level) { return fighter_level >= 13; }
+
+bool IsFightingStyleLevel2024(CharacterClass character_class, int class_level) {
+  return character_class == CharacterClass::kFighter && (class_level == 1 || class_level == 7);
+}
 
 std::vector<ClassFeature> ClassFeatures2024(CharacterClass character_class, int level) {
   std::vector<ClassFeature> features;

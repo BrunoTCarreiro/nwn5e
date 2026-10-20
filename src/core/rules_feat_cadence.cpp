@@ -24,6 +24,7 @@
 #include "hooks.h"
 #include "log.h"
 #include "nwmain_1_69.h"
+#include "rules/class_features.h"
 #include "rules/nwn_conversion.h"
 #include "rules/progression.h"
 #include "rules_loaded.h"
@@ -43,7 +44,9 @@ void SetFaithfulBonusFeatSlots(void* rules_object, bool reload) {
     if (!character_class) continue;
     uint8_t* slots = classes + id * nwmain::kClassStride + nwmain::kClassBonusFeats;
     for (int level = 1; level <= kMaxBonusFeatLevel; ++level) {
-      slots[level] = rules::IsFeatLevel2024(*character_class, level) ? 1 : 0;
+      const bool style = g_config.class_features == rules::RuleVariant::kFaithful &&
+                         rules::IsFightingStyleLevel2024(*character_class, level);  // Fighter F1
+      slots[level] = rules::IsFeatLevel2024(*character_class, level) || style ? 1 : 0;
     }
     ++changed;
   }

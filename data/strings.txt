@@ -9,3 +9,12 @@
 16000105 Ability Score Improvement 5
 16000106 Ability Score Improvement 6
 16000107 Ability Score Improvement 7
+# 16000110-16000117: the Fighting Style feats (Fighter F1).
+16000110 Fighting Style: Archery
+16000111 Fighting Style (2024): you gain a +2 bonus to attack rolls you make with ranged weapons.
+16000112 Fighting Style: Defense
+16000113 Fighting Style (2024): while you're wearing armor (not clothing), you gain a +1 bonus to Armor Class.
+16000114 Fighting Style: Great Weapon Fighting
+16000115 Fighting Style (2024): when you roll damage for an attack with a melee weapon you're holding in two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property.
+16000116 Fighting Style: Two-Weapon Fighting
+16000117 Fighting Style (2024): when you make the extra attack of two-weapon fighting, you add your ability modifier to its damage (NWN's Two-Weapon Fighting feat does the same in the 2024 rules).

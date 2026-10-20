@@ -11,9 +11,9 @@ rows, writes it to `build\served\<table>.2da`, and registers that folder with
 the engine's resource manager. The game install is not touched; launching
 NWN without nwn5e is vanilla.
 
-## rows/<table>.txt
+## rows/<table>.txt (or <table>.<part>.txt)
 
-One file per 2da table (`rows/feat.txt` → feat.2da). `#` starts a comment.
+One file per 2da table (`rows/feat.txt` → feat.2da), or several (`feat.asi.txt`, `feat.styles.txt`: the part before the first dot names the table). `#` starts a comment.
 The first other line names columns of the table; each following line is a
 row number and one value per named column:
 
