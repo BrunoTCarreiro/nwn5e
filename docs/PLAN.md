@@ -401,6 +401,11 @@ each change is kept in a local variable (`nwn5e_delta_*`): applied once,
 undone in NWN mode. Checked every 2 s per character (AIUpdate) and right
 after !asi / !background. Not undone without nwn5e (a vanilla launch sees
 the 2024 bases).
+*Verified in game 2026-10-20 (0.9.52):* `!background soldier str con` → Str 16
+→ 18, Con 16 → 17; `!asi dex` after taking ASI 1 → Dex 13 → 15; switching to
+Criminal removed the Soldier increases (Str 16) and gave Dex 17 (+2 +2) and
+Alert (initiative +5 = Dex +3, PB +2); the owner checked the creation screen.
+Not seen yet: a henchman's ASIs, the NWN-mode undo, legacy ASIs.
 
 **CM5. Backgrounds.** SRD 5.2 has 4: Acolyte, Criminal, Sage, Soldier
 (abilities, Origin feat, 2 skills, a tool). NWN has no background step; its
@@ -460,6 +465,9 @@ bonus list (List 2); hidden in NWN mode (MinLevel 0xFF). Henchmen still level
 fewer). Not yet: Fighting Style slots and Epic Boons (with those feats, CM8 /
 CM9), the level-1 slot limited to Origin feats (CM8), prestige classes' slots
 (CM10 turns them off).
+*Verified in game 2026-10-20 (0.9.52):* a Fighter leveled 1 → 4: no general
+feat at 3, no ability page at 4, Ability Score Improvement 1 offered in the
+bonus slot and taken.
 
 **CM8. Which feats exist.** SRD 5.2 has 17: Origin — Alert, Magic Initiate,
 Savage Attacker, Skilled; General — Ability Score Improvement, Grappler;
