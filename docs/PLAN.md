@@ -362,6 +362,10 @@ the class slots in order; prestige classes use their parent's die (decision
 (CM8). The level-up screen still shows NWN's HP roll for the new level (client
 code, Phase 7); the sheet shows the 2024 maximum. Current HP above a lower new
 maximum is left to the engine (watch in the test).
+*Verified in game 2026-10-20 (0.9.49):* a Fighter with Con +2 had 12 at level 1
+(NWN 12) and 20 after levelling to 2 (+8; NWN 24). Not seen yet: a henchman,
+current HP above a lower new maximum (a character above level 1 made under
+NWN).
 
 **CM4. Ability scores.** 2024: standard array, 27-point buy (8–15) or roll;
 **species give nothing**; the background gives +2 / +1 or +1 / +1 / +1 among
