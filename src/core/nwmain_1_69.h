@@ -1403,4 +1403,72 @@ constexpr MediumPatch kFaithfulFeatCadencePatches[] = {
     {"no ability page every 4 levels (level-up screen)", 0x00531EE1, 2, {0x75, 0x5f}, {0xeb, 0x5f}},
 };
 
+// Phase 3 CM4 (RE-NOTES "Ability scores"). Base scores: stats +0x3F8 Str,
+// +0x3FA Dex, +0x3FC Con, +0x3FE Int, +0x400 Wis, +0x402 Cha (no racial
+// adjustment; NWN's level +1s included), each followed by its cached
+// modifier. The setters (ecx = stats, push value, ret 4) write the base and
+// recompute the modifier inline (base + race + effects) — so do 8 other
+// writers (load, LevelUp 0x6A9394, LevelDown 0x6A9A1E, effects 0x64C066...).
+constexpr uintptr_t kStatsStrBase = 0x3F8;  // + 2 * ability
+constexpr uintptr_t kSetStrBase = 0x006A1510;
+constexpr uintptr_t kSetDexBase = 0x006A1600;
+constexpr uintptr_t kSetConBase = 0x006A1720;
+constexpr uintptr_t kSetIntBase = 0x006A1830;
+constexpr uintptr_t kSetWisBase = 0x006A1920;
+constexpr uintptr_t kSetChaBase = 0x006A1A10;
+constexpr uintptr_t kLevelStatsAbility = 0x102;  // uint8: the ability raised at that level (6 = none)
+// Races: CNWRace array at rules +0xE8, stride 0x34, count rules +0xDE
+// (uint8, LoadRaceInfo 0x47D1E4); ability adjustments int8 at +0x18..+0x1D
+// in racialtypes.2da column order (Str, Dex, Int, Cha, Wis, Con).
+constexpr uintptr_t kRulesRaces = 0xE8;
+constexpr uintptr_t kRulesRaceCount = 0xDE;
+constexpr uintptr_t kRaceStride = 0x34;
+constexpr uintptr_t kRaceAbilityAdjust = 0x18;
+// The creation screen's point buy (client; the server's copy in
+// ValidateCharacter runs only with Enforce Legal Characters): the budget
+// (mov byte [reg+0xAC], 0x1E at 0x4F0074, 0x531A6E, 0x537F05), the maximum
+// 18 and the cost tiers (14: 2 points, 16: 3) in the 12 +/- handlers
+// 0x52F66C..0x5306F9. 2024: 27 points, at most 15, 2 points from 13.
+constexpr SmallPatch kFaithfulPointBuyPatches[] = {
+    {"point buy: 27 points", 0x004F007A, 1, {0x1e}, {0x1b}},
+    {"point buy: 27 points", 0x00531A74, 1, {0x1e}, {0x1b}},
+    {"point buy: 27 points", 0x00537F0B, 1, {0x1e}, {0x1b}},
+    {"point buy: 2 points from 13", 0x0052F69E, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052F6E4, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x0052F7E6, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x0052F7EE, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052F807, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052F85F, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052F974, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052F9BA, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x0052FAB6, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x0052FABE, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FAD7, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FB2F, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FC44, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FC8A, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x0052FD87, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x0052FD90, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FDAB, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FE04, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FF39, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0052FF7F, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x00530077, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x00530080, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0053009B, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x005300F4, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x00530204, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0053024A, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x00530347, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x00530350, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0053036B, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x005303C4, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x00530538, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x0053057E, 1, {0x0e}, {0x0d}},
+    {"point buy: at most 15", 0x00530676, 1, {0x12}, {0x0f}},
+    {"point buy: 2 points from 13", 0x0053067E, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x00530697, 1, {0x0e}, {0x0d}},
+    {"point buy: 2 points from 13", 0x005306EF, 1, {0x0e}, {0x0d}},
+};
+
 }  // namespace nwmain

@@ -24,6 +24,8 @@ std::string DescribeSaves(void* stats);                                         
 std::vector<std::string> MasteryCommand(void* creature, const std::string& args);  // rules_mastery.cpp
 
 std::vector<std::string> SkillsCommand(void* creature, const std::string& args);  // rules_skills.cpp
+std::vector<std::string> AsiCommand(void* creature, const std::string& args);         // rules_abilities.cpp
+std::vector<std::string> BackgroundCommand(void* creature, const std::string& args);  // rules_abilities.cpp
 
 namespace {
 
@@ -48,7 +50,7 @@ const auto g_get_nws_message = reinterpret_cast<GetNwsMessageFn>(nwmain::kGetNws
 
 constexpr uint32_t kNoPlayer = 0xFFFFFFFE;
 
-enum class Command { kNone, kSaves, kMastery, kSkills };
+enum class Command { kNone, kSaves, kMastery, kSkills, kAsi, kBackground };
 
 // "!saves" or "!mastery <args>" (command in any case, leading spaces
 // ignored), read before the engine frees the text.
@@ -68,6 +70,8 @@ Command ParseCommand(const ExoString& text, std::string* args) {
   if (word == "!saves") return Command::kSaves;
   if (word == "!mastery") return Command::kMastery;
   if (word == "!skills") return Command::kSkills;
+  if (word == "!asi") return Command::kAsi;
+  if (word == "!background") return Command::kBackground;
   return Command::kNone;
 }
 
@@ -93,14 +97,18 @@ uint32_t __fastcall SendServerToPlayerChatMessage(void* message, void* edx, uint
     Log("chat: no player id for 0x%08X; command not answered", sender);
     return result;
   }
-  const std::vector<std::string> lines = command == Command::kSaves    ? std::vector<std::string>{DescribeSaves(stats)}
-                                         : command == Command::kSkills ? SkillsCommand(creature, args)
-                                                                       : MasteryCommand(creature, args);
+  std::vector<std::string> lines;
+  const char* name = "";
+  switch (command) {
+    case Command::kSaves: lines = {DescribeSaves(stats)}; name = "!saves"; break;
+    case Command::kSkills: lines = SkillsCommand(creature, args); name = "!skills"; break;
+    case Command::kAsi: lines = AsiCommand(creature, args); name = "!asi"; break;
+    case Command::kBackground: lines = BackgroundCommand(creature, args); name = "!background"; break;
+    default: lines = MasteryCommand(creature, args); name = "!mastery"; break;
+  }
   for (const std::string& line : lines) Reply(message, player, line);
   if (g_config.log_attacks && !lines.empty()) {
-    Log("chat: %s for 0x%08X: %s%s",
-        command == Command::kSaves ? "!saves" : command == Command::kSkills ? "!skills" : "!mastery", sender,
-        lines[0].c_str(), lines.size() > 1 ? " ..." : "");
+    Log("chat: %s for 0x%08X: %s%s", name, sender, lines[0].c_str(), lines.size() > 1 ? " ..." : "");
   }
   return result;
 }

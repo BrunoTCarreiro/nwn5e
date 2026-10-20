@@ -388,6 +388,19 @@ counted; point buy 27 / max 15 if the creation screen's budget is a patchable
 constant (client RE, 1.69-only), otherwise Phase 7. NWN mode: NWN's.
 Consequences: campaign Int / Cha dialog checks (142 dialogs) see the 2024
 scores.
+*Built 0.9.52 (key `ability_scores`):* racial adjustments zeroed in the loaded
+race table after every rules load (only Dwarf, Elf, Gnome, Halfling and
+Half-Orc have any; NPCs of those species lose them too); the creation screen's
+point buy patched at 39 client sites (27 points, at most 15, 2 points from
+13; the "Recommended" button can still set package scores above 15). Read-time
+wasn't possible: every cached modifier is recomputed inline from the stored
+base (9 writers per ability), so a character's base scores are *set* through
+the engine's setters — minus NWN's level +1s (history +0x102), plus the
+background and each ASI, none past 20 (rules::FaithfulAbilityDelta) — and
+each change is kept in a local variable (`nwn5e_delta_*`): applied once,
+undone in NWN mode. Checked every 2 s per character (AIUpdate) and right
+after !asi / !background. Not undone without nwn5e (a vanilla launch sees
+the 2024 bases).
 
 **CM5. Backgrounds.** SRD 5.2 has 4: Acolyte, Criminal, Sage, Soldier
 (abilities, Origin feat, 2 skills, a tool). NWN has no background step; its
@@ -399,6 +412,12 @@ Origin feat, and its 2 skills count in `!skills`; tools map to SK1's rows
 and are only recorded). NWN's background feats do nothing and are hidden.
 NWN mode: NWN's background feats, no 2024 background. Note: Magic Initiate
 (Acolyte, Sage) needs Phase 4's spells; until then it grants nothing.
+*Built 0.9.52:* `!background <name> <+2> <+1>` or `<+1> <+1> <+1>` (the SRD's four;
+changeable); its skills count as proficient (Insight, Religion, History and
+Athletics have no NWN use yet); Alert (Criminal) gives initiative +PB now;
+Savage Attacker and Magic Initiate are recorded. NWN's background feats still
+work until CM8 hides them. `!asi <ability>` (+2) or `<a> <b>` (+1 each), `!asi
+undo`, `!asi` to see the scores and what is unspent.
 
 **CM6. Species (open decisions 1, 2).** SRD 5.2: Dragonborn, Dwarf, Elf,
 Gnome, Goliath, Halfling, Human, Orc, Tiefling. Built already: the save
@@ -501,6 +520,9 @@ picking NWN feats, which do nothing in faithful. Recommendation, faithful:
 their ASIs are assigned automatically (+2 to the class's primary ability,
 then the next); OC's pre-built blueprints read the same way. HotU's
 automatic level-up of the PC to 15: the player assigns its ASIs with `!asi`.
+*Built 0.9.52 (with CM4):* a henchman's ASIs = its 2024 feat levels (classes
+grouped by decision 10), each +2 to its first class's main ability below 20,
+then the next (rules::AsiPriority2024).
 
 **CM13. Existing characters.** Everything read-time switches cleanly with
 the mode. What a faithful player does once: `!background`, `!asi` for the
@@ -508,6 +530,10 @@ ASIs already earned, `!skills` (built). Characters above 20 (HotU saves) are
 read as their first 20 levels in faithful. The XP floor (CM1) raises stored
 XP — the one write, and the reason a character moved back to NWN mode may
 have levels to take.
+*Built 0.9.52 (part):* the first time faithful sees a player character, its
+2024 feat levels so far minus the ASI feats it owns become "legacy" ASIs to
+assign with `!asi` (`nwn5e_asi_legacy`); its NWN level +1s stop counting. The
+ability changes are the second write (undone in NWN mode).
 
 **CM14. Alignment (decided by the owner, 2026-10-19: the recommendation,
 option A).** 2024 keeps alignment as a description only (character, monster

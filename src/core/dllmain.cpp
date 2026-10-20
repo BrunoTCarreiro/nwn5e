@@ -37,6 +37,7 @@ void InstallAlignmentRules();
 void InstallHitPointRules();
 void InstallDataServing(const wchar_t* dll_directory);
 void InstallFeatCadenceRules();
+void InstallAbilityRules();
 void InstallCreatureUpdate();
 void InstallRetargetRules();
 void InstallSheetRules();
@@ -63,7 +64,7 @@ void Start(HMODULE self) {
   GetModuleFileNameW(self, directory, MAX_PATH);
   PathRemoveFileSpecW(directory);
   LogOpen(directory);
-  Log("nwn5e 0.9.51 loaded");
+  Log("nwn5e 0.9.52 loaded");
 #ifdef NWN5E_PRIVATE
   Log("private layer: compiled in (personal use only; never share this DLL)");
 #endif
@@ -101,6 +102,7 @@ void Start(HMODULE self) {
   InstallAlignmentRules();
   InstallHitPointRules();
   InstallFeatCadenceRules();
+  InstallAbilityRules();
   InstallCreatureUpdate();
   InstallRetargetRules();
   InstallSheetRules();

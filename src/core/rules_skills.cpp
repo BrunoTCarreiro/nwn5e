@@ -40,6 +40,8 @@
 void TellPlayer(uint32_t object_id, const std::string& line);  // rules_chat.cpp
 bool IsPlayerControlled(uint32_t object_id);                   // rules_chat.cpp
 
+rules::SkillSet BackgroundSkills(void* creature);  // rules_abilities.cpp (CM5)
+
 namespace {
 
 using GetSkillRankFn = char(__fastcall*)(void* stats, void* edx, uint8_t skill, void* vs, int base_only);
@@ -241,6 +243,7 @@ bool SkillValue2024(void* stats, uint8_t skill, void* vs, int* value, SkillParts
   Profile profile;
   if (character) {
     profile = CharacterProfile(creature, stats);
+    profile.proficient |= BackgroundSkills(creature);  // CM5
   } else if (RanksFor(stats, *mapped) > 0) {
     profile.proficient = rules::SkillBit(*mapped);  // monsters: proficient where they have ranks
   }

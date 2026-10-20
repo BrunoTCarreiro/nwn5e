@@ -25,6 +25,7 @@
 
 bool IsPlayerControlled(uint32_t object_id);  // rules_chat.cpp
 bool HiddenByStealth(void* creature);         // rules_perception.cpp
+bool HasAlertFromBackground(void* creature);  // rules_abilities.cpp (CM5)
 
 namespace {
 
@@ -48,7 +49,8 @@ int __fastcall InitiativeModifier(void* stats, void* edx, int armor_cap) {
   const CreatureFacts facts = ReadCreatureFacts(stats);
   if (!facts.plausible) return dex;
   const int pb = rules::ProficiencyBonusForCreature(facts.character, facts.level, facts.challenge_rating);
-  const bool alert = g_has_feat(stats, nullptr, nwmain::kFeatImprovedInitiative) != 0;
+  const bool alert = g_has_feat(stats, nullptr, nwmain::kFeatImprovedInitiative) != 0 ||
+                     HasAlertFromBackground(Field<void*>(stats, nwmain::kStatsCreature));  // CM5: Criminal
   const int modifier = rules::InitiativeModifier2024(dex, pb, alert);
   if (g_config.log_attacks && IsPlayerControlled(ObjectIdOf(stats)) &&
       g_logged.First(LogOnce::Key(ObjectIdOf(stats), dex, modifier))) {

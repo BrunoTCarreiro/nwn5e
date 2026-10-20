@@ -19,6 +19,8 @@ bool IsPlayerControlled(uint32_t object_id);  // rules_chat.cpp
 
 void MasteryCreatureUpdate(void* creature);  // rules_mastery.cpp: Push slide, fall, watch
 void PotionCreatureUpdate(void* creature);   // rules_potion.cpp: back to attacking after a potion
+void AbilitiesCreatureUpdate(void* creature);  // rules_abilities.cpp: 2024 / NWN base scores
+bool AbilitiesActive();                        // rules_abilities.cpp
 
 namespace {
 
@@ -27,6 +29,7 @@ AIUpdateFn g_ai_update = nullptr;
 bool g_push = false;
 bool g_potion = false;
 bool g_idle_trace = false;
+bool g_abilities = false;
 
 // Test log: a player's character left without orders in a fight ("lost its
 // target", owner 2026-10-19). Logged once per idle spell, after 1.5 s, with
@@ -73,6 +76,7 @@ void __fastcall AIUpdate(void* creature, void* edx) {
   if (g_push) MasteryCreatureUpdate(creature);
   if (g_potion) PotionCreatureUpdate(creature);
   if (g_idle_trace) IdleTrace(creature);
+  if (g_abilities) AbilitiesCreatureUpdate(creature);
 }
 
 }  // namespace
@@ -82,7 +86,8 @@ void InstallCreatureUpdate() {
   g_push = g_config.weapon_mastery == rules::RuleVariant::kFaithful;
   g_potion = g_config.resume_attack_after_potion;
   g_idle_trace = g_config.log_attacks;
-  if (!g_push && !g_potion && !g_idle_trace) return;
+  g_abilities = AbilitiesActive();
+  if (!g_push && !g_potion && !g_idle_trace && !g_abilities) return;
   InstallHook({"CNWSCreature::AIUpdate (Push slide and fall, back to attacking after a potion)",
                nwmain::kCreatureAIUpdate, nwmain::kCreatureAIUpdatePrologue,
                sizeof(nwmain::kCreatureAIUpdatePrologue), reinterpret_cast<void*>(&AIUpdate),

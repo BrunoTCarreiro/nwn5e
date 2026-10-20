@@ -1106,3 +1106,25 @@ SetInteger(3, DC) (0x4FA320). Sites (bytes in nwmain_1_69.h kSkillDcSites):
   bonus; it walks the package's feat table (0x6AACB8..) through 0x6AB840,
   then every feat 0..count (0x6AADA4..) for the rest — unfilled slots don't
   fail the level-up.
+
+## Ability scores (decoded 2026-10-20, CM4)
+
+- Base scores at stats +0x3F8 / +0x3FA / +0x3FC / +0x3FE / +0x400 / +0x402
+  (Str..Cha; no racial adjustment, NWN's level +1s included), each followed by
+  a cached modifier byte. GetXXXStat (0x6A0FF0..0x6A1360) = base + race
+  +0x18..+0x1D (Str, Dex, Int, Cha, Wis, Con) + effects (0x65E7D0), at
+  least 3. The modifiers are NOT taken from the getters: each writer
+  recomputes base + race + effects inline — SetSTRBase 0x6A1510, SetDEXBase
+  0x6A1600, SetCONBase 0x6A1720, SetINTBase 0x6A1830, SetWISBase 0x6A1920,
+  SetCHABase 0x6A1A10 (ecx = stats, value, ret 4), and 0x64C066 (effects),
+  0x691B42 (init), 0x69CAC8 (load), 0x6A9394 (LevelUp), 0x6A9A1E
+  (LevelDown), 0x6AD9E2, 0x6B3AE7 (Dex). So 2024 scores are set through the
+  setters, not computed when read.
+- Races: array at rules +0xE8, stride 0x34, count +0xDE (uint8). Only
+  Dwarf, Elf, Gnome, Halfling and Half-Orc have adjustments in 1.69's
+  racialtypes.2da (no monster type has any).
+- Point buy (client): budget byte 0x1E at 0x4F007A, 0x531A74, 0x537F0B
+  (mov byte [reg+0xAC]); 12 +/- handlers 0x52F66C..0x5306F9 compare with 0x12
+  (18, six sites), 0x0E and 0x10 (cost tiers: 2 points from 14, 3 from 16;
+  30 sites each) and 8 (the minimum). ValidateCharacter's copies (0x617136,
+  0x61728D) run only with Enforce Legal Characters.
